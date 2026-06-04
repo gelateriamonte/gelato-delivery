@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Gelateria — Ordina</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <h1>🍦 La Gelateria</h1>
+      <span class="sub">Consegna a domicilio</span>
+    </div>
+  </header>
+
+  <main class="wrap" id="app">
+    <!-- COMPOSIZIONE ORDINE -->
+    <section id="shop">
+      <h2>Scegli il tuo gelato</h2>
+      <p class="muted small" id="shop-hint">Tocca un formato per scegliere i gusti.</p>
+      <div id="formats" class="stack"></div>
+
+      <h2>Il tuo ordine</h2>
+      <div class="card" id="cart">
+        <p class="muted small" id="cart-empty">Carrello vuoto.</p>
+        <div id="cart-lines"></div>
+      </div>
+
+      <h2>Quando lo vuoi?</h2>
+      <div class="card">
+        <label for="slot">Fascia oraria di consegna</label>
+        <select id="slot"></select>
+      </div>
+
+      <h2>I tuoi dati</h2>
+      <div class="card stack">
+        <div class="field"><label for="name">Nome e cognome</label>
+          <input id="name" type="text" placeholder="Mario Rossi"></div>
+        <div class="field"><label for="phone">Telefono</label>
+          <input id="phone" type="tel" placeholder="333 1234567"></div>
+        <div class="field"><label for="address">Indirizzo di consegna</label>
+          <input id="address" type="text" placeholder="Via Roma 1, scala B"></div>
+        <div class="field"><label for="notes">Note (opzionale)</label>
+          <textarea id="notes" rows="2" placeholder="Citofono Rossi, 2º piano"></textarea></div>
+      </div>
+
+      <div class="banner" id="min-banner" style="display:none"></div>
+    </section>
+
+    <!-- CONFERMA -->
+    <section id="done" class="hidden">
+      <div class="center">
+        <div class="bigemoji">🍨</div>
+        <h2>Ordine inviato!</h2>
+        <p class="muted">Grazie, ti contatteremo per la consegna.</p>
+        <div class="card" id="done-summary" style="text-align:left"></div>
+        <button class="btn ghost" onclick="location.reload()">Nuovo ordine</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- BARRA CHECKOUT -->
+  <div class="bar" id="bar">
+    <div class="wrap">
+      <div class="grow">
+        <div class="small muted">Totale</div>
+        <div class="price" id="total">€ 0,00</div>
+      </div>
+      <button class="btn" id="submit" disabled>Invia ordine</button>
+    </div>
+  </div>
+
+  <!-- MODALE GUSTI -->
+  <div class="modal-bg" id="modal">
+    <div class="modal">
+      <div class="row between">
+        <h2 id="m-title" style="margin:0">Scegli i gusti</h2>
+        <button class="btn ghost sm" id="m-close">Chiudi</button>
+      </div>
+      <p class="muted small" id="m-hint"></p>
+      <div class="flexwrap" id="m-flavors"></div>
+      <div class="field" style="margin-top:14px">
+        <label for="m-qty">Quantità</label>
+        <input id="m-qty" type="number" min="1" value="1">
+      </div>
+      <button class="btn block" id="m-add">Aggiungi al carrello</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/order.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Sito statico: nessun build step, pubblica la root del repo.
+[build]
+  publish = "."
+  command = ""
