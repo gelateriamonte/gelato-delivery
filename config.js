@@ -8,8 +8,8 @@
 //   Chiunque legga questo file la vede. Auth vera = fase successiva.
 // ============================================================
 window.SUPABASE_CONFIG = {
-  url:     "https://YOUR-PROJECT-REF.supabase.co",
-  anonKey: "YOUR-ANON-KEY"
+  url:     "https://hsnikgbwsggusqlanwmt.supabase.co",
+  anonKey: "sb_publishable_efCBXPaGPk4JsmUWkvASkg_9GHaHuB3"
 };
 
 window.ADMIN_PASSWORD = "gelato2026";
