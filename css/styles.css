@@ -399,10 +399,10 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .addrow .btn{ flex:none; }
 
 /* capienza fascia (Max consegne/giorno) */
-.slotmax{ display:inline-flex; align-items:center; gap:7px; flex:none; margin:0; cursor:default;
+.slotmax{ display:inline-flex; align-items:center; gap:7px; flex:none; min-width:0; margin:0; cursor:default;
   text-transform:none; letter-spacing:normal; }
 .slotmax-lbl{ font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-.slotmax input{ flex:0 0 64px; width:64px; text-align:center; padding:9px 6px; -moz-appearance:textfield; }
+.slotmax input{ flex:0 0 64px; width:64px; max-width:64px; text-align:center; padding:9px 6px; -moz-appearance:textfield; }
 .slotmax input::-webkit-outer-spin-button, .slotmax input::-webkit-inner-spin-button,
 #ns-max::-webkit-outer-spin-button, #ns-max::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
 #ns-max{ -moz-appearance:textfield; }
@@ -563,7 +563,7 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
   .mrow .g-name{ flex:1 1 0; min-width:96px; font-size:14px; padding:12px 10px; }
   .slotmax{ gap:4px; flex:none; }
   .slotmax-lbl{ font-size:9px; letter-spacing:.03em; }
-  .slotmax input{ -webkit-appearance:none; appearance:none; flex:0 0 44px; width:44px; min-width:0; padding:9px 2px; }
+  .slotmax input{ -webkit-appearance:none; appearance:none; flex:0 0 44px; width:44px; max-width:44px; min-width:0; padding:9px 2px; }
   .mrow .btn.icon{ flex:none; padding:8px 8px; }
   /* add-row: i select prendono larghezza utile, va a capo */
   .addrow{ flex-wrap:wrap; }
