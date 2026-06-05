@@ -28,8 +28,10 @@
       </div>
 
       <h2>Quando lo vuoi?</h2>
-      <div class="card">
-        <label for="slot">Fascia oraria di consegna</label>
+      <div class="card stack">
+        <label>Giorno di consegna</label>
+        <div id="day-pick" class="cal"></div>
+        <label for="slot" style="margin-top:6px">Fascia oraria</label>
         <select id="slot"></select>
       </div>
 
@@ -39,6 +41,8 @@
           <input id="name" type="text" placeholder="Mario Rossi"></div>
         <div class="field"><label for="phone">Telefono</label>
           <input id="phone" type="tel" placeholder="333 1234567"></div>
+        <div class="field"><label for="email">Email</label>
+          <input id="email" type="email" placeholder="mario.rossi@email.it"></div>
         <div class="field"><label for="address">Indirizzo di consegna</label>
           <input id="address" type="text" placeholder="Via Roma 1, scala B"></div>
         <div class="field"><label for="notes">Note (opzionale)</label>

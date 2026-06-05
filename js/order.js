@@ -7,13 +7,29 @@ let CART = [];
 let modalFormat = null;        // formato attualmente in selezione nel modale
 let modalChosen = [];          // gusti scelti nel modale
 
+// ---------- giorni di consegna (prossimi 7, oggi incluso) ----------
+const WD = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+const ymd = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+function next7() {
+  const out = [], t = new Date(); t.setHours(0, 0, 0, 0);
+  for (let i = 0; i < 7; i++) { const d = new Date(t); d.setDate(t.getDate() + i); out.push(d); }
+  return out;
+}
+const dayName = (d, i) => (i === 0 ? "Oggi" : i === 1 ? "Domani" : WD[d.getDay()]);
+const dateLabel = (s) => (s ? new Date(s + "T00:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "2-digit", month: "long" }) : "-");
+let DAYS = next7();
+let SELECTED_DAY = ymd(DAYS[0]);
+let DAY_OVERRIDES = new Map();   // slot_id -> active per il giorno scelto
+// fasce effettivamente attive nel giorno scelto (override del giorno, altrimenti default catalogo)
+const effectiveSlots = () => DATA.slots.filter((s) => (DAY_OVERRIDES.has(s.id) ? DAY_OVERRIDES.get(s.id) : s.active));
+
 // ---------- caricamento dati ----------
 async function loadData() {
   const [settings, flavors, formats, slots] = await Promise.all([
     sb.from("settings").select("*").eq("id", 1).single(),
     sb.from("flavors").select("*").eq("available", true).order("sort_order"),
     sb.from("formats").select("*").eq("available", true).order("sort_order"),
-    sb.from("time_slots").select("*").eq("active", true).order("sort_order"),
+    sb.from("time_slots").select("*").order("sort_order"),
   ]);
   if (settings.error || flavors.error || formats.error || slots.error) {
     toast("Errore nel caricamento. Controlla la configurazione Supabase.");
@@ -25,7 +41,8 @@ async function loadData() {
     flavors: flavors.data, formats: formats.data, slots: slots.data,
   };
   renderFormats();
-  renderSlots();
+  renderDayPick();
+  await loadDaySlots();
   renderCart();
 }
 
@@ -122,27 +139,54 @@ function updateTotal() {
   $("total").textContent = euro(total);
   const min = Number(DATA.settings.min_order);
   const okMin = sub >= min;
+  const hasSlot = effectiveSlots().length > 0;
   const banner = $("min-banner");
   if (CART.length && !okMin) {
     banner.style.display = "block";
     banner.textContent = `Ordine minimo ${euro(min)}. Mancano ${euro(min - sub)} (consegna ${euro(delivery)}).`;
+  } else if (CART.length && !hasSlot) {
+    banner.style.display = "block";
+    banner.textContent = "Nessuna fascia disponibile per il giorno scelto. Scegli un altro giorno.";
   } else { banner.style.display = "none"; }
-  $("submit").disabled = !(CART.length && okMin);
+  $("submit").disabled = !(CART.length && okMin && hasSlot);
 }
 
-// ---------- slot ----------
-function renderSlots() {
+// ---------- giorno + fasce ----------
+function renderDayPick() {
+  const cal = $("day-pick");
+  cal.innerHTML = "";
+  DAYS.forEach((d, i) => {
+    const key = ymd(d);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "day" + (key === SELECTED_DAY ? " sel" : "") + (i === 0 ? " today" : "");
+    b.innerHTML = `<div class="dwd">${dayName(d, i)}</div><div class="dnum">${d.getDate()}</div>`;
+    b.onclick = () => { SELECTED_DAY = key; renderDayPick(); loadDaySlots(); };
+    cal.appendChild(b);
+  });
+}
+
+async function loadDaySlots() {
+  const { data, error } = await sb.from("slot_day_state").select("slot_id, active").eq("day", SELECTED_DAY);
+  if (error) console.error(error);
+  DAY_OVERRIDES = new Map((data || []).map((r) => [r.slot_id, r.active]));
+  renderSlotSelect();
+}
+
+function renderSlotSelect() {
   const s = $("slot");
   s.innerHTML = "";
-  if (!DATA.slots.length) {
+  const slots = effectiveSlots();
+  if (!slots.length) {
     s.innerHTML = '<option value="">Nessuna fascia disponibile</option>';
-    return;
+  } else {
+    slots.forEach((sl) => {
+      const o = document.createElement("option");
+      o.value = sl.label; o.textContent = sl.label;
+      s.appendChild(o);
+    });
   }
-  DATA.slots.forEach((sl) => {
-    const o = document.createElement("option");
-    o.value = sl.label; o.textContent = sl.label;
-    s.appendChild(o);
-  });
+  updateTotal();
 }
 
 // ---------- invio ----------
@@ -151,14 +195,16 @@ async function submitOrder() {
   const phone = $("phone").value.trim();
   const address = $("address").value.trim();
   if (!name || !phone || !address) { toast("Compila nome, telefono e indirizzo."); return; }
-  if (!DATA.slots.length) { toast("Nessuna fascia di consegna disponibile."); return; }
+  if (!effectiveSlots().length) { toast("Nessuna fascia disponibile per il giorno scelto."); return; }
 
   const sub = subtotal();
   const delivery = Number(DATA.settings.delivery_cost);
   const payload = {
     customer_name: name,
     customer_phone: phone,
+    email: $("email").value.trim() || null,
     address,
+    delivery_date: SELECTED_DAY,
     slot_label: $("slot").value,
     items: CART,
     subtotal: sub,
@@ -190,7 +236,7 @@ function showConfirmation(o) {
     rows +
     `<div class="row between" style="margin-top:10px"><span class="muted">Consegna</span><span>${euro(o.delivery_cost)}</span></div>` +
     `<div class="row between"><b>Totale</b><b class="price">${euro(o.total)}</b></div>` +
-    `<div class="muted small" style="margin-top:8px">Consegna: ${esc(o.slot_label || "-")}</div>`;
+    `<div class="muted small" style="margin-top:8px">Consegna: ${esc(dateLabel(o.delivery_date))} · ${esc(o.slot_label || "-")}</div>`;
   window.scrollTo(0, 0);
 }
 
@@ -207,5 +253,12 @@ $("m-close").onclick = closeModal;
 $("modal").onclick = (e) => { if (e.target.id === "modal") closeModal(); };
 $("m-add").onclick = addToCart;
 $("submit").onclick = submitOrder;
+
+// ⚠️ PROTOTIPO: precompila i dati cliente con valori di fantasia per non
+// reinserirli a ogni test. Rimuovere in produzione.
+$("name").value = "Mario Rossi";
+$("phone").value = "333 1234567";
+$("email").value = "mario.rossi@email.it";
+$("address").value = "Via Roma 1, scala B";
 
 loadData();

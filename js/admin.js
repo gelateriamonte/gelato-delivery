@@ -1,10 +1,54 @@
 // ============ Back office — gestione parametri + ordini live ============
 const $ = (id) => document.getElementById(id);
 const euro = (n) => "€ " + Number(n || 0).toFixed(2).replace(".", ",");
+const kg = (v) => Number(v || 0).toFixed(3).replace(/0+$/, "").replace(/\.$/, "").replace(".", ",") + " kg";
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-const STATUSES = ["ricevuto", "accettato", "in preparazione", "in consegna", "consegnato", "rifiutato", "annullato"];
+const STATUS_META = {
+  "ricevuto":        { label: "Ricevuto",        slug: "ricevuto" },
+  "accettato":       { label: "Accettato",       slug: "accettato" },
+  "in preparazione": { label: "In preparazione", slug: "in-preparazione" },
+  "in consegna":     { label: "In consegna",     slug: "in-consegna" },
+  "consegnato":      { label: "Consegnato",      slug: "consegnato" },
+  "rifiutato":       { label: "Rifiutato",       slug: "rifiutato" },
+  "annullato":       { label: "Annullato",       slug: "annullato" },
+};
+const PROGRESS = ["in preparazione", "in consegna", "consegnato"];
+const TERMINAL = new Set(["consegnato", "rifiutato", "annullato"]);
+const FILTERS = ["all", "ricevuto", "accettato", "in preparazione", "in consegna", "consegnato", "rifiutato", "annullato"];
+const COUNTED = new Set(["ricevuto", "accettato", "in preparazione", "in consegna", "consegnato"]); // per contatore giorni (no rifiutati/annullati)
 let ORDERS = [];
+let ACTIVE_FILTER = "all";
+let ACTIVE_DAY = "all";
+
+// ---------- date / calendario (prossimi 7 giorni, oggi incluso) ----------
+const WD = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+const ymd = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+function next7() {
+  const out = [], t = new Date(); t.setHours(0, 0, 0, 0);
+  for (let i = 0; i < 7; i++) { const d = new Date(t); d.setDate(t.getDate() + i); out.push(d); }
+  return out;
+}
+const dayName = (d, i) => (i === 0 ? "Oggi" : i === 1 ? "Domani" : WD[d.getDay()]);
+
+// stato tab Fasce
+let SLOT_DAYS = next7();
+let SELECTED_DAY = ymd(SLOT_DAYS[0]);
+let SLOTS_CATALOG = [];
+let DAY_OVERRIDES = new Map();   // slot_id -> active (override del giorno selezionato)
+
+// radio Disponibile / Non disponibile (gusti, formati)
+function availRadios(name, available) {
+  return `<div class="onoff" data-onoff>` +
+    `<label><input type="radio" name="${name}" value="1"${available ? " checked" : ""}> Disponibile</label>` +
+    `<label><input type="radio" name="${name}" value="0"${available ? "" : " checked"}> No</label>` +
+    `</div>`;
+}
+function wireAvailRadios(el, cb) {
+  el.querySelectorAll('[data-onoff] input[type=radio]').forEach((r) => {
+    r.onchange = () => { if (r.checked) cb(r.value === "1"); };
+  });
+}
 
 // ---------- LOGIN GATE ----------
 function tryLogin() {
@@ -32,9 +76,12 @@ document.querySelectorAll(".tab").forEach((t) => {
   };
 });
 
+// refresh manuale ordini
+$("orders-refresh").onclick = async () => { await loadOrders(); toast("Ordini aggiornati."); };
+
 // ---------- INIT ----------
 async function initApp() {
-  await Promise.all([loadOrders(), loadFlavors(), loadFormats(), loadSlots(), loadSettings()]);
+  await Promise.all([loadOrders(), loadFlavors(), loadFormats(), loadSlots(), loadSettings(), purgeOldSlotState()]);
   subscribeOrders();
 }
 
@@ -46,35 +93,231 @@ async function loadOrders() {
   renderOrders();
 }
 
+function renderFilters() {
+  const bar = $("orders-filter");
+  bar.innerHTML = "";
+  const counts = {};
+  ORDERS.forEach((o) => { counts[o.status] = (counts[o.status] || 0) + 1; });
+  FILTERS.forEach((f) => {
+    const n = f === "all" ? ORDERS.length : (counts[f] || 0);
+    const label = f === "all" ? "Tutti" : STATUS_META[f].label;
+    const slug = f === "all" ? "all" : STATUS_META[f].slug;
+    const chip = mkBtn("", "fchip f-" + slug + (f === ACTIVE_FILTER ? " sel" : ""),
+      () => { ACTIVE_FILTER = f; renderOrders(); });
+    chip.innerHTML = `${esc(label)} <span class="fcount">${n}</span>`;
+    bar.appendChild(chip);
+  });
+}
+
+function renderDays() {
+  const bar = $("orders-days");
+  bar.innerHTML = "";
+  const counts = {};
+  ORDERS.forEach((o) => {
+    if (o.delivery_date && COUNTED.has(o.status)) counts[o.delivery_date] = (counts[o.delivery_date] || 0) + 1;
+  });
+  // chip "Tutti"
+  const all = mkBtn("", "dchip" + (ACTIVE_DAY === "all" ? " sel" : ""), () => { ACTIVE_DAY = "all"; renderOrders(); });
+  all.innerHTML = `<div class="dwd">Tutti</div><div class="dnum">·</div><div class="dcount" style="visibility:hidden">0</div>`;
+  bar.appendChild(all);
+  // 7 giorni: oggi + 6
+  next7().forEach((d, i) => {
+    const key = ymd(d);
+    const n = counts[key] || 0;
+    const b = mkBtn("", "dchip day" + (key === ACTIVE_DAY ? " sel" : "") + (i === 0 ? " today" : ""),
+      () => { ACTIVE_DAY = (ACTIVE_DAY === key ? "all" : key); renderOrders(); });
+    b.innerHTML = `<div class="dwd">${dayName(d, i)}</div><div class="dnum">${d.getDate()}</div>` +
+      `<div class="dcount${n ? " has" : ""}">${n}</div>`;
+    bar.appendChild(b);
+  });
+}
+
 function renderOrders() {
   $("orders-count").textContent = ORDERS.length;
+  renderFilters();
+  renderDays();
+  renderLab();
+  renderHistory();
   const list = $("orders-list");
-  if (!ORDERS.length) { list.innerHTML = '<p class="muted small">Nessun ordine.</p>'; return; }
+  let shown = ORDERS;
+  if (ACTIVE_FILTER !== "all") shown = shown.filter((o) => o.status === ACTIVE_FILTER);
+  if (ACTIVE_DAY !== "all") shown = shown.filter((o) => o.delivery_date === ACTIVE_DAY);
+  if (!shown.length) {
+    list.innerHTML = '<p class="muted small">Nessun ordine' + (ACTIVE_FILTER === "all" && ACTIVE_DAY === "all" ? "" : " con questi filtri") + '.</p>';
+    return;
+  }
   list.innerHTML = "";
-  ORDERS.forEach((o) => list.appendChild(orderCard(o)));
+  shown.forEach((o) => list.appendChild(orderCard(o)));
+}
+
+// ========== LABORATORIO (solo ordini accettati, kg per gusto per giorno) ==========
+// peso in grammi ricavato dal nome formato (es. "500g", "1kg", "1,5 kg"); 0 se assente (coppette)
+function formatGrams(name) {
+  const m = String(name).toLowerCase().match(/(\d+(?:[.,]\d+)?)\s*(kg|g)\b/);
+  if (!m) return 0;
+  const v = parseFloat(m[1].replace(",", "."));
+  return m[2] === "kg" ? v * 1000 : v;
+}
+
+function renderLab() {
+  const wrap = $("lab-list");
+  if (!wrap) return;
+  const byDay = {};   // delivery_date -> { count, flavors: {nome: grammi} }
+  ORDERS.forEach((o) => {
+    if (o.status !== "accettato" || !o.delivery_date) return;
+    const d = byDay[o.delivery_date] || (byDay[o.delivery_date] = { count: 0, flavors: {} });
+    d.count++;
+    (o.items || []).forEach((it) => {
+      const g = formatGrams(it.format), gusti = it.gusti || [];
+      if (!g || !gusti.length) return;                 // coppette / senza gusti: niente kg
+      const per = (g * (it.qty || 1)) / gusti.length;  // peso diviso per n. gusti
+      gusti.forEach((n) => { d.flavors[n] = (d.flavors[n] || 0) + per; });
+    });
+  });
+
+  wrap.innerHTML = "";
+  let any = false;
+  next7().forEach((dt, i) => {
+    const info = byDay[ymd(dt)];
+    if (!info) return;   // mostra solo giorni con ordini accettati
+    any = true;
+    const flavs = Object.entries(info.flavors).sort((a, b) => b[1] - a[1]);
+    const totKg = flavs.reduce((s, [, g]) => s + g, 0) / 1000;
+    const rows = flavs.length
+      ? flavs.map(([n, g]) => `<div class="line"><div class="grow">${esc(n)}</div><div class="price">${kg(g / 1000)}</div></div>`).join("")
+      : '<p class="muted small">Solo coppette: nessun kg da preparare.</p>';
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML =
+      `<div class="row between"><b>${esc(dayName(dt, i))} ${dt.getDate()}/${dt.getMonth() + 1}</b>` +
+      `<span class="tag">${info.count} ordin${info.count === 1 ? "e" : "i"}</span></div>` +
+      `<div style="margin:8px 0">${rows}</div>` +
+      (flavs.length ? `<div class="row between"><span class="muted small">Totale gelato</span><b class="price">${kg(totKg)}</b></div>` : "");
+    wrap.appendChild(card);
+  });
+  if (!any) wrap.innerHTML = '<p class="muted small">Nessun ordine accettato da preparare.</p>';
+}
+
+// ========== STORICO (ordini consegnati: economico + breakdown formato/gusto) ==========
+function renderHistory() {
+  const wrap = $("history-list");
+  if (!wrap) return;
+  const done = ORDERS.filter((o) => o.status === "consegnato");
+  wrap.innerHTML = "";
+  if (!done.length) { wrap.innerHTML = '<p class="muted small">Nessun ordine consegnato.</p>'; return; }
+
+  let fatturato = 0, prodotti = 0, consegne = 0;
+  const byFormat = {};   // nome -> { qty, rev }
+  const byFlavor = {};   // nome -> { qty, grams }
+  done.forEach((o) => {
+    fatturato += Number(o.total || 0);
+    prodotti  += Number(o.subtotal || 0);
+    consegne  += Number(o.delivery_cost || 0);
+    (o.items || []).forEach((it) => {
+      const q = it.qty || 1;
+      const f = byFormat[it.format] || (byFormat[it.format] = { qty: 0, rev: 0 });
+      f.qty += q; f.rev += Number(it.prezzo_unit || 0) * q;
+      const g = formatGrams(it.format), gusti = it.gusti || [];
+      gusti.forEach((n) => {
+        const fl = byFlavor[n] || (byFlavor[n] = { qty: 0, grams: 0 });
+        fl.qty += q;
+        if (g && gusti.length) fl.grams += (g * q) / gusti.length;
+      });
+    });
+  });
+  const media = fatturato / done.length;
+
+  // riepilogo economico
+  const eco = document.createElement("div");
+  eco.className = "card stack";
+  eco.innerHTML =
+    `<div class="row between"><b>Riepilogo economico</b><span class="tag">${done.length} consegnati</span></div>` +
+    `<div class="row between"><span class="muted small">Fatturato totale</span><b class="price">${euro(fatturato)}</b></div>` +
+    `<div class="row between"><span class="muted small">di cui prodotti</span><span>${euro(prodotti)}</span></div>` +
+    `<div class="row between"><span class="muted small">di cui consegne</span><span>${euro(consegne)}</span></div>` +
+    `<div class="row between"><span class="muted small">Scontrino medio</span><b>${euro(media)}</b></div>`;
+  wrap.appendChild(eco);
+
+  // breakdown per formato
+  const fmts = Object.entries(byFormat).sort((a, b) => b[1].rev - a[1].rev);
+  const fc = document.createElement("div");
+  fc.className = "card";
+  fc.innerHTML = `<b>Per tipologia (formato)</b>` +
+    fmts.map(([n, v]) => `<div class="line"><div class="grow">${esc(n)}<div class="muted small">${v.qty} pz</div></div><div class="price">${euro(v.rev)}</div></div>`).join("");
+  wrap.appendChild(fc);
+
+  // breakdown per gusto
+  const flv = Object.entries(byFlavor).sort((a, b) => b[1].qty - a[1].qty);
+  const gc = document.createElement("div");
+  gc.className = "card";
+  gc.innerHTML = `<b>Per gusto</b>` +
+    flv.map(([n, v]) => `<div class="line"><div class="grow">${esc(n)}<div class="muted small">${v.qty} volte</div></div><div class="price">${v.grams ? kg(v.grams / 1000) : "—"}</div></div>`).join("");
+  wrap.appendChild(gc);
+
+  // lista ordini consegnati (recenti prima)
+  const lc = document.createElement("div");
+  lc.className = "card";
+  const rows = done.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map((o) => {
+    const when = new Date(o.created_at).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" });
+    const cons = o.delivery_date ? new Date(o.delivery_date + "T00:00:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) : "-";
+    return `<div class="line"><div class="grow">${esc(o.customer_name)}<div class="muted small">${when} · 🗓️ ${esc(cons)} · ${esc(o.slot_label || "-")}</div></div><div class="price">${euro(o.total)}</div></div>`;
+  }).join("");
+  lc.innerHTML = `<b>Ordini consegnati</b>${rows}`;
+  wrap.appendChild(lc);
 }
 
 function orderCard(o) {
+  const meta = STATUS_META[o.status] || { label: o.status, slug: "ricevuto" };
   const el = document.createElement("div");
-  el.className = "card";
+  el.className = "card order s-" + meta.slug;
   el.id = "order-" + o.id;
   const items = (o.items || []).map((i) =>
     `<div class="line"><div class="grow">${i.qty}× ${esc(i.format)}<div class="muted small">${esc((i.gusti || []).join(", "))}</div></div><div class="price">${euro(i.prezzo_unit * i.qty)}</div></div>`
   ).join("");
   const when = new Date(o.created_at).toLocaleString("it-IT", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
-  const opts = STATUSES.map((s) => `<option value="${s}"${s === o.status ? " selected" : ""}>${s}</option>`).join("");
   el.innerHTML =
-    `<div class="row between"><b>${esc(o.customer_name)}</b><span class="muted small">${when}</span></div>` +
-    `<div class="muted small">${esc(o.customer_phone)} · ${esc(o.address)}</div>` +
-    `<div class="muted small">🕒 ${esc(o.slot_label || "-")}</div>` +
+    `<div class="row between"><b>${esc(o.customer_name)}</b><span class="st-badge">${esc(meta.label)}</span></div>` +
+    `<div class="muted small">${when} · ${esc(o.customer_phone)}${o.email ? " · " + esc(o.email) : ""}</div>` +
+    `<div class="muted small">📍 ${esc(o.address)}</div>` +
+    `<div class="muted small">🗓️ ${o.delivery_date ? esc(new Date(o.delivery_date + "T00:00:00").toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "2-digit" })) : "-"} · 🕒 ${esc(o.slot_label || "-")}</div>` +
     (o.notes ? `<div class="muted small">📝 ${esc(o.notes)}</div>` : "") +
     `<div style="margin:8px 0">${items}</div>` +
     `<div class="row between"><span class="muted small">Consegna ${euro(o.delivery_cost)}</span><b class="price">${euro(o.total)}</b></div>` +
-    `<div class="row" style="margin-top:10px"><span class="muted small grow">Stato</span><select class="status"></select></div>`;
-  const sel = el.querySelector("select");
-  sel.innerHTML = opts;
-  sel.onchange = () => updateStatus(o.id, sel.value);
+    `<div class="actions" style="margin-top:12px"></div>`;
+  renderActions(el.querySelector(".actions"), o);
   return el;
+}
+
+function mkBtn(text, cls, onclick) {
+  const b = document.createElement("button");
+  b.className = cls; b.textContent = text; b.onclick = onclick;
+  return b;
+}
+
+function renderActions(box, o) {
+  box.innerHTML = "";
+  const st = o.status;
+  if (TERMINAL.has(st)) return;   // consegnato / rifiutato / annullato: nessuna azione
+
+  if (st === "ricevuto") {
+    const row = document.createElement("div"); row.className = "flexwrap";
+    row.append(
+      mkBtn("✓ Accetta", "btn ok sm", () => updateStatus(o.id, "accettato")),
+      mkBtn("✕ Rifiuta", "btn danger sm", () => { if (confirm("Rifiutare questo ordine?")) updateStatus(o.id, "rifiutato"); })
+    );
+    box.append(row);
+    return;
+  }
+
+  // accettato / in preparazione / in consegna → step + annulla
+  const steps = document.createElement("div"); steps.className = "flexwrap";
+  PROGRESS.forEach((s) => {
+    steps.append(mkBtn(STATUS_META[s].label, "chip" + (s === st ? " sel" : ""), () => updateStatus(o.id, s)));
+  });
+  box.append(
+    steps,
+    mkBtn("Annulla ordine", "btn danger sm", () => { if (confirm("Annullare questo ordine?")) updateStatus(o.id, "annullato"); })
+  );
 }
 
 async function updateStatus(id, status) {
@@ -106,15 +349,14 @@ async function loadFlavors() {
   list.innerHTML = "";
   data.forEach((f) => {
     const el = document.createElement("div");
-    el.className = "card row between";
+    el.className = "card stack";
     el.innerHTML =
-      `<input class="grow" value="${esc(f.name)}">` +
-      `<button class="btn sm ${f.available ? "mint" : "ghost"}" style="margin:0 8px">${f.available ? "Disponibile" : "Nascosto"}</button>` +
-      `<button class="btn danger sm">✕</button>`;
-    const [input, toggle, del] = [el.querySelector("input"), el.querySelectorAll("button")[0], el.querySelectorAll("button")[1]];
-    input.onchange = () => updateRow("flavors", f.id, { name: input.value.trim() });
-    toggle.onclick = async () => { await updateRow("flavors", f.id, { available: !f.available }); loadFlavors(); };
-    del.onclick = async () => { await delRow("flavors", f.id); loadFlavors(); };
+      `<input class="g-name" value="${esc(f.name)}">` +
+      `<div class="row between">` + availRadios("fl-" + f.id, f.available) + `<button class="btn danger sm">✕</button></div>`;
+    const name = el.querySelector(".g-name");
+    name.onchange = () => updateRow("flavors", f.id, { name: name.value.trim() });
+    wireAvailRadios(el, (val) => updateRow("flavors", f.id, { available: val }));
+    el.querySelector("button.danger").onclick = async () => { await delRow("flavors", f.id); loadFlavors(); };
     list.appendChild(el);
   });
 }
@@ -140,15 +382,13 @@ async function loadFormats() {
       `<div class="grow"><label>Gusti max</label><input class="f-max" type="number" min="1" value="${f.max_flavors}"></div>` +
       `<div class="grow"><label>Prezzo €</label><input class="f-price" type="number" min="0" step="0.50" value="${f.price}"></div>` +
       `</div>` +
-      `<div class="row between">` +
-      `<button class="btn sm ${f.available ? "mint" : "ghost"}">${f.available ? "Disponibile" : "Nascosto"}</button>` +
-      `<button class="btn danger sm">Elimina</button></div>`;
+      `<div class="row between">` + availRadios("fo-" + f.id, f.available) + `<button class="btn danger sm">Elimina</button></div>`;
     const name = el.querySelector(".f-name"), max = el.querySelector(".f-max"), price = el.querySelector(".f-price");
-    const [toggle, del] = el.querySelectorAll(".between button");
+    const del = el.querySelector(".between button.danger");
     name.onchange = () => updateRow("formats", f.id, { name: name.value.trim() });
     max.onchange = () => updateRow("formats", f.id, { max_flavors: parseInt(max.value || "1", 10) });
     price.onchange = () => updateRow("formats", f.id, { price: parseFloat(price.value || "0") });
-    toggle.onclick = async () => { await updateRow("formats", f.id, { available: !f.available }); loadFormats(); };
+    wireAvailRadios(el, (val) => updateRow("formats", f.id, { available: val }));
     del.onclick = async () => { await delRow("formats", f.id); loadFormats(); };
     list.appendChild(el);
   });
@@ -165,31 +405,102 @@ $("nfo-add").onclick = async () => {
   loadFormats();
 };
 
-// ========== FASCE ==========
+// ========== FASCE (catalogo condiviso + acceso/spento per giorno) ==========
+const slotScope = () => (document.querySelector('input[name="slot-scope"]:checked') || {}).value || "day";
+const slotActive = (s) => (DAY_OVERRIDES.has(s.id) ? DAY_OVERRIDES.get(s.id) : s.active);
+
+function renderCal() {
+  const cal = $("slot-cal");
+  cal.innerHTML = "";
+  SLOT_DAYS.forEach((d, i) => {
+    const key = ymd(d);
+    const b = document.createElement("button");
+    b.className = "day" + (key === SELECTED_DAY ? " sel" : "") + (i === 0 ? " today" : "");
+    b.innerHTML = `<div class="dwd">${dayName(d, i)}</div><div class="dnum">${d.getDate()}</div>`;
+    b.onclick = () => {
+      SELECTED_DAY = key;
+      const sd = $("scope-day");
+      if (sd) sd.textContent = i === 0 ? "oggi" : i === 1 ? "domani" : dayName(d, i).toLowerCase() + " " + d.getDate();
+      loadSlots();
+    };
+    cal.appendChild(b);
+  });
+}
+
 async function loadSlots() {
-  const { data, error } = await sb.from("time_slots").select("*").order("sort_order");
-  if (error) { console.error(error); return; }
+  renderCal();
+  const cat = await sb.from("time_slots").select("*").order("sort_order");
+  if (cat.error) { console.error(cat.error); return; }
+  SLOTS_CATALOG = cat.data;
+  const ov = await sb.from("slot_day_state").select("slot_id, active").eq("day", SELECTED_DAY);
+  if (ov.error) { console.error(ov.error); }
+  DAY_OVERRIDES = new Map((ov.data || []).map((r) => [r.slot_id, r.active]));
+  renderSlotsList();
+}
+
+function renderSlotsList() {
   const list = $("slots-list");
   list.innerHTML = "";
-  data.forEach((s) => {
+  if (!SLOTS_CATALOG.length) { list.innerHTML = '<p class="muted small">Nessuna fascia. Aggiungine una sopra.</p>'; return; }
+  SLOTS_CATALOG.forEach((s) => {
+    const on = slotActive(s);
     const el = document.createElement("div");
-    el.className = "card row between";
+    el.className = "card stack";
     el.innerHTML =
-      `<input class="grow" value="${esc(s.label)}">` +
-      `<button class="btn sm ${s.active ? "mint" : "ghost"}" style="margin:0 8px">${s.active ? "Attiva" : "Spenta"}</button>` +
-      `<button class="btn danger sm">✕</button>`;
-    const input = el.querySelector("input");
-    const [toggle, del] = el.querySelectorAll("button");
-    input.onchange = () => updateRow("time_slots", s.id, { label: input.value.trim() });
-    toggle.onclick = async () => { await updateRow("time_slots", s.id, { active: !s.active }); loadSlots(); };
-    del.onclick = async () => { await delRow("time_slots", s.id); loadSlots(); };
+      `<input class="s-label" value="${esc(s.label)}">` +
+      `<div class="row between">` +
+      `<div class="onoff" data-onoff>` +
+      `<label><input type="radio" name="sl-${s.id}" value="1"${on ? " checked" : ""}> Accesa</label>` +
+      `<label><input type="radio" name="sl-${s.id}" value="0"${on ? "" : " checked"}> Spenta</label>` +
+      `</div>` +
+      `<button class="btn danger sm">✕</button></div>`;
+    const label = el.querySelector(".s-label");
+    label.onchange = () => updateRow("time_slots", s.id, { label: label.value.trim() });
+    el.querySelectorAll('[data-onoff] input[type=radio]').forEach((r) => {
+      r.onchange = () => { if (r.checked) setSlotActive(s.id, r.value === "1"); };
+    });
+    el.querySelector("button.danger").onclick = async () => { await delRow("time_slots", s.id); loadSlots(); };
     list.appendChild(el);
   });
 }
+
+async function setSlotActive(slotId, active) {
+  const all = slotScope() === "all";
+  const days = all ? SLOT_DAYS.map(ymd) : [SELECTED_DAY];
+  const rows = days.map((day) => ({ slot_id: slotId, day, active }));
+  const { error } = await sb.from("slot_day_state").upsert(rows, { onConflict: "slot_id,day" });
+  if (error) { console.error(error); toast("Errore salvataggio fascia."); return; }
+  DAY_OVERRIDES.set(slotId, active);
+  toast(all ? "Applicato a tutti e 7 i giorni." : "Aggiornato.");
+}
+
+async function purgeOldSlotState() {
+  await sb.from("slot_day_state").delete().lt("day", ymd(next7()[0]));
+}
+
+// selettori inizio/fine fascia: step 30 min, 12:00 → 24:00
+const SLOT_MIN = 12 * 60, SLOT_MAX = 24 * 60, SLOT_STEP = 30;
+const fmtTime = (m) => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+function fillSlotStart() {
+  const s = $("ns-start"); s.innerHTML = "";
+  for (let m = SLOT_MIN; m <= SLOT_MAX - SLOT_STEP; m += SLOT_STEP) s.appendChild(new Option(fmtTime(m), m));
+}
+function fillSlotEnd() {
+  const start = parseInt($("ns-start").value, 10);
+  const e = $("ns-end"); const prev = parseInt(e.value, 10); e.innerHTML = "";
+  for (let m = start + SLOT_STEP; m <= SLOT_MAX; m += SLOT_STEP) e.appendChild(new Option(fmtTime(m), m));
+  if (prev > start && prev <= SLOT_MAX) e.value = prev;   // mantieni scelta se ancora valida
+}
+fillSlotStart(); fillSlotEnd();
+$("ns-start").onchange = fillSlotEnd;
+
 $("ns-add").onclick = async () => {
-  const label = $("ns-label").value.trim(); if (!label) return;
-  await sb.from("time_slots").insert({ label, sort_order: Date.now() % 100000 });
-  $("ns-label").value = ""; loadSlots();
+  const start = parseInt($("ns-start").value, 10), end = parseInt($("ns-end").value, 10);
+  if (!(end > start)) { toast("La fine deve essere dopo l'inizio."); return; }
+  const label = fmtTime(start) + " - " + fmtTime(end);
+  if (SLOTS_CATALOG.some((s) => s.label === label)) { toast("Fascia già presente."); return; }
+  await sb.from("time_slots").insert({ label, sort_order: start });
+  loadSlots();
 };
 
 // ========== PARAMETRI ==========

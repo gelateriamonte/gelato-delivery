@@ -27,13 +27,22 @@ create table if not exists formats (
   created_at  timestamptz not null default now()
 );
 
--- FASCE ORARIE di consegna
+-- FASCE ORARIE di consegna (CATALOGO condiviso da tutti i giorni)
 create table if not exists time_slots (
   id          uuid primary key default gen_random_uuid(),
   label       text not null,                 -- es. "18:00 - 18:30"
-  active      boolean not null default true,
+  active      boolean not null default true, -- default per i giorni senza override
   sort_order  int not null default 0,
   created_at  timestamptz not null default now()
+);
+
+-- STATO acceso/spento di una fascia in uno specifico giorno.
+-- Nessuna riga per (giorno, fascia) ⇒ vale time_slots.active.
+create table if not exists slot_day_state (
+  slot_id     uuid not null references time_slots(id) on delete cascade,
+  day         date not null,
+  active      boolean not null,
+  primary key (slot_id, day)
 );
 
 -- PARAMETRI GLOBALI (riga singola)
@@ -49,7 +58,9 @@ create table if not exists orders (
   id             uuid primary key default gen_random_uuid(),
   customer_name  text not null,
   customer_phone text not null,
+  email          text,
   address        text not null,
+  delivery_date  date,                        -- giorno di consegna scelto
   slot_label     text,                        -- snapshot fascia scelta
   items          jsonb not null default '[]'::jsonb,  -- [{format, gusti[], qty, prezzo_unit}]
   subtotal       numeric(8,2) not null default 0,
@@ -86,17 +97,19 @@ insert into time_slots (label, sort_order) values
 -- leggere/scrivere. NON usare in produzione: serve auth reale + policy
 -- ristrette (back office solo authenticated, ordini insert pubblico).
 
-alter table flavors    enable row level security;
-alter table formats    enable row level security;
-alter table time_slots enable row level security;
-alter table settings   enable row level security;
-alter table orders     enable row level security;
+alter table flavors        enable row level security;
+alter table formats        enable row level security;
+alter table time_slots     enable row level security;
+alter table slot_day_state enable row level security;
+alter table settings       enable row level security;
+alter table orders         enable row level security;
 
-create policy "proto anon flavors"    on flavors    for all to anon using (true) with check (true);
-create policy "proto anon formats"    on formats    for all to anon using (true) with check (true);
-create policy "proto anon time_slots" on time_slots for all to anon using (true) with check (true);
-create policy "proto anon settings"   on settings   for all to anon using (true) with check (true);
-create policy "proto anon orders"     on orders     for all to anon using (true) with check (true);
+create policy "proto anon flavors"        on flavors        for all to anon using (true) with check (true);
+create policy "proto anon formats"        on formats        for all to anon using (true) with check (true);
+create policy "proto anon time_slots"     on time_slots     for all to anon using (true) with check (true);
+create policy "proto anon slot_day_state" on slot_day_state for all to anon using (true) with check (true);
+create policy "proto anon settings"       on settings       for all to anon using (true) with check (true);
+create policy "proto anon orders"         on orders         for all to anon using (true) with check (true);
 
 -- grant esplicito al ruolo anon (alcune config Data API non lo fanno in automatico)
 grant usage on schema public to anon;

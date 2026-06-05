@@ -28,6 +28,8 @@
   <main class="wrap hidden" id="app">
     <div class="tabs">
       <button class="tab active" data-tab="orders">Ordini</button>
+      <button class="tab" data-tab="lab">Laboratorio</button>
+      <button class="tab" data-tab="history">Storico</button>
       <button class="tab" data-tab="flavors">Gusti</button>
       <button class="tab" data-tab="formats">Formati &amp; prezzi</button>
       <button class="tab" data-tab="slots">Fasce orarie</button>
@@ -35,8 +37,25 @@
     </div>
 
     <section id="tab-orders" class="tabpane">
-      <div class="row between"><h2>Ordini in arrivo</h2><span class="tag" id="orders-count">0</span></div>
+      <div class="row between"><h2>Ordini in arrivo</h2>
+        <div class="row" style="gap:8px"><span class="tag" id="orders-count">0</span>
+          <button class="btn ghost sm" id="orders-refresh">↻ Aggiorna</button></div>
+      </div>
+      <div id="orders-filter" class="filters"></div>
+      <div id="orders-days" class="daybar"></div>
       <div id="orders-list" class="stack"></div>
+    </section>
+
+    <section id="tab-lab" class="tabpane hidden">
+      <h2>Laboratorio — da preparare</h2>
+      <p class="muted small" style="margin:0 4px 10px">Solo ordini <b>accettati</b>. Chili per gusto = peso del formato (dal nome) diviso per il numero di gusti scelti.</p>
+      <div id="lab-list" class="stack"></div>
+    </section>
+
+    <section id="tab-history" class="tabpane hidden">
+      <h2>Storico — consegnati</h2>
+      <p class="muted small" style="margin:0 4px 10px">Solo ordini <b>consegnati</b>. Economico, breakdown per formato e per gusto.</p>
+      <div id="history-list" class="stack"></div>
     </section>
 
     <section id="tab-flavors" class="tabpane hidden">
@@ -63,9 +82,23 @@
 
     <section id="tab-slots" class="tabpane hidden">
       <h2>Fasce orarie</h2>
-      <div class="card row">
-        <input id="ns-label" placeholder="Nuova fascia (es. 20:00 - 20:30)" class="grow">
-        <button class="btn sm" id="ns-add" style="margin-left:8px">Aggiungi</button>
+      <p class="muted small" style="margin:0 4px 8px">Scegli un giorno, poi accendi/spegni le fasce. Rinomina, aggiungi ed elimina valgono per tutti i giorni.</p>
+      <div id="slot-cal" class="cal"></div>
+      <div class="card">
+        <label>Acceso/spento si applica a:</label>
+        <div class="scope">
+          <label class="scope-opt"><input type="radio" name="slot-scope" value="day" checked> Solo <span id="scope-day">oggi</span></label>
+          <label class="scope-opt"><input type="radio" name="slot-scope" value="all"> Tutti e 7 i giorni</label>
+        </div>
+      </div>
+      <div class="card">
+        <label>Nuova fascia</label>
+        <div class="row" style="gap:8px">
+          <select id="ns-start" class="grow"></select>
+          <span class="muted">→</span>
+          <select id="ns-end" class="grow"></select>
+          <button class="btn sm" id="ns-add">Aggiungi</button>
+        </div>
       </div>
       <div id="slots-list" class="stack"></div>
     </section>
