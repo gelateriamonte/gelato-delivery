@@ -545,16 +545,17 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
   .tabs{ top:67px; }
 }
 
-/* ---- mobile: gestione su UNA riga, compatta ---- */
+/* ---- mobile: gestione compatta su UNA riga (orario sempre leggibile) ---- */
 @media (max-width:560px){
-  .mrow{ gap:8px; }
-  .mrow > .grow{ min-width:0; }                /* il campo orario/nome si restringe quanto serve */
+  .mrow{ gap:7px; }                            /* niente wrap: tutto su una riga */
+  .mrow .switch{ gap:0; flex:none; }
   .mrow .switch-lbl{ display:none; }           /* toggle senza testo: lo stato è il colore */
-  .mrow .switch{ gap:0; }
-  .slotmax{ gap:5px; }
-  .slotmax-lbl{ font-size:9px; letter-spacing:.05em; }
-  .slotmax input{ flex:0 0 48px; width:48px; padding:9px 4px; }
-  .mrow .btn.icon{ padding:8px 9px; }
+  /* campo orario / nome: domina la riga, min-width garantito → NON collassa mai */
+  .mrow .s-label, .mrow .g-name{ flex:1 1 160px; min-width:118px; font-size:14px; padding:12px 8px; }
+  .slotmax{ gap:4px; flex:none; }
+  .slotmax-lbl{ font-size:9px; letter-spacing:.03em; }
+  .slotmax input{ -webkit-appearance:none; appearance:none; flex:0 0 44px; width:44px; min-width:0; padding:9px 2px; }
+  .mrow .btn.icon{ flex:none; padding:8px 8px; }
   /* add-row: i select prendono larghezza utile, va a capo */
   .addrow{ flex-wrap:wrap; }
   .addrow .select-wrap.grow{ flex:1 1 40%; min-width:122px; }
