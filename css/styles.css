@@ -365,6 +365,24 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .dchip.sel{ border-color:var(--accent); background:var(--accent-soft); }
 .dchip.sel .dwd, .dchip.sel .dnum{ color:var(--accent-ink); }
 
+/* ---------- fasce del giorno: ordini attivi per fascia ---------- */
+.slotstats-wrap:empty{ display:none; }
+.slotstats-wrap{ margin-bottom:22px; }
+.slotstats-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.slotstats-tot{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+.slotstats{ display:flex; flex-wrap:wrap; gap:10px; }
+.slotstat{ position:relative; flex:0 0 auto; min-width:112px; background:var(--paper); border:1px solid var(--line);
+  border-left:3px solid var(--line-2); border-radius:var(--r-md); box-shadow:var(--shadow-card); padding:11px 14px; }
+.slotstat-time{ font-size:12px; font-weight:600; color:var(--ink-2); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.slotstat-n{ font-family:var(--serif); font-size:24px; font-weight:600; color:var(--ink); line-height:1.1; margin-top:3px; }
+.slotstat-max{ font-family:var(--serif); font-size:16px; color:var(--muted); font-weight:500; margin-left:1px; }
+.slotstat.near{ border-left-color:var(--ochre); }
+.slotstat.full{ border-left-color:var(--rosso); background:var(--rosso-soft); }
+.slotstat.full .slotstat-n{ color:var(--rosso); }
+.slotstat-badge{ position:absolute; top:9px; right:11px; font-size:9px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--rosso); background:var(--paper); border:1px solid color-mix(in oklch,var(--rosso) 30%,transparent);
+  padding:2px 7px; border-radius:999px; }
+
 /* ---------- gestione (gusti / formati / fasce) ---------- */
 .mrow{
   display:flex; align-items:center; gap:12px;
@@ -522,6 +540,18 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
   .labgrid{ grid-template-columns:1fr; }
   .fmt-card .grid2{ grid-template-columns:1fr; }
   .tabs{ top:67px; }
+}
+
+/* ---- mobile: gestione (righe + add-row) non si comprimono, vanno a capo ---- */
+@media (max-width:560px){
+  /* riga di gestione: campo editabile a tutta larghezza, controlli sotto */
+  .mrow{ flex-wrap:wrap; }
+  .mrow > .grow{ flex:1 1 100%; }
+  /* add-row: i select prendono larghezza utile, il bottone resta naturale */
+  .addrow{ flex-wrap:wrap; }
+  .addrow .select-wrap.grow{ flex:1 1 40%; min-width:122px; }
+  /* statistiche fasce: due card piene per riga */
+  .slotstat{ flex:1 1 calc(50% - 5px); min-width:0; }
 }
 
 @media (prefers-reduced-motion:reduce){

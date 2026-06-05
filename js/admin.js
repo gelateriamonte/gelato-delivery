@@ -84,6 +84,7 @@ $("orders-refresh").onclick = async () => { await loadOrders(); toast("Ordini ag
 // ---------- INIT ----------
 async function initApp() {
   await Promise.all([loadOrders(), loadFlavors(), loadFormats(), loadSlots(), loadSettings(), purgeOldSlotState()]);
+  renderOrders();   // re-render con SLOTS_CATALOG caricato (statistiche fasce del giorno)
   subscribeOrders();
 }
 
@@ -134,10 +135,51 @@ function renderDays() {
   });
 }
 
+// ---------- fasce del giorno: ordini attivi (in lavorazione) per fascia ----------
+function slotStatCard(label, n, max) {
+  const hasMax = max != null && Number(max) > 0;
+  const full = hasMax && n >= Number(max);
+  const near = hasMax && !full && n > 0 && n >= Number(max) - 1;
+  const cls = "slotstat" + (full ? " full" : (near ? " near" : ""));
+  const maxTxt = hasMax ? `<span class="slotstat-max">/ ${Number(max)}</span>` : "";
+  const badge = full ? `<span class="slotstat-badge">Piena</span>` : "";
+  return `<div class="${cls}"><div class="slotstat-time">${esc(label)}</div>` +
+    `<div class="slotstat-n">${n}${maxTxt}</div>${badge}</div>`;
+}
+
+function renderSlotStats() {
+  const wrap = $("orders-slots");
+  if (!wrap) return;
+  const days = next7();
+  const day = (ACTIVE_DAY === "all") ? ymd(days[0]) : ACTIVE_DAY;
+  // conteggio ordini attivi (non terminali) per fascia, nel giorno scelto
+  const counts = {};
+  ORDERS.forEach((o) => {
+    if (o.delivery_date === day && !TERMINAL.has(o.status) && o.slot_label) {
+      counts[o.slot_label] = (counts[o.slot_label] || 0) + 1;
+    }
+  });
+  const cat = (SLOTS_CATALOG || []).slice().sort((a, b) => a.sort_order - b.sort_order);
+  if (!cat.length && !Object.keys(counts).length) { wrap.innerHTML = ""; return; }
+  // fasce del catalogo + eventuali label storiche presenti negli ordini ma non più in catalogo
+  const known = new Set(cat.map((s) => s.label));
+  const extras = Object.keys(counts).filter((l) => !known.has(l)).sort();
+  let cards = cat.map((s) => slotStatCard(s.label, counts[s.label] || 0, s.max_deliveries)).join("");
+  cards += extras.map((l) => slotStatCard(l, counts[l], null)).join("");
+  const idx = days.findIndex((d) => ymd(d) === day);
+  const dlabel = idx >= 0 ? `${dayName(days[idx], idx)} ${days[idx].getDate()}/${days[idx].getMonth() + 1}` : day;
+  const tot = Object.values(counts).reduce((a, b) => a + b, 0);
+  wrap.innerHTML =
+    `<div class="slotstats-head"><span class="eyebrow muted" style="margin:0">Fasce · ${esc(dlabel)}</span>` +
+    `<span class="slotstats-tot">${tot} attiv${tot === 1 ? "o" : "i"}</span></div>` +
+    `<div class="slotstats">${cards}</div>`;
+}
+
 function renderOrders() {
   $("orders-count").textContent = ORDERS.length;
   renderFilters();
   renderDays();
+  renderSlotStats();
   renderLab();
   renderHistory();
   const list = $("orders-list");
