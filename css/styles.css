@@ -402,7 +402,10 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .slotmax{ display:inline-flex; align-items:center; gap:7px; flex:none; margin:0; cursor:default;
   text-transform:none; letter-spacing:normal; }
 .slotmax-lbl{ font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-.slotmax input{ flex:0 0 64px; width:64px; text-align:center; padding:9px 6px; }
+.slotmax input{ flex:0 0 64px; width:64px; text-align:center; padding:9px 6px; -moz-appearance:textfield; }
+.slotmax input::-webkit-outer-spin-button, .slotmax input::-webkit-inner-spin-button,
+#ns-max::-webkit-outer-spin-button, #ns-max::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+#ns-max{ -moz-appearance:textfield; }
 .fmt-card{
   background:var(--paper); border:1px solid var(--line); border-radius:var(--r-md);
   box-shadow:var(--shadow-card); padding:16px; display:flex; flex-direction:column; gap:13px;
@@ -542,12 +545,17 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
   .tabs{ top:67px; }
 }
 
-/* ---- mobile: gestione (righe + add-row) non si comprimono, vanno a capo ---- */
+/* ---- mobile: gestione su UNA riga, compatta ---- */
 @media (max-width:560px){
-  /* riga di gestione: campo editabile a tutta larghezza, controlli sotto */
-  .mrow{ flex-wrap:wrap; }
-  .mrow > .grow{ flex:1 1 100%; }
-  /* add-row: i select prendono larghezza utile, il bottone resta naturale */
+  .mrow{ gap:8px; }
+  .mrow > .grow{ min-width:0; }                /* il campo orario/nome si restringe quanto serve */
+  .mrow .switch-lbl{ display:none; }           /* toggle senza testo: lo stato è il colore */
+  .mrow .switch{ gap:0; }
+  .slotmax{ gap:5px; }
+  .slotmax-lbl{ font-size:9px; letter-spacing:.05em; }
+  .slotmax input{ flex:0 0 48px; width:48px; padding:9px 4px; }
+  .mrow .btn.icon{ padding:8px 9px; }
+  /* add-row: i select prendono larghezza utile, va a capo */
   .addrow{ flex-wrap:wrap; }
   .addrow .select-wrap.grow{ flex:1 1 40%; min-width:122px; }
   /* statistiche fasce: due card piene per riga */
