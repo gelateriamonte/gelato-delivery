@@ -547,18 +547,25 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 
 /* ---- mobile: gestione compatta su UNA riga (orario sempre leggibile) ---- */
 @media (max-width:560px){
-  .mrow{ gap:7px; }                            /* niente wrap: tutto su una riga */
+  /* nessuno shift orizzontale (clip non rompe lo sticky come overflow:hidden) */
+  body.admin{ overflow-x:clip; }
+  /* meno padding laterale → ~28px di spazio in più ovunque (assorbe differenze iOS) */
+  .admin .wrap{ padding:14px 13px 40px; }
+  .admin .bar-in{ padding:14px 14px; }
+  .tabs{ margin:0 -13px 16px; padding:12px 13px 10px; }
+  /* riga di gestione: tutto su una sola riga */
+  .mrow{ gap:7px; padding:13px 12px; }
   .mrow .switch{ gap:0; flex:none; }
   .mrow .switch-lbl{ display:none; }           /* toggle senza testo: lo stato è il colore */
-  /* campo orario / nome: domina la riga, min-width garantito → NON collassa mai */
-  .mrow .s-label, .mrow .g-name{ flex:1 1 160px; min-width:118px; font-size:14px; padding:12px 8px; }
+  /* campo orario / nome: riempie lo spazio, floor garantito → non collassa */
+  .mrow .s-label, .mrow .g-name{ flex:1 1 0; min-width:114px; font-size:14px; padding:12px 8px; }
   .slotmax{ gap:4px; flex:none; }
   .slotmax-lbl{ font-size:9px; letter-spacing:.03em; }
   .slotmax input{ -webkit-appearance:none; appearance:none; flex:0 0 44px; width:44px; min-width:0; padding:9px 2px; }
   .mrow .btn.icon{ flex:none; padding:8px 8px; }
   /* add-row: i select prendono larghezza utile, va a capo */
   .addrow{ flex-wrap:wrap; }
-  .addrow .select-wrap.grow{ flex:1 1 40%; min-width:122px; }
+  .addrow .select-wrap.grow{ flex:1 1 40%; min-width:118px; }
   /* statistiche fasce: due card piene per riga */
   .slotstat{ flex:1 1 calc(50% - 5px); min-width:0; }
 }
