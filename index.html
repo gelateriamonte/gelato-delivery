@@ -3,40 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Gelateria — Ordina</title>
+  <title>La Gelateria — Ordina</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="wrap">
-      <h1>🍦 La Gelateria</h1>
-      <span class="sub">Consegna a domicilio</span>
+  <header class="appbar">
+    <div class="bar-in">
+      <div class="mark">
+        <svg viewBox="0 0 38 38" fill="none" aria-hidden="true">
+          <circle cx="19" cy="15" r="6.1" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M12.6 19 H25.4 L19 31.6 Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="brand"><b>La Gelateria</b><span>Consegna a domicilio</span></div>
+      <div class="right">gelato<br>artigianale</div>
     </div>
   </header>
 
   <main class="wrap" id="app">
     <!-- COMPOSIZIONE ORDINE -->
     <section id="shop">
-      <h2>Scegli il tuo gelato</h2>
-      <p class="muted small" id="shop-hint">Tocca un formato per scegliere i gusti.</p>
-      <div id="formats" class="stack"></div>
-
-      <h2>Il tuo ordine</h2>
-      <div class="card" id="cart">
-        <p class="muted small" id="cart-empty">Carrello vuoto.</p>
-        <div id="cart-lines"></div>
+      <div class="group">
+        <p class="eyebrow">Il menù</p>
+        <h3 class="s-title">Scegli il tuo gelato</h3>
+        <p class="hint" id="shop-hint">Tocca un formato per comporre i gusti.</p>
+        <div id="formats" class="list"></div>
       </div>
 
-      <h2>Quando lo vuoi?</h2>
-      <div class="card stack">
+      <div class="group">
+        <p class="eyebrow muted">Il tuo ordine</p>
+        <h3 class="s-title">Carrello</h3>
+        <div style="height:14px"></div>
+        <div id="cart">
+          <p class="hint" id="cart-empty" style="margin:0">Carrello vuoto.</p>
+          <div id="cart-lines"></div>
+        </div>
+      </div>
+
+      <div class="group">
+        <p class="eyebrow muted">Consegna</p>
+        <h3 class="s-title">Quando lo vuoi?</h3>
+        <div style="height:14px"></div>
         <label>Giorno di consegna</label>
         <div id="day-pick" class="cal"></div>
-        <label for="slot" style="margin-top:6px">Fascia oraria</label>
-        <select id="slot"></select>
+        <div class="field" style="margin-top:16px">
+          <label for="slot">Fascia oraria</label>
+          <div class="select-wrap"><select id="slot"></select></div>
+        </div>
       </div>
 
-      <h2>I tuoi dati</h2>
-      <div class="card stack">
+      <div class="group">
+        <p class="eyebrow muted">Recapiti</p>
+        <h3 class="s-title">I tuoi dati</h3>
+        <div style="height:16px"></div>
         <div class="field"><label for="name">Nome e cognome</label>
           <input id="name" type="text" placeholder="Mario Rossi"></div>
         <div class="field"><label for="phone">Telefono</label>
@@ -54,39 +76,51 @@
 
     <!-- CONFERMA -->
     <section id="done" class="hidden">
-      <div class="center">
-        <div class="bigemoji">🍨</div>
-        <h2>Ordine inviato!</h2>
-        <p class="muted">Grazie, ti contatteremo per la consegna.</p>
-        <div class="card" id="done-summary" style="text-align:left"></div>
-        <button class="btn ghost" onclick="location.reload()">Nuovo ordine</button>
+      <div class="confirm">
+        <div class="seal">
+          <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
+            <path d="M7 14.4 L11.6 19 L21 8.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <p class="eyebrow">Grazie</p>
+        <h2>Ordine inviato</h2>
+        <p id="done-text">Ti contatteremo a breve per la consegna.</p>
+        <div class="cart summary" id="done-summary"></div>
+        <button class="btn ghost block" style="margin-top:22px" onclick="location.reload()">Nuovo ordine</button>
       </div>
     </section>
   </main>
 
   <!-- BARRA CHECKOUT -->
   <div class="bar" id="bar">
-    <div class="wrap">
+    <div class="bar-in">
       <div class="grow">
-        <div class="small muted">Totale</div>
-        <div class="price" id="total">€ 0,00</div>
+        <div class="lab">Totale</div>
+        <div class="amt" id="total">€ 0,00</div>
       </div>
       <button class="btn" id="submit" disabled>Invia ordine</button>
     </div>
   </div>
 
-  <!-- MODALE GUSTI -->
+  <!-- MODALE GUSTI (bottom sheet) -->
   <div class="modal-bg" id="modal">
     <div class="modal">
-      <div class="row between">
-        <h2 id="m-title" style="margin:0">Scegli i gusti</h2>
+      <div class="sheet-head">
+        <div>
+          <p class="eyebrow" id="m-eyebrow"></p>
+          <h2 id="m-title">Scegli i gusti</h2>
+        </div>
         <button class="btn ghost sm" id="m-close">Chiudi</button>
       </div>
-      <p class="muted small" id="m-hint"></p>
-      <div class="flexwrap" id="m-flavors"></div>
-      <div class="field" style="margin-top:14px">
-        <label for="m-qty">Quantità</label>
-        <input id="m-qty" type="number" min="1" value="1">
+      <p class="hint" id="m-hint" style="margin:10px 0 16px"></p>
+      <div class="chips" id="m-flavors"></div>
+      <div class="qty">
+        <label class="lbl" for="m-qty">Quantità</label>
+        <div class="qty-stepper">
+          <button type="button" id="m-qty-dec" aria-label="Diminuisci">–</button>
+          <input id="m-qty" type="number" min="1" value="1" inputmode="numeric">
+          <button type="button" id="m-qty-inc" aria-label="Aumenta">+</button>
+        </div>
       </div>
       <button class="btn block" id="m-add">Aggiungi al carrello</button>
     </div>

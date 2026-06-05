@@ -49,15 +49,15 @@ async function loadData() {
 // ---------- formati ----------
 function renderFormats() {
   const wrap = $("formats");
-  if (!DATA.formats.length) { wrap.innerHTML = '<p class="muted small">Nessun prodotto disponibile al momento.</p>'; return; }
+  if (!DATA.formats.length) { wrap.innerHTML = '<p class="hint">Nessun prodotto disponibile al momento.</p>'; return; }
   wrap.innerHTML = "";
   DATA.formats.forEach((f) => {
     const el = document.createElement("div");
-    el.className = "card row between";
+    el.className = "fmt";
     el.innerHTML =
-      `<div class="grow"><b>${esc(f.name)}</b>` +
-      `<div class="muted small">${f.max_flavors} gust${f.max_flavors === 1 ? "o" : "i"}</div></div>` +
-      `<div class="price" style="margin-right:10px">${euro(f.price)}</div>` +
+      `<div class="meta"><div class="name">${esc(f.name)}</div>` +
+      `<div class="desc">${f.max_flavors} gust${f.max_flavors === 1 ? "o" : "i"}</div></div>` +
+      `<div class="price">${euro(f.price)}</div>` +
       `<button class="btn sm">Scegli</button>`;
     el.querySelector("button").onclick = () => openModal(f);
     wrap.appendChild(el);
@@ -67,9 +67,11 @@ function renderFormats() {
 // ---------- modale gusti ----------
 function openModal(format) {
   modalFormat = format; modalChosen = [];
+  $("m-eyebrow").textContent =
+    `${format.max_flavors} gust${format.max_flavors === 1 ? "o" : "i"} · ${euro(format.price)}`;
   $("m-title").textContent = format.name;
   $("m-hint").textContent =
-    `Scegli fino a ${format.max_flavors} gust${format.max_flavors === 1 ? "o" : "i"} · ${euro(format.price)}`;
+    `Scegli fino a ${format.max_flavors} gust${format.max_flavors === 1 ? "o" : "i"} per questo formato.`;
   $("m-qty").value = 1;
   renderModalFlavors();
   $("modal").classList.add("show");
@@ -79,12 +81,12 @@ function closeModal() { $("modal").classList.remove("show"); }
 function renderModalFlavors() {
   const wrap = $("m-flavors");
   wrap.innerHTML = "";
-  if (!DATA.flavors.length) { wrap.innerHTML = '<p class="muted small">Nessun gusto disponibile.</p>'; return; }
+  if (!DATA.flavors.length) { wrap.innerHTML = '<p class="hint">Nessun gusto disponibile.</p>'; return; }
   DATA.flavors.forEach((g) => {
     const sel = modalChosen.includes(g.name);
     const full = modalChosen.length >= modalFormat.max_flavors;
     const b = document.createElement("button");
-    b.className = "chip" + (sel ? " sel" : "");
+    b.className = "chip" + (sel ? " sel" : (full ? " off" : ""));
     b.textContent = g.name;
     b.disabled = !sel && full;
     b.onclick = () => {
@@ -108,24 +110,31 @@ function addToCart() {
   });
   closeModal();
   renderCart();
-  toast("Aggiunto al carrello 🍦");
+  toast("Aggiunto al carrello.");
 }
 
 // ---------- carrello ----------
 function renderCart() {
   const lines = $("cart-lines");
   $("cart-empty").style.display = CART.length ? "none" : "block";
-  lines.innerHTML = "";
-  CART.forEach((item, i) => {
-    const el = document.createElement("div");
-    el.className = "line";
-    el.innerHTML =
-      `<div class="grow"><b>${item.qty}× ${esc(item.format)}</b>` +
-      `<div class="muted small">${esc(item.gusti.join(", "))}</div></div>` +
-      `<div class="price">${euro(item.prezzo_unit * item.qty)}</div>` +
-      `<button class="btn danger sm" style="margin-left:8px">✕</button>`;
-    el.querySelector("button").onclick = () => { CART.splice(i, 1); renderCart(); };
-    lines.appendChild(el);
+  if (!CART.length) { lines.innerHTML = ""; updateTotal(); return; }
+  const rows = CART.map((item, i) =>
+    `<div class="cart-line"><div class="q">${item.qty}×</div>` +
+    `<div class="body"><div class="t">${esc(item.format)}</div><div class="g">${esc(item.gusti.join(", "))}</div></div>` +
+    `<div class="lp">${euro(item.prezzo_unit * item.qty)}</div>` +
+    `<button class="btn icon rm" data-i="${i}" aria-label="Rimuovi">✕</button></div>`
+  ).join("");
+  const sub = subtotal();
+  const delivery = Number(DATA.settings.delivery_cost);
+  lines.innerHTML =
+    `<div class="cart">${rows}` +
+    `<div class="cart-foot">` +
+    `<div class="r"><span>Subtotale</span><span>${euro(sub)}</span></div>` +
+    `<div class="r"><span>Consegna</span><span>${euro(delivery)}</span></div>` +
+    `<div class="r tot"><b>Totale</b><span class="v">${euro(sub + delivery)}</span></div>` +
+    `</div></div>`;
+  lines.querySelectorAll(".rm").forEach((btn) => {
+    btn.onclick = () => { CART.splice(parseInt(btn.dataset.i, 10), 1); renderCart(); };
   });
   updateTotal();
 }
@@ -229,14 +238,19 @@ function showConfirmation(o) {
   $("shop").classList.add("hidden");
   $("bar").style.display = "none";
   $("done").classList.remove("hidden");
+  $("done-text").textContent =
+    `Ti contatteremo a breve. Consegna prevista ${dateLabel(o.delivery_date)}, ${o.slot_label || "-"}.`;
   const rows = o.items.map((i) =>
-    `<div class="line"><div class="grow">${i.qty}× ${esc(i.format)}<div class="muted small">${esc(i.gusti.join(", "))}</div></div><div class="price">${euro(i.prezzo_unit * i.qty)}</div></div>`
+    `<div class="cart-line"><div class="q">${i.qty}×</div>` +
+    `<div class="body"><div class="t">${esc(i.format)}</div><div class="g">${esc(i.gusti.join(", "))}</div></div>` +
+    `<div class="lp">${euro(i.prezzo_unit * i.qty)}</div></div>`
   ).join("");
   $("done-summary").innerHTML =
     rows +
-    `<div class="row between" style="margin-top:10px"><span class="muted">Consegna</span><span>${euro(o.delivery_cost)}</span></div>` +
-    `<div class="row between"><b>Totale</b><b class="price">${euro(o.total)}</b></div>` +
-    `<div class="muted small" style="margin-top:8px">Consegna: ${esc(dateLabel(o.delivery_date))} · ${esc(o.slot_label || "-")}</div>`;
+    `<div class="cart-foot">` +
+    `<div class="r"><span>Consegna</span><span>${euro(o.delivery_cost)}</span></div>` +
+    `<div class="r tot"><b>Totale</b><span class="v">${euro(o.total)}</span></div>` +
+    `</div>`;
   window.scrollTo(0, 0);
 }
 
@@ -252,6 +266,8 @@ function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 $("m-close").onclick = closeModal;
 $("modal").onclick = (e) => { if (e.target.id === "modal") closeModal(); };
 $("m-add").onclick = addToCart;
+$("m-qty-dec").onclick = () => { $("m-qty").value = Math.max(1, (parseInt($("m-qty").value || "1", 10) || 1) - 1); };
+$("m-qty-inc").onclick = () => { $("m-qty").value = (parseInt($("m-qty").value || "1", 10) || 1) + 1; };
 $("submit").onclick = submitOrder;
 
 // ⚠️ PROTOTIPO: precompila i dati cliente con valori di fantasia per non

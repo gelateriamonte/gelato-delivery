@@ -184,18 +184,18 @@ function renderLab() {
     const flavs = Object.entries(info.flavors).sort((a, b) => b[1] - a[1]);
     const totKg = flavs.reduce((s, [, g]) => s + g, 0) / 1000;
     const rows = flavs.length
-      ? flavs.map(([n, g]) => `<div class="line"><div class="grow">${esc(n)}</div><div class="price">${kg(g / 1000)}</div></div>`).join("")
-      : '<p class="muted small">Solo coppette: nessun kg da preparare.</p>';
+      ? flavs.map(([n, g]) => `<div class="kgline"><span class="kn">${esc(n)}</span><span class="kv">${kg(g / 1000)}</span></div>`).join("")
+      : '<p class="hint">Solo coppette: nessun kg da preparare.</p>';
     const card = document.createElement("div");
-    card.className = "card";
+    card.className = "labcard";
     card.innerHTML =
-      `<div class="row between"><b>${esc(dayName(dt, i))} ${dt.getDate()}/${dt.getMonth() + 1}</b>` +
-      `<span class="tag">${info.count} ordin${info.count === 1 ? "e" : "i"}</span></div>` +
-      `<div style="margin:8px 0">${rows}</div>` +
-      (flavs.length ? `<div class="row between"><span class="muted small">Totale gelato</span><b class="price">${kg(totKg)}</b></div>` : "");
+      `<div class="labhead"><span class="labday">${esc(dayName(dt, i))} ${dt.getDate()}/${dt.getMonth() + 1}</span>` +
+      `<span class="count">${info.count} ordin${info.count === 1 ? "e" : "i"}</span></div>` +
+      `<div class="kglist">${rows}</div>` +
+      (flavs.length ? `<div class="kgtot"><span>Totale gelato</span><b>${kg(totKg)}</b></div>` : "");
     wrap.appendChild(card);
   });
-  if (!any) wrap.innerHTML = '<p class="muted small">Nessun ordine accettato da preparare.</p>';
+  if (!any) wrap.innerHTML = '<p class="hint">Nessun ordine accettato da preparare.</p>';
 }
 
 // ========== STORICO (ordini consegnati: economico + breakdown formato/gusto) ==========
@@ -228,62 +228,65 @@ function renderHistory() {
   const media = fatturato / done.length;
 
   // riepilogo economico
-  const eco = document.createElement("div");
-  eco.className = "card stack";
-  eco.innerHTML =
-    `<div class="row between"><b>Riepilogo economico</b><span class="tag">${done.length} consegnati</span></div>` +
-    `<div class="row between"><span class="muted small">Fatturato totale</span><b class="price">${euro(fatturato)}</b></div>` +
-    `<div class="row between"><span class="muted small">di cui prodotti</span><span>${euro(prodotti)}</span></div>` +
-    `<div class="row between"><span class="muted small">di cui consegne</span><span>${euro(consegne)}</span></div>` +
-    `<div class="row between"><span class="muted small">Scontrino medio</span><b>${euro(media)}</b></div>`;
-  wrap.appendChild(eco);
+  const eco =
+    `<div class="panel ecocard">` +
+    `<div class="eco-row big"><span>Fatturato totale</span><b>${euro(fatturato)}</b></div>` +
+    `<div class="eco-row"><span>di cui prodotti</span><span>${euro(prodotti)}</span></div>` +
+    `<div class="eco-row"><span>di cui consegne</span><span>${euro(consegne)}</span></div>` +
+    `<div class="eco-row sep"><span>Scontrino medio</span><b>${euro(media)}</b></div>` +
+    `<div class="eco-row"><span>Ordini consegnati</span><span>${done.length}</span></div>` +
+    `</div>`;
 
   // breakdown per formato
-  const fmts = Object.entries(byFormat).sort((a, b) => b[1].rev - a[1].rev);
-  const fc = document.createElement("div");
-  fc.className = "card";
-  fc.innerHTML = `<b>Per tipologia (formato)</b>` +
-    fmts.map(([n, v]) => `<div class="line"><div class="grow">${esc(n)}<div class="muted small">${v.qty} pz</div></div><div class="price">${euro(v.rev)}</div></div>`).join("");
-  wrap.appendChild(fc);
+  const fmts = Object.entries(byFormat).sort((a, b) => b[1].rev - a[1].rev)
+    .map(([n, v]) => `<div class="brk"><div class="bn">${esc(n)}<small>${v.qty} pz</small></div><div class="bv">${euro(v.rev)}</div></div>`).join("");
 
   // breakdown per gusto
-  const flv = Object.entries(byFlavor).sort((a, b) => b[1].qty - a[1].qty);
-  const gc = document.createElement("div");
-  gc.className = "card";
-  gc.innerHTML = `<b>Per gusto</b>` +
-    flv.map(([n, v]) => `<div class="line"><div class="grow">${esc(n)}<div class="muted small">${v.qty} volte</div></div><div class="price">${v.grams ? kg(v.grams / 1000) : "—"}</div></div>`).join("");
-  wrap.appendChild(gc);
+  const flv = Object.entries(byFlavor).sort((a, b) => b[1].qty - a[1].qty)
+    .map(([n, v]) => `<div class="brk"><div class="bn">${esc(n)}<small>${v.qty} volte</small></div><div class="bv">${v.grams ? kg(v.grams / 1000) : "—"}</div></div>`).join("");
 
   // lista ordini consegnati (recenti prima)
-  const lc = document.createElement("div");
-  lc.className = "card";
-  const rows = done.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map((o) => {
+  const orders = done.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map((o) => {
     const when = new Date(o.created_at).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" });
     const cons = o.delivery_date ? new Date(o.delivery_date + "T00:00:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) : "-";
-    return `<div class="line"><div class="grow">${esc(o.customer_name)}<div class="muted small">${when} · 🗓️ ${esc(cons)} · ${esc(o.slot_label || "-")}</div></div><div class="price">${euro(o.total)}</div></div>`;
+    return `<div class="brk"><div class="bn">${esc(o.customer_name)}<small>${esc(when)} · ${esc(cons)} · ${esc(o.slot_label || "-")}</small></div><div class="bv">${euro(o.total)}</div></div>`;
   }).join("");
-  lc.innerHTML = `<b>Ordini consegnati</b>${rows}`;
-  wrap.appendChild(lc);
+
+  wrap.innerHTML =
+    `<div class="subgrid">` +
+      `<div><p class="eyebrow muted">Riepilogo economico</p><div style="height:10px"></div>${eco}</div>` +
+      `<div>` +
+        `<p class="eyebrow muted">Per tipologia (formato)</p><div style="height:10px"></div><div class="panel">${fmts}</div>` +
+        `<div style="height:18px"></div>` +
+        `<p class="eyebrow muted">Per gusto</p><div style="height:10px"></div><div class="panel">${flv}</div>` +
+      `</div>` +
+    `</div>` +
+    `<div style="height:22px"></div>` +
+    `<p class="eyebrow muted">Ordini consegnati</p><div style="height:10px"></div><div class="panel">${orders}</div>`;
 }
 
 function orderCard(o) {
   const meta = STATUS_META[o.status] || { label: o.status, slug: "ricevuto" };
   const el = document.createElement("div");
-  el.className = "card order s-" + meta.slug;
+  el.className = "order";
+  el.setAttribute("data-s", o.status);
   el.id = "order-" + o.id;
   const items = (o.items || []).map((i) =>
-    `<div class="line"><div class="grow">${i.qty}× ${esc(i.format)}<div class="muted small">${esc((i.gusti || []).join(", "))}</div></div><div class="price">${euro(i.prezzo_unit * i.qty)}</div></div>`
+    `<div class="it"><div class="t">${i.qty}× ${esc(i.format)}<small>${esc((i.gusti || []).join(", "))}</small></div>` +
+    `<div class="p">${euro(i.prezzo_unit * i.qty)}</div></div>`
   ).join("");
   const when = new Date(o.created_at).toLocaleString("it-IT", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
+  const cons = o.delivery_date ? new Date(o.delivery_date + "T00:00:00").toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "2-digit" }) : "-";
   el.innerHTML =
-    `<div class="row between"><b>${esc(o.customer_name)}</b><span class="st-badge">${esc(meta.label)}</span></div>` +
-    `<div class="muted small">${when} · ${esc(o.customer_phone)}${o.email ? " · " + esc(o.email) : ""}</div>` +
-    `<div class="muted small">📍 ${esc(o.address)}</div>` +
-    `<div class="muted small">🗓️ ${o.delivery_date ? esc(new Date(o.delivery_date + "T00:00:00").toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "2-digit" })) : "-"} · 🕒 ${esc(o.slot_label || "-")}</div>` +
-    (o.notes ? `<div class="muted small">📝 ${esc(o.notes)}</div>` : "") +
-    `<div style="margin:8px 0">${items}</div>` +
-    `<div class="row between"><span class="muted small">Consegna ${euro(o.delivery_cost)}</span><b class="price">${euro(o.total)}</b></div>` +
-    `<div class="actions" style="margin-top:12px"></div>`;
+    `<div class="top"><div class="who">${esc(o.customer_name)}</div>` +
+    `<span class="status" data-s="${esc(o.status)}"><span class="led"></span>${esc(meta.label)}</span></div>` +
+    `<div class="meta"><span class="k">${esc(when)}</span> · ${esc(o.customer_phone)}${o.email ? " · " + esc(o.email) : ""}<br>` +
+    `${esc(o.address)}<br>` +
+    `<span class="k">Consegna</span> ${esc(cons)} · ${esc(o.slot_label || "-")}` +
+    `${o.notes ? `<br><span class="k">Note</span> ${esc(o.notes)}` : ""}</div>` +
+    `<div class="items">${items}</div>` +
+    `<div class="foot"><span class="del">Consegna ${euro(o.delivery_cost)}</span><span class="tot">${euro(o.total)}</span></div>` +
+    `<div class="actions"></div>`;
   renderActions(el.querySelector(".actions"), o);
   return el;
 }
@@ -300,24 +303,23 @@ function renderActions(box, o) {
   if (TERMINAL.has(st)) return;   // consegnato / rifiutato / annullato: nessuna azione
 
   if (st === "ricevuto") {
-    const row = document.createElement("div"); row.className = "flexwrap";
+    const row = document.createElement("div"); row.className = "actrow";
     row.append(
-      mkBtn("✓ Accetta", "btn ok sm", () => updateStatus(o.id, "accettato")),
-      mkBtn("✕ Rifiuta", "btn danger sm", () => { if (confirm("Rifiutare questo ordine?")) updateStatus(o.id, "rifiutato"); })
+      mkBtn("Accetta", "btn ok sm", () => updateStatus(o.id, "accettato")),
+      mkBtn("Rifiuta", "btn danger sm", () => { if (confirm("Rifiutare questo ordine?")) updateStatus(o.id, "rifiutato"); })
     );
     box.append(row);
     return;
   }
 
   // accettato / in preparazione / in consegna → step + annulla
-  const steps = document.createElement("div"); steps.className = "flexwrap";
+  const steps = document.createElement("div"); steps.className = "actrow steps";
   PROGRESS.forEach((s) => {
     steps.append(mkBtn(STATUS_META[s].label, "chip" + (s === st ? " sel" : ""), () => updateStatus(o.id, s)));
   });
-  box.append(
-    steps,
-    mkBtn("Annulla ordine", "btn danger sm", () => { if (confirm("Annullare questo ordine?")) updateStatus(o.id, "annullato"); })
-  );
+  const cancelRow = document.createElement("div"); cancelRow.className = "actrow";
+  cancelRow.append(mkBtn("Annulla ordine", "btn danger sm", () => { if (confirm("Annullare questo ordine?")) updateStatus(o.id, "annullato"); }));
+  box.append(steps, cancelRow);
 }
 
 async function updateStatus(id, status) {
@@ -330,7 +332,7 @@ function subscribeOrders() {
   sb.channel("orders-rt")
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, (p) => {
       ORDERS.unshift(p.new); renderOrders();
-      toast("🔔 Nuovo ordine!"); beep();
+      toast("Nuovo ordine ricevuto."); beep();
     })
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, (p) => {
       const i = ORDERS.findIndex((o) => o.id === p.new.id);
@@ -349,14 +351,15 @@ async function loadFlavors() {
   list.innerHTML = "";
   data.forEach((f) => {
     const el = document.createElement("div");
-    el.className = "card stack";
+    el.className = "mrow";
     el.innerHTML =
-      `<input class="g-name" value="${esc(f.name)}">` +
-      `<div class="row between">` + availRadios("fl-" + f.id, f.available) + `<button class="btn danger sm">✕</button></div>`;
+      `<input class="g-name grow" value="${esc(f.name)}">` +
+      availRadios("fl-" + f.id, f.available) +
+      `<button class="btn icon">✕</button>`;
     const name = el.querySelector(".g-name");
     name.onchange = () => updateRow("flavors", f.id, { name: name.value.trim() });
     wireAvailRadios(el, (val) => updateRow("flavors", f.id, { available: val }));
-    el.querySelector("button.danger").onclick = async () => { await delRow("flavors", f.id); loadFlavors(); };
+    el.querySelector(".btn.icon").onclick = async () => { await delRow("flavors", f.id); loadFlavors(); };
     list.appendChild(el);
   });
 }
@@ -375,16 +378,16 @@ async function loadFormats() {
   list.innerHTML = "";
   data.forEach((f) => {
     const el = document.createElement("div");
-    el.className = "card stack";
+    el.className = "fmt-card";
     el.innerHTML =
       `<input class="f-name" value="${esc(f.name)}">` +
-      `<div class="row" style="gap:8px">` +
-      `<div class="grow"><label>Gusti max</label><input class="f-max" type="number" min="1" value="${f.max_flavors}"></div>` +
-      `<div class="grow"><label>Prezzo €</label><input class="f-price" type="number" min="0" step="0.50" value="${f.price}"></div>` +
+      `<div class="grid2">` +
+      `<div class="field" style="margin:0"><label>Gusti max</label><input class="f-max" type="number" min="1" value="${f.max_flavors}"></div>` +
+      `<div class="field" style="margin:0"><label>Prezzo €</label><input class="f-price" type="number" min="0" step="0.50" value="${f.price}"></div>` +
       `</div>` +
-      `<div class="row between">` + availRadios("fo-" + f.id, f.available) + `<button class="btn danger sm">Elimina</button></div>`;
+      `<div class="foot">` + availRadios("fo-" + f.id, f.available) + `<button class="btn icon" style="width:auto;padding:8px 14px">Elimina</button></div>`;
     const name = el.querySelector(".f-name"), max = el.querySelector(".f-max"), price = el.querySelector(".f-price");
-    const del = el.querySelector(".between button.danger");
+    const del = el.querySelector(".foot .btn.icon");
     name.onchange = () => updateRow("formats", f.id, { name: name.value.trim() });
     max.onchange = () => updateRow("formats", f.id, { max_flavors: parseInt(max.value || "1", 10) });
     price.onchange = () => updateRow("formats", f.id, { price: parseFloat(price.value || "0") });
@@ -445,21 +448,20 @@ function renderSlotsList() {
   SLOTS_CATALOG.forEach((s) => {
     const on = slotActive(s);
     const el = document.createElement("div");
-    el.className = "card stack";
+    el.className = "mrow";
     el.innerHTML =
-      `<input class="s-label" value="${esc(s.label)}">` +
-      `<div class="row between">` +
+      `<input class="s-label grow" value="${esc(s.label)}" style="font-variant-numeric:tabular-nums">` +
       `<div class="onoff" data-onoff>` +
       `<label><input type="radio" name="sl-${s.id}" value="1"${on ? " checked" : ""}> Accesa</label>` +
       `<label><input type="radio" name="sl-${s.id}" value="0"${on ? "" : " checked"}> Spenta</label>` +
       `</div>` +
-      `<button class="btn danger sm">✕</button></div>`;
+      `<button class="btn icon">✕</button>`;
     const label = el.querySelector(".s-label");
     label.onchange = () => updateRow("time_slots", s.id, { label: label.value.trim() });
     el.querySelectorAll('[data-onoff] input[type=radio]').forEach((r) => {
       r.onchange = () => { if (r.checked) setSlotActive(s.id, r.value === "1"); };
     });
-    el.querySelector("button.danger").onclick = async () => { await delRow("time_slots", s.id); loadSlots(); };
+    el.querySelector(".btn.icon").onclick = async () => { await delRow("time_slots", s.id); loadSlots(); };
     list.appendChild(el);
   });
 }
