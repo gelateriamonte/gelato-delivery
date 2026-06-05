@@ -38,16 +38,18 @@ let SLOTS_CATALOG = [];
 let DAY_OVERRIDES = new Map();   // slot_id -> active (override del giorno selezionato)
 
 // radio Disponibile / Non disponibile (gusti, formati)
-function availRadios(name, available) {
-  return `<div class="onoff" data-onoff>` +
-    `<label><input type="radio" name="${name}" value="1"${available ? " checked" : ""}> Disponibile</label>` +
-    `<label><input type="radio" name="${name}" value="0"${available ? "" : " checked"}> No</label>` +
-    `</div>`;
+// Toggle switch on/off (un solo controllo). `name` tenuto per compatibilità chiamate.
+function availRadios(name, available, onText, offText) {
+  onText = onText || "Disponibile"; offText = offText || "Non disponibile";
+  return `<label class="switch" data-onoff>` +
+    `<input type="checkbox"${available ? " checked" : ""}>` +
+    `<span class="track"><span class="thumb"></span></span>` +
+    `<span class="switch-lbl"><span class="on-t">${esc(onText)}</span><span class="off-t">${esc(offText)}</span></span>` +
+    `</label>`;
 }
 function wireAvailRadios(el, cb) {
-  el.querySelectorAll('[data-onoff] input[type=radio]').forEach((r) => {
-    r.onchange = () => { if (r.checked) cb(r.value === "1"); };
-  });
+  const sw = el.querySelector('[data-onoff] input[type=checkbox]');
+  if (sw) sw.onchange = () => cb(sw.checked);
 }
 
 // ---------- LOGIN GATE ----------
@@ -451,16 +453,11 @@ function renderSlotsList() {
     el.className = "mrow";
     el.innerHTML =
       `<input class="s-label grow" value="${esc(s.label)}" style="font-variant-numeric:tabular-nums">` +
-      `<div class="onoff" data-onoff>` +
-      `<label><input type="radio" name="sl-${s.id}" value="1"${on ? " checked" : ""}> Accesa</label>` +
-      `<label><input type="radio" name="sl-${s.id}" value="0"${on ? "" : " checked"}> Spenta</label>` +
-      `</div>` +
+      availRadios("sl-" + s.id, on, "Accesa", "Spenta") +
       `<button class="btn icon">✕</button>`;
     const label = el.querySelector(".s-label");
     label.onchange = () => updateRow("time_slots", s.id, { label: label.value.trim() });
-    el.querySelectorAll('[data-onoff] input[type=radio]').forEach((r) => {
-      r.onchange = () => { if (r.checked) setSlotActive(s.id, r.value === "1"); };
-    });
+    wireAvailRadios(el, (val) => setSlotActive(s.id, val));
     el.querySelector(".btn.icon").onclick = async () => { await delRow("time_slots", s.id); loadSlots(); };
     list.appendChild(el);
   });
