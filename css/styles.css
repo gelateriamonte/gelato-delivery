@@ -557,8 +557,10 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
   .mrow{ gap:7px; padding:13px 12px; }
   .mrow .switch{ gap:0; flex:none; }
   .mrow .switch-lbl{ display:none; }           /* toggle senza testo: lo stato è il colore */
-  /* campo orario / nome: riempie lo spazio, floor garantito → non collassa */
-  .mrow .s-label, .mrow .g-name{ flex:1 1 0; min-width:114px; font-size:14px; padding:12px 8px; }
+  /* campo FASCIA (orario): larghezza FISSA piccola, non cresce/non collassa */
+  .mrow .s-label{ flex:0 0 124px; width:124px; min-width:0; font-size:14px; padding:11px 8px; }
+  /* nome gusto: flessibile (i nomi variano di lunghezza) */
+  .mrow .g-name{ flex:1 1 0; min-width:96px; font-size:14px; padding:12px 10px; }
   .slotmax{ gap:4px; flex:none; }
   .slotmax-lbl{ font-size:9px; letter-spacing:.03em; }
   .slotmax input{ -webkit-appearance:none; appearance:none; flex:0 0 44px; width:44px; min-width:0; padding:9px 2px; }
