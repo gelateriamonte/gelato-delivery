@@ -379,6 +379,12 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 }
 .addrow .grow{ flex:1; }
 .addrow .btn{ flex:none; }
+
+/* capienza fascia (Max consegne/giorno) */
+.slotmax{ display:inline-flex; align-items:center; gap:7px; flex:none; margin:0; cursor:default;
+  text-transform:none; letter-spacing:normal; }
+.slotmax-lbl{ font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.slotmax input{ flex:0 0 64px; width:64px; text-align:center; padding:9px 6px; }
 .fmt-card{
   background:var(--paper); border:1px solid var(--line); border-radius:var(--r-md);
   box-shadow:var(--shadow-card); padding:16px; display:flex; flex-direction:column; gap:13px;

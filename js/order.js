@@ -20,8 +20,20 @@ const dateLabel = (s) => (s ? new Date(s + "T00:00:00").toLocaleDateString("it-I
 let DAYS = next7();
 let SELECTED_DAY = ymd(DAYS[0]);
 let DAY_OVERRIDES = new Map();   // slot_id -> active per il giorno scelto
-// fasce effettivamente attive nel giorno scelto (override del giorno, altrimenti default catalogo)
-const effectiveSlots = () => DATA.slots.filter((s) => (DAY_OVERRIDES.has(s.id) ? DAY_OVERRIDES.get(s.id) : s.active));
+let DAY_COUNTS = {};             // slot_label -> n. ordini in lavorazione nel giorno scelto
+// ordini "in lavorazione" che occupano capienza (esclusi consegnato/rifiutato/annullato)
+const LAVORAZIONE = ["ricevuto", "accettato", "in preparazione", "in consegna"];
+// fascia piena: ha un tetto e gli ordini in lavorazione del giorno lo raggiungono
+const slotFull = (s) => {
+  const max = Number(s.max_deliveries);
+  if (!max || max <= 0) return false;            // null / 0 = illimitato
+  return (DAY_COUNTS[s.label] || 0) >= max;
+};
+// fasce effettivamente offribili nel giorno scelto: accese (override/catalogo) e non piene
+const effectiveSlots = () => DATA.slots.filter((s) => {
+  const on = DAY_OVERRIDES.has(s.id) ? DAY_OVERRIDES.get(s.id) : s.active;
+  return on && !slotFull(s);
+});
 
 // ---------- caricamento dati ----------
 async function loadData() {
@@ -176,9 +188,15 @@ function renderDayPick() {
 }
 
 async function loadDaySlots() {
-  const { data, error } = await sb.from("slot_day_state").select("slot_id, active").eq("day", SELECTED_DAY);
-  if (error) console.error(error);
-  DAY_OVERRIDES = new Map((data || []).map((r) => [r.slot_id, r.active]));
+  const [ov, occ] = await Promise.all([
+    sb.from("slot_day_state").select("slot_id, active").eq("day", SELECTED_DAY),
+    sb.from("orders").select("slot_label").eq("delivery_date", SELECTED_DAY).in("status", LAVORAZIONE),
+  ]);
+  if (ov.error) console.error(ov.error);
+  if (occ.error) console.error(occ.error);
+  DAY_OVERRIDES = new Map((ov.data || []).map((r) => [r.slot_id, r.active]));
+  DAY_COUNTS = {};
+  (occ.data || []).forEach((r) => { if (r.slot_label) DAY_COUNTS[r.slot_label] = (DAY_COUNTS[r.slot_label] || 0) + 1; });
   renderSlotSelect();
 }
 
@@ -205,6 +223,20 @@ async function submitOrder() {
   const address = $("address").value.trim();
   if (!name || !phone || !address) { toast("Compila nome, telefono e indirizzo."); return; }
   if (!effectiveSlots().length) { toast("Nessuna fascia disponibile per il giorno scelto."); return; }
+
+  // re-check capienza fascia prima dell'invio (best-effort anti-race)
+  const chosen = $("slot").value;
+  const slotObj = DATA.slots.find((s) => s.label === chosen);
+  if (slotObj && Number(slotObj.max_deliveries) > 0) {
+    const { count, error: capErr } = await sb.from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("delivery_date", SELECTED_DAY).eq("slot_label", chosen).in("status", LAVORAZIONE);
+    if (!capErr && count != null && count >= Number(slotObj.max_deliveries)) {
+      toast("Questa fascia si è appena riempita. Scegli un'altra fascia.");
+      await loadDaySlots();
+      return;
+    }
+  }
 
   const sub = subtotal();
   const delivery = Number(DATA.settings.delivery_cost);

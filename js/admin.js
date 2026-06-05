@@ -453,10 +453,17 @@ function renderSlotsList() {
     el.className = "mrow";
     el.innerHTML =
       `<input class="s-label grow" value="${esc(s.label)}" style="font-variant-numeric:tabular-nums">` +
+      `<label class="slotmax"><span class="slotmax-lbl">Max</span>` +
+      `<input class="s-max" type="number" min="1" placeholder="∞" title="Max consegne al giorno (vuoto = illimitato)" value="${s.max_deliveries ?? ""}"></label>` +
       availRadios("sl-" + s.id, on, "Accesa", "Spenta") +
       `<button class="btn icon">✕</button>`;
     const label = el.querySelector(".s-label");
     label.onchange = () => updateRow("time_slots", s.id, { label: label.value.trim() });
+    const smax = el.querySelector(".s-max");
+    smax.onchange = () => {
+      const v = smax.value.trim(), n = v === "" ? null : parseInt(v, 10);
+      updateRow("time_slots", s.id, { max_deliveries: (n && n > 0) ? n : null });
+    };
     wireAvailRadios(el, (val) => setSlotActive(s.id, val));
     el.querySelector(".btn.icon").onclick = async () => { await delRow("time_slots", s.id); loadSlots(); };
     list.appendChild(el);
@@ -498,7 +505,9 @@ $("ns-add").onclick = async () => {
   if (!(end > start)) { toast("La fine deve essere dopo l'inizio."); return; }
   const label = fmtTime(start) + " - " + fmtTime(end);
   if (SLOTS_CATALOG.some((s) => s.label === label)) { toast("Fascia già presente."); return; }
-  await sb.from("time_slots").insert({ label, sort_order: start });
+  const maxRaw = $("ns-max").value.trim(), maxVal = maxRaw === "" ? null : parseInt(maxRaw, 10);
+  await sb.from("time_slots").insert({ label, sort_order: start, max_deliveries: (maxVal && maxVal > 0) ? maxVal : null });
+  $("ns-max").value = "";
   loadSlots();
 };
 

@@ -29,11 +29,12 @@ create table if not exists formats (
 
 -- FASCE ORARIE di consegna (CATALOGO condiviso da tutti i giorni)
 create table if not exists time_slots (
-  id          uuid primary key default gen_random_uuid(),
-  label       text not null,                 -- es. "18:00 - 18:30"
-  active      boolean not null default true, -- default per i giorni senza override
-  sort_order  int not null default 0,
-  created_at  timestamptz not null default now()
+  id             uuid primary key default gen_random_uuid(),
+  label          text not null,                 -- es. "18:00 - 18:30"
+  active         boolean not null default true, -- default per i giorni senza override
+  max_deliveries int,                           -- max consegne/giorno (NULL = illimitato)
+  sort_order     int not null default 0,
+  created_at     timestamptz not null default now()
 );
 
 -- STATO acceso/spento di una fascia in uno specifico giorno.
