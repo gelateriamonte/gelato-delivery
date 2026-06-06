@@ -16,4 +16,4 @@ window.ADMIN_PASSWORD = "gelato2026";
 
 // Stripe — chiave PUBBLICABILE (pk_test_… in test, pk_live_… in produzione).
 // È pubblica per design (sta nel browser). La chiave segreta sta SOLO nelle env di Netlify.
-window.STRIPE_PUBLISHABLE_KEY = "";
+window.STRIPE_PUBLISHABLE_KEY = "pk_test_51TfKmZDURGKjK0gjwpU60Dogc2KtSTRsYIhKJakNVidDiO95yfEkwH55BMFpw4dKlnDOQXAJMKyExvavmrUg04Nq00keeeocdp";
