@@ -439,23 +439,21 @@ async function submitOrder() {
   } catch (e) {
     console.error(e); toast("Rete non disponibile. Riprova."); resetSubmit(); return;
   }
-  await openPayment(data.client_secret, payload);
+  await openPayment(data.client_secret);
   resetSubmit();
 }
 function resetSubmit() { $("submit").disabled = false; $("submit").textContent = "Vai al pagamento"; }
 
 // ---------- pagamento (Stripe Embedded Checkout) ----------
 let stripeObj = null, embeddedCheckout = null;
-async function openPayment(clientSecret, payload) {
+async function openPayment(clientSecret) {
   if (!window.Stripe || !window.STRIPE_PUBLISHABLE_KEY) { toast("Pagamenti non ancora configurati."); return; }
   if (!stripeObj) stripeObj = window.Stripe(window.STRIPE_PUBLISHABLE_KEY);
   if (embeddedCheckout) { try { embeddedCheckout.destroy(); } catch (e) {} embeddedCheckout = null; }
   $("pay-modal").classList.add("show");
   try {
-    embeddedCheckout = await stripeObj.initEmbeddedCheckout({
-      clientSecret,
-      onComplete: () => { closePayment(); showConfirmation(payload); },
-    });
+    // a pagamento riuscito Stripe fa redirect a return_url (grazie.html); l'ordine lo crea il webhook.
+    embeddedCheckout = await stripeObj.initEmbeddedCheckout({ fetchClientSecret: async () => clientSecret });
     embeddedCheckout.mount("#checkout");
   } catch (e) {
     console.error(e); closePayment(); toast("Impossibile aprire il pagamento.");

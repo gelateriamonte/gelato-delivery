@@ -88,13 +88,15 @@ exports.handler = async (event) => {
     if (pErr) return json(500, { error: "Errore creazione bozza." });
 
     // 4) Checkout Session embedded — NIENTE payment_method_types (metodi dinamici da dashboard).
+    // ui_mode 'embedded_page' (API nuova): form in pagina; a pagamento fatto redirect a return_url.
+    const origin = event.headers.origin || (event.headers.host ? "https://" + event.headers.host : "");
     let session;
     try {
       session = await stripe.checkout.sessions.create({
-        ui_mode: "embedded",
+        ui_mode: "embedded_page",
         mode: "payment",
         line_items,
-        redirect_on_completion: "never",
+        return_url: origin + "/grazie.html?session_id={CHECKOUT_SESSION_ID}",
         customer_email: email || undefined,
         metadata: { pending_id: pend.id },
         payment_intent_data: { metadata: { pending_id: pend.id } },
