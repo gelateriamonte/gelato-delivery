@@ -49,6 +49,7 @@
       <button class="tab active" data-tab="orders">Ordini</button>
       <button class="tab" data-tab="lab">Laboratorio</button>
       <button class="tab" data-tab="consegne">Consegne</button>
+      <button class="tab" data-tab="takeaway">Take away</button>
       <button class="tab" data-tab="history">Storico</button>
       <button class="tab" data-tab="flavors">Gusti</button>
       <button class="tab" data-tab="formats">Formati &amp; prezzi</button>
@@ -78,6 +79,12 @@
       <div class="admin-head"><h2>Consegne in corso</h2></div>
       <p class="muted small">Ordini in stato <b>in consegna</b>, ordinati dal più vicino alla gelateria.</p>
       <div id="consegne-list" class="orders"></div>
+    </section>
+
+    <section id="tab-takeaway" class="tabpane hidden">
+      <div class="admin-head"><h2>Take away — ritiri</h2></div>
+      <p class="muted small">Ordini per <b>ritiro in negozio</b>. Si possono solo accettare o rifiutare; poi "ritirato".</p>
+      <div id="takeaway-list" class="orders"></div>
     </section>
 
     <section id="tab-history" class="tabpane hidden">
@@ -164,6 +171,11 @@
         <button class="btn sm" id="area-save">Salva zona</button>
         <button class="btn ghost sm" id="area-reset">Ripristina San Teodoro</button>
       </div>
+
+      <div class="admin-head" style="margin-top:30px"><h2>Orari di apertura</h2></div>
+      <p class="muted small">Usati per gli orari di ritiro in negozio. Spunta "Chiuso" nei giorni di chiusura.</p>
+      <div class="panel stack" id="oh-editor"></div>
+      <button class="btn sm" id="oh-save" style="margin-top:12px">Salva orari</button>
     </section>
   </main>
 

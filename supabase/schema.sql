@@ -53,6 +53,7 @@ create table if not exists settings (
   min_order     numeric(8,2) not null default 0,
   wa_templates  jsonb,                          -- messaggi WhatsApp per stato (override dei default in admin.js)
   delivery_area jsonb,                          -- poligono zona di consegna [[lat,lng],...] (NULL = comune San Teodoro)
+  opening_hours jsonb,                          -- orari apertura per giorno {lun..dom:{chiuso,apertura,chiusura}}
   constraint settings_singleton check (id = 1)
 );
 
@@ -65,8 +66,9 @@ create table if not exists orders (
   address        text not null,
   delivery_lat   double precision,            -- posizione precisa del pin (mappa)
   delivery_lng   double precision,
-  delivery_date  date,                        -- giorno di consegna scelto
-  slot_label     text,                        -- snapshot fascia scelta
+  delivery_date  date,                        -- giorno di consegna/ritiro scelto
+  slot_label     text,                        -- snapshot fascia (consegna) o orario (ritiro)
+  fulfillment    text not null default 'delivery',  -- 'delivery' | 'pickup'
   items          jsonb not null default '[]'::jsonb,  -- [{format, gusti[], qty, prezzo_unit}]
   subtotal       numeric(8,2) not null default 0,
   delivery_cost  numeric(8,2) not null default 0,

@@ -284,6 +284,32 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .locate-btn:hover{ color:var(--accent-ink); background:var(--paper-2); }
 .locate-btn svg{ display:block; margin:6px; }
 
+/* modalità consegna / ritiro (cliente) */
+.mode-toggle{ display:flex; gap:8px; }
+.mode-opt{
+  flex:1; padding:13px 14px; border-radius:var(--r-md); border:1.3px solid var(--line-2);
+  background:var(--paper); color:var(--ink-2); font-family:var(--sans); font-size:14px;
+  font-weight:600; line-height:1.2; text-align:center; cursor:pointer; transition:.16s;
+}
+.mode-opt:hover{ border-color:var(--accent-line); }
+.mode-opt.sel{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent-ink); }
+
+/* orari di apertura — vista cliente (#opening-hours) */
+.opening-hours{ margin-top:12px; border:1px solid var(--line); border-radius:var(--r-md); overflow:hidden; }
+.oh-row{ display:flex; justify-content:space-between; gap:12px; padding:8px 13px; font-size:13px; color:var(--ink-2); border-bottom:1px solid var(--line); }
+.oh-row:last-child{ border-bottom:none; }
+.oh-row span:first-child{ font-weight:600; color:var(--ink); }
+
+/* orari di apertura — editor (Parametri, #oh-editor) */
+.oh-erow{ display:flex; align-items:center; gap:10px; }
+.oh-erow .oh-day{ flex:0 0 40px; font-size:14px; font-weight:600; color:var(--ink); }
+.oh-erow .oh-closed{ flex:0 0 auto; display:flex; align-items:center; gap:6px; margin:0;
+  font-size:13px; font-weight:500; letter-spacing:0; text-transform:none; color:var(--ink-2); cursor:pointer; }
+.oh-erow .oh-closed input{ width:auto; cursor:pointer; }
+.oh-erow select{ flex:1; min-width:0; -webkit-appearance:menulist; appearance:menulist; padding:10px 12px; cursor:pointer; }
+.oh-erow .oh-sep{ flex:0 0 auto; color:var(--muted); }
+.oh-erow select:disabled{ opacity:.45; }
+
 /* ============================================================
    BACK OFFICE
    ============================================================ */

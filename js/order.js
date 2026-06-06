@@ -35,6 +35,50 @@ const effectiveSlots = () => DATA.slots.filter((s) => {
   return on && !slotFull(s);
 });
 
+// ---------- modalità: consegna a domicilio / ritiro in negozio ----------
+let MODE = "delivery";
+const isPickup = () => MODE === "pickup";
+const deliveryCost = () => (isPickup() ? 0 : Number(DATA.settings.delivery_cost || 0));
+const WD_KEY = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];   // index = Date.getDay()
+const OPENING_DEFAULTS = { lun: { open: "16:00", close: "24:00" }, mar: { open: "16:00", close: "24:00" }, mer: { open: "16:00", close: "24:00" }, gio: { open: "16:00", close: "24:00" }, ven: { open: "16:00", close: "24:00" }, sab: { open: "16:00", close: "24:00" }, dom: { open: "16:00", close: "24:00" } };
+const openingHours = () => (DATA.settings && DATA.settings.opening_hours) || OPENING_DEFAULTS;
+const openingFor = (ymdStr) => openingHours()[WD_KEY[new Date(ymdStr + "T00:00:00").getDay()]] || null;
+const hmToMin = (t) => { const m = String(t).match(/(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : 0; };
+
+function renderPickupTimes() {
+  const sel = $("pickup-time"); if (!sel) return;
+  sel.innerHTML = "";
+  const oh = openingFor(SELECTED_DAY);
+  if (!oh || oh.closed) { sel.innerHTML = '<option value="">Chiuso in questo giorno</option>'; updateTotal(); return; }
+  let start = hmToMin(oh.open), end = hmToMin(oh.close);
+  if (SELECTED_DAY === ymd(DAYS[0])) {   // oggi: da ora + 30 min
+    const n = new Date(); start = Math.max(start, Math.ceil((n.getHours() * 60 + n.getMinutes() + 30) / 30) * 30);
+  }
+  const opts = [];
+  for (let m = start; m <= end; m += 30) opts.push(String(Math.floor(m / 60) % 24).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"));
+  if (!opts.length) { sel.innerHTML = '<option value="">Nessun orario disponibile oggi</option>'; updateTotal(); return; }
+  opts.forEach((t) => sel.appendChild(new Option(t, t)));
+  updateTotal();
+}
+function renderOpeningHours() {
+  const el = $("opening-hours"); if (!el) return;
+  const oh = openingHours();
+  const days = [["lun", "Lun"], ["mar", "Mar"], ["mer", "Mer"], ["gio", "Gio"], ["ven", "Ven"], ["sab", "Sab"], ["dom", "Dom"]];
+  el.innerHTML = days.map(([k, lbl]) => { const h = oh[k] || {}; return `<div class="oh-row"><span>${lbl}</span><span>${h.closed ? "chiuso" : esc((h.open || "-") + "–" + (h.close || "-"))}</span></div>`; }).join("");
+}
+function setMode(mode) {
+  MODE = mode;
+  $("mode-delivery").classList.toggle("sel", mode === "delivery");
+  $("mode-pickup").classList.toggle("sel", mode === "pickup");
+  const del = mode === "delivery";
+  $("slot-field").style.display = del ? "" : "none";
+  $("pickup-field").style.display = del ? "none" : "";
+  const af = $("address-field"); if (af) af.style.display = del ? "" : "none";
+  const dl = $("day-label"); if (dl) dl.textContent = del ? "Giorno di consegna" : "Giorno di ritiro";
+  if (del) renderSlotSelect(); else { renderPickupTimes(); renderOpeningHours(); }
+  renderCart();
+}
+
 // ---------- mappa consegna + geofence San Teodoro ----------
 const GELATERIA = { lat: 40.8410901, lng: 9.6538693, name: "Gelateria Bm&V Montepetrosu" };
 const ST_BBOX = [[40.6967, 9.5776], [40.8649, 9.7287]];   // [S,W],[N,E] comune San Teodoro
@@ -242,12 +286,12 @@ function renderCart() {
     `<button class="btn icon rm" data-i="${i}" aria-label="Rimuovi">✕</button></div>`
   ).join("");
   const sub = subtotal();
-  const delivery = Number(DATA.settings.delivery_cost);
+  const delivery = deliveryCost();
   lines.innerHTML =
     `<div class="cart">${rows}` +
     `<div class="cart-foot">` +
     `<div class="r"><span>Subtotale</span><span>${euro(sub)}</span></div>` +
-    `<div class="r"><span>Consegna</span><span>${euro(delivery)}</span></div>` +
+    `<div class="r"><span>${isPickup() ? "Ritiro" : "Consegna"}</span><span>${euro(delivery)}</span></div>` +
     `<div class="r tot"><b>Totale</b><span class="v">${euro(sub + delivery)}</span></div>` +
     `</div></div>`;
   lines.querySelectorAll(".rm").forEach((btn) => {
@@ -260,24 +304,29 @@ function subtotal() { return CART.reduce((s, i) => s + i.prezzo_unit * i.qty, 0)
 
 function updateTotal() {
   const sub = subtotal();
-  const delivery = CART.length ? Number(DATA.settings.delivery_cost) : 0;
-  const total = sub + delivery;
-  $("total").textContent = euro(total);
+  const delivery = CART.length ? deliveryCost() : 0;
+  $("total").textContent = euro(sub + delivery);
   const min = Number(DATA.settings.min_order);
   const okMin = sub >= min;
+  const pickup = isPickup();
   const hasSlot = effectiveSlots().length > 0;
+  const pickupOk = !!($("pickup-time") && $("pickup-time").value);
   const banner = $("min-banner");
   if (CART.length && !okMin) {
     banner.style.display = "block";
-    banner.textContent = `Ordine minimo ${euro(min)}. Mancano ${euro(min - sub)} (consegna ${euro(delivery)}).`;
-  } else if (CART.length && !hasSlot) {
+    banner.textContent = `Ordine minimo ${euro(min)}. Mancano ${euro(min - sub)}.`;
+  } else if (CART.length && pickup && !pickupOk) {
+    banner.style.display = "block";
+    banner.textContent = "Scegli un orario di ritiro disponibile.";
+  } else if (CART.length && !pickup && !hasSlot) {
     banner.style.display = "block";
     banner.textContent = "Nessuna fascia disponibile per il giorno scelto. Scegli un altro giorno.";
-  } else if (CART.length && !IN_ZONE) {
+  } else if (CART.length && !pickup && !IN_ZONE) {
     banner.style.display = "block";
     banner.textContent = "Indica sulla mappa un punto di consegna dentro la zona.";
   } else { banner.style.display = "none"; }
-  $("submit").disabled = !(CART.length && okMin && hasSlot && IN_ZONE);
+  const ready = pickup ? pickupOk : (hasSlot && IN_ZONE);
+  $("submit").disabled = !(CART.length && okMin && ready);
 }
 
 // ---------- giorno + fasce ----------
@@ -290,7 +339,7 @@ function renderDayPick() {
     b.type = "button";
     b.className = "day" + (key === SELECTED_DAY ? " sel" : "") + (i === 0 ? " today" : "");
     b.innerHTML = `<div class="dwd">${dayName(d, i)}</div><div class="dnum">${d.getDate()}</div>`;
-    b.onclick = () => { SELECTED_DAY = key; renderDayPick(); loadDaySlots(); };
+    b.onclick = () => { SELECTED_DAY = key; renderDayPick(); if (isPickup()) renderPickupTimes(); else loadDaySlots(); };
     cal.appendChild(b);
   });
 }
@@ -328,36 +377,46 @@ function renderSlotSelect() {
 async function submitOrder() {
   const name = $("name").value.trim();
   const phone = $("phone").value.trim();
-  const address = $("address").value.trim();
-  if (!name || !phone || !address) { toast("Compila nome, telefono e indirizzo."); return; }
-  if (!(IN_ZONE && DELIV_LAT != null)) { toast("Posiziona il pin di consegna dentro la zona."); return; }
-  if (!effectiveSlots().length) { toast("Nessuna fascia disponibile per il giorno scelto."); return; }
-
-  // re-check capienza fascia prima dell'invio (best-effort anti-race)
-  const chosen = $("slot").value;
-  const slotObj = DATA.slots.find((s) => s.label === chosen);
-  if (slotObj && Number(slotObj.max_deliveries) > 0) {
-    const { count, error: capErr } = await sb.from("orders")
-      .select("id", { count: "exact", head: true })
-      .eq("delivery_date", SELECTED_DAY).eq("slot_label", chosen).in("status", LAVORAZIONE);
-    if (!capErr && count != null && count >= Number(slotObj.max_deliveries)) {
-      toast("Questa fascia si è appena riempita. Scegli un'altra fascia.");
-      await loadDaySlots();
-      return;
+  if (!name || !phone) { toast("Compila nome e telefono."); return; }
+  const pickup = isPickup();
+  let address, slotLabel, lat = null, lng = null;
+  if (pickup) {
+    const t = $("pickup-time").value;
+    if (!t) { toast("Scegli un orario di ritiro disponibile."); return; }
+    address = "Ritiro in negozio"; slotLabel = "Ritiro " + t;
+  } else {
+    address = $("address").value.trim();
+    if (!address) { toast("Inserisci l'indirizzo di consegna."); return; }
+    if (!(IN_ZONE && DELIV_LAT != null)) { toast("Posiziona il pin di consegna dentro la zona."); return; }
+    if (!effectiveSlots().length) { toast("Nessuna fascia disponibile per il giorno scelto."); return; }
+    // re-check capienza fascia prima dell'invio (best-effort anti-race)
+    const chosen = $("slot").value;
+    const slotObj = DATA.slots.find((s) => s.label === chosen);
+    if (slotObj && Number(slotObj.max_deliveries) > 0) {
+      const { count, error: capErr } = await sb.from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("delivery_date", SELECTED_DAY).eq("slot_label", chosen).in("status", LAVORAZIONE);
+      if (!capErr && count != null && count >= Number(slotObj.max_deliveries)) {
+        toast("Questa fascia si è appena riempita. Scegli un'altra fascia.");
+        await loadDaySlots();
+        return;
+      }
     }
+    slotLabel = chosen; lat = DELIV_LAT; lng = DELIV_LNG;
   }
 
   const sub = subtotal();
-  const delivery = Number(DATA.settings.delivery_cost);
+  const delivery = deliveryCost();
   const payload = {
     customer_name: name,
     customer_phone: phone,
     email: $("email").value.trim() || null,
     address,
-    delivery_lat: DELIV_LAT,
-    delivery_lng: DELIV_LNG,
+    delivery_lat: lat,
+    delivery_lng: lng,
     delivery_date: SELECTED_DAY,
-    slot_label: $("slot").value,
+    slot_label: slotLabel,
+    fulfillment: pickup ? "pickup" : "delivery",
     items: CART,
     subtotal: sub,
     delivery_cost: delivery,
@@ -381,8 +440,10 @@ function showConfirmation(o) {
   $("shop").classList.add("hidden");
   $("bar").style.display = "none";
   $("done").classList.remove("hidden");
-  $("done-text").textContent =
-    `Ti contatteremo a breve. Consegna prevista ${dateLabel(o.delivery_date)}, ${o.slot_label || "-"}.`;
+  const isP = o.fulfillment === "pickup";
+  $("done-text").textContent = isP
+    ? `Ti contatteremo a breve. Ritiro in negozio ${dateLabel(o.delivery_date)}, ${String(o.slot_label || "").replace("Ritiro ", "ore ")}.`
+    : `Ti contatteremo a breve. Consegna prevista ${dateLabel(o.delivery_date)}, ${o.slot_label || "-"}.`;
   const rows = o.items.map((i) =>
     `<div class="cart-line"><div class="q">${i.qty}×</div>` +
     `<div class="body"><div class="t">${esc(i.format)}</div><div class="g">${esc(i.gusti.join(", "))}</div></div>` +
@@ -391,7 +452,7 @@ function showConfirmation(o) {
   $("done-summary").innerHTML =
     rows +
     `<div class="cart-foot">` +
-    `<div class="r"><span>Consegna</span><span>${euro(o.delivery_cost)}</span></div>` +
+    `<div class="r"><span>${isP ? "Ritiro" : "Consegna"}</span><span>${euro(o.delivery_cost)}</span></div>` +
     `<div class="r tot"><b>Totale</b><span class="v">${euro(o.total)}</span></div>` +
     `</div>`;
   window.scrollTo(0, 0);
@@ -414,6 +475,9 @@ $("m-qty-inc").onclick = () => { $("m-qty").value = (parseInt($("m-qty").value |
 $("submit").onclick = submitOrder;
 $("addr-find").onclick = geocodeAddress;
 $("address").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); geocodeAddress(); } });
+$("mode-delivery").onclick = () => setMode("delivery");
+$("mode-pickup").onclick = () => setMode("pickup");
+$("pickup-time").onchange = () => updateTotal();
 
 // ⚠️ PROTOTIPO: precompila i dati cliente con valori di fantasia per non
 // reinserirli a ogni test. Rimuovere in produzione.

@@ -137,10 +137,11 @@ async function loadOrders() {
 function renderFilters() {
   const bar = $("orders-filter");
   bar.innerHTML = "";
+  const DEL = ORDERS.filter((o) => o.fulfillment !== "pickup");
   const counts = {};
-  ORDERS.forEach((o) => { counts[o.status] = (counts[o.status] || 0) + 1; });
+  DEL.forEach((o) => { counts[o.status] = (counts[o.status] || 0) + 1; });
   FILTERS.forEach((f) => {
-    const n = f === "all" ? ORDERS.length : (counts[f] || 0);
+    const n = f === "all" ? DEL.length : (counts[f] || 0);
     const label = f === "all" ? "Tutti" : STATUS_META[f].label;
     const slug = f === "all" ? "all" : STATUS_META[f].slug;
     const chip = mkBtn("", "fchip f-" + slug + (f === ACTIVE_FILTER ? " sel" : ""),
@@ -155,7 +156,7 @@ function renderDays() {
   bar.innerHTML = "";
   const counts = {};
   ORDERS.forEach((o) => {
-    if (o.delivery_date && COUNTED.has(o.status)) counts[o.delivery_date] = (counts[o.delivery_date] || 0) + 1;
+    if (o.delivery_date && COUNTED.has(o.status) && o.fulfillment !== "pickup") counts[o.delivery_date] = (counts[o.delivery_date] || 0) + 1;
   });
   // chip "Tutti"
   const all = mkBtn("", "dchip" + (ACTIVE_DAY === "all" ? " sel" : ""), () => { ACTIVE_DAY = "all"; renderOrders(); });
@@ -196,7 +197,7 @@ function renderSlotStats() {
   // conteggio ordini attivi (non terminali) per fascia, nel giorno scelto
   const counts = {};
   ORDERS.forEach((o) => {
-    if (o.delivery_date === day && !TERMINAL.has(o.status) && o.slot_label) {
+    if (o.delivery_date === day && !TERMINAL.has(o.status) && o.slot_label && o.fulfillment !== "pickup") {
       counts[o.slot_label] = (counts[o.slot_label] || 0) + 1;
     }
   });
@@ -217,15 +218,17 @@ function renderSlotStats() {
 }
 
 function renderOrders() {
-  $("orders-count").textContent = ORDERS.length;
+  const DEL = ORDERS.filter((o) => o.fulfillment !== "pickup");   // Ordini = solo consegne (i ritiri → Take away)
+  $("orders-count").textContent = DEL.length;
   renderFilters();
   renderDays();
   renderSlotStats();
   renderLab();
   renderHistory();
   renderConsegne();
+  renderTakeaway();
   const list = $("orders-list");
-  let shown = ORDERS;
+  let shown = DEL;
   if (ACTIVE_FILTER !== "all") shown = shown.filter((o) => o.status === ACTIVE_FILTER);
   if (ACTIVE_DAY !== "all") shown = shown.filter((o) => o.delivery_date === ACTIVE_DAY);
   if (!shown.length) {
@@ -394,8 +397,21 @@ async function renderConsegne() {
   hydrateRoutes();
 }
 
+// ========== TAKE AWAY (solo ritiri in negozio, attivi) ==========
+function renderTakeaway() {
+  const wrap = $("takeaway-list");
+  if (!wrap) return;
+  const list = ORDERS.filter((o) => o.fulfillment === "pickup" && !TERMINAL.has(o.status));
+  if (!list.length) { wrap.innerHTML = '<p class="hint">Nessun ordine da ritirare al momento.</p>'; return; }
+  const key = (o) => (o.delivery_date || "") + " " + (o.slot_label || "");   // per giorno+orario di ritiro
+  list.sort((a, b) => key(a).localeCompare(key(b)));
+  wrap.innerHTML = "";
+  list.forEach((o) => wrap.appendChild(orderCard(o)));
+}
+
 function orderCard(o) {
   const meta = STATUS_META[o.status] || { label: o.status, slug: "ricevuto" };
+  const isPk = o.fulfillment === "pickup";
   const el = document.createElement("div");
   el.className = "order";
   el.setAttribute("data-s", o.status);
@@ -411,10 +427,10 @@ function orderCard(o) {
     `<span class="status" data-s="${esc(o.status)}"><span class="led"></span>${esc(meta.label)}</span></div>` +
     `<div class="meta"><span class="k">${esc(when)}</span> · ${esc(o.customer_phone)}${o.email ? " · " + esc(o.email) : ""}<br>` +
     `${esc(o.address)}${o.delivery_lat != null ? ` · <a class="maplink" href="https://www.google.com/maps?q=${o.delivery_lat},${o.delivery_lng}" target="_blank" rel="noopener">Mappa</a><span class="route-info" data-rk="${o.delivery_lat},${o.delivery_lng}"></span>` : ""}<br>` +
-    `<span class="k">Consegna</span> ${esc(cons)} · ${esc(o.slot_label || "-")}` +
+    `<span class="k">${isPk ? "Ritiro" : "Consegna"}</span> ${esc(cons)} · ${esc((o.slot_label || "-").replace(/^Ritiro /, "ore "))}` +
     `${o.notes ? `<br><span class="k">Note</span> ${esc(o.notes)}` : ""}</div>` +
     `<div class="items">${items}</div>` +
-    `<div class="foot"><span class="del">Consegna ${euro(o.delivery_cost)}</span><span class="tot">${euro(o.total)}</span></div>` +
+    `<div class="foot"><span class="del">${isPk ? "Ritiro" : "Consegna"} ${euro(o.delivery_cost)}</span><span class="tot">${euro(o.total)}</span></div>` +
     (o.status !== "ricevuto" ? `<div class="wa-row"><button class="btn wa sm wa-btn">WhatsApp</button></div>` : "") +
     `<div class="actions"></div>`;
   renderActions(el.querySelector(".actions"), o);
@@ -443,7 +459,17 @@ function renderActions(box, o) {
     return;
   }
 
-  // accettato / in preparazione / in consegna → step + annulla (ognuno apre WhatsApp)
+  // RITIRO: dopo "accettato" niente preparazione/consegna → solo "ritirato" (consegnato) + annulla
+  if (o.fulfillment === "pickup") {
+    const row = document.createElement("div"); row.className = "actrow";
+    row.append(mkBtn("Segna ritirato", "btn ok sm", () => changeStatus(o, "consegnato")));
+    const cancelRow = document.createElement("div"); cancelRow.className = "actrow";
+    cancelRow.append(mkBtn("Annulla ordine", "btn danger sm", () => { if (confirm("Annullare questo ordine?")) changeStatus(o, "annullato"); }));
+    box.append(row, cancelRow);
+    return;
+  }
+
+  // CONSEGNA · accettato / in preparazione / in consegna → step + annulla (ognuno apre WhatsApp)
   const steps = document.createElement("div"); steps.className = "actrow steps";
   PROGRESS.forEach((s) => {
     steps.append(mkBtn(STATUS_META[s].label, "chip" + (s === st ? " sel" : ""), () => changeStatus(o, s)));
@@ -649,6 +675,7 @@ async function loadSettings() {
   $("set-min").value = data.min_order;
   const t = waTemplates();
   WA_STATUSES.forEach((s) => { const el = $("wa-" + STATUS_META[s].slug); if (el) el.value = t[s] || ""; });
+  renderOpeningHoursEditor();
 }
 $("set-save").onclick = async () => {
   const { error } = await sb.from("settings").update({
@@ -712,6 +739,49 @@ $("area-reset").onclick = async () => {
   SETTINGS.delivery_area = null;
   if (areaLayer && areaMap) { areaMap.removeLayer(areaLayer); areaLayer = null; }
   toast("Zona ripristinata: comune di San Teodoro.");
+};
+
+// ---------- orari di apertura (Parametri; usati per il ritiro in negozio) ----------
+// chiavi giorno e default allineati a js/order.js (WD_KEY / OPENING_DEFAULTS)
+const OH_DAYS = [["lun", "Lun"], ["mar", "Mar"], ["mer", "Mer"], ["gio", "Gio"], ["ven", "Ven"], ["sab", "Sab"], ["dom", "Dom"]];
+const OH_DEFAULTS = { lun: { open: "16:00", close: "24:00" }, mar: { open: "16:00", close: "24:00" }, mer: { open: "16:00", close: "24:00" }, gio: { open: "16:00", close: "24:00" }, ven: { open: "16:00", close: "24:00" }, sab: { open: "16:00", close: "24:00" }, dom: { open: "16:00", close: "24:00" } };
+function ohTimes() {                                       // "00:00" .. "24:00", passo 30 min
+  const out = [];
+  for (let m = 0; m <= 1440; m += 30) out.push(String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"));
+  return out;
+}
+const ohOptions = (sel) => ohTimes().map((t) => `<option value="${t}"${t === sel ? " selected" : ""}>${t}</option>`).join("");
+function renderOpeningHoursEditor() {
+  const wrap = $("oh-editor"); if (!wrap) return;
+  const oh = Object.assign({}, OH_DEFAULTS, SETTINGS.opening_hours || {});
+  wrap.innerHTML = OH_DAYS.map(([k, lbl]) => {
+    const h = oh[k] || {}, cl = !!h.closed;
+    return `<div class="oh-erow" data-k="${k}">
+      <span class="oh-day">${lbl}</span>
+      <label class="oh-closed"><input type="checkbox" class="oh-cl"${cl ? " checked" : ""}> Chiuso</label>
+      <select class="oh-open"${cl ? " disabled" : ""}>${ohOptions(h.open || "16:00")}</select>
+      <span class="oh-sep">–</span>
+      <select class="oh-close"${cl ? " disabled" : ""}>${ohOptions(h.close || "24:00")}</select>
+    </div>`;
+  }).join("");
+  wrap.querySelectorAll(".oh-erow").forEach((row) => {
+    const cb = row.querySelector(".oh-cl");
+    cb.onchange = () => row.querySelectorAll("select").forEach((s) => { s.disabled = cb.checked; });
+  });
+}
+$("oh-save").onclick = async () => {
+  const oh = {};
+  $("oh-editor").querySelectorAll(".oh-erow").forEach((row) => {
+    oh[row.dataset.k] = {
+      closed: row.querySelector(".oh-cl").checked,
+      open: row.querySelector(".oh-open").value,
+      close: row.querySelector(".oh-close").value,
+    };
+  });
+  const { error } = await sb.from("settings").update({ opening_hours: oh }).eq("id", 1);
+  if (error) { console.error(error); toast("Errore salvataggio orari."); return; }
+  SETTINGS.opening_hours = oh;
+  toast("Orari di apertura salvati.");
 };
 
 // ---------- helper DB ----------

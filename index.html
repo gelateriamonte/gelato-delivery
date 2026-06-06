@@ -46,14 +46,25 @@
       </div>
 
       <div class="group">
-        <p class="eyebrow muted">Consegna</p>
-        <h3 class="s-title">Quando lo vuoi?</h3>
-        <div style="height:14px"></div>
-        <label>Giorno di consegna</label>
+        <p class="eyebrow muted">Modalità</p>
+        <h3 class="s-title">Come lo vuoi?</h3>
+        <div style="height:12px"></div>
+        <div class="mode-toggle">
+          <button type="button" class="mode-opt sel" id="mode-delivery">Consegna a domicilio</button>
+          <button type="button" class="mode-opt" id="mode-pickup">Ritiro in negozio</button>
+        </div>
+        <div style="height:18px"></div>
+        <label id="day-label">Giorno di consegna</label>
         <div id="day-pick" class="cal"></div>
-        <div class="field" style="margin-top:16px">
+        <div class="field" id="slot-field" style="margin-top:16px">
           <label for="slot">Fascia oraria</label>
           <div class="select-wrap"><select id="slot"></select></div>
+        </div>
+        <div class="field" id="pickup-field" style="margin-top:16px;display:none">
+          <label for="pickup-time">Orario di ritiro</label>
+          <div class="select-wrap"><select id="pickup-time"></select></div>
+          <p class="map-note">Preparazione minimo 30 minuti — scegli un orario entro l'apertura.</p>
+          <div id="opening-hours" class="opening-hours"></div>
         </div>
       </div>
 
@@ -67,7 +78,7 @@
           <input id="phone" type="tel" placeholder="333 1234567"></div>
         <div class="field"><label for="email">Email</label>
           <input id="email" type="email" placeholder="mario.rossi@email.it"></div>
-        <div class="field"><label for="address">Indirizzo di consegna</label>
+        <div class="field" id="address-field"><label for="address">Indirizzo di consegna</label>
           <div class="addr-row">
             <input id="address" type="text" placeholder="Via Cala d'Ambra 1, San Teodoro" class="grow">
             <button type="button" class="btn sm" id="addr-find">Trova</button>
