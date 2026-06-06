@@ -117,7 +117,7 @@
         <div class="lab">Totale</div>
         <div class="amt" id="total">€ 0,00</div>
       </div>
-      <button class="btn" id="submit" disabled>Invia ordine</button>
+      <button class="btn" id="submit" disabled>Vai al pagamento</button>
     </div>
   </div>
 
@@ -145,12 +145,28 @@
     </div>
   </div>
 
+  <!-- MODALE PAGAMENTO (Stripe Embedded Checkout) -->
+  <div class="modal-bg" id="pay-modal">
+    <div class="modal">
+      <div class="sheet-head">
+        <div>
+          <p class="eyebrow">Pagamento sicuro</p>
+          <h2>Completa l'ordine</h2>
+        </div>
+        <button class="btn ghost sm" id="pay-close">Annulla</button>
+      </div>
+      <p class="hint" style="margin:10px 0 16px">Paga ora per confermare. Se chiudi, nessun addebito e l'ordine non parte.</p>
+      <div id="checkout"></div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="js/supabase-client.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://js.stripe.com/v3/"></script>
   <script src="js/santeodoro-boundary.js"></script>
   <script src="js/order.js"></script>
 </body>

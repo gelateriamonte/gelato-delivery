@@ -1,0 +1,10 @@
+{
+  "name": "gelato-delivery-functions",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Netlify Functions per i pagamenti Stripe (create-checkout + stripe-webhook). Il sito resta statico; queste deps servono solo alle funzioni serverless.",
+  "dependencies": {
+    "stripe": "^22.2.0",
+    "@supabase/supabase-js": "^2.107.0"
+  }
+}

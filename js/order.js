@@ -425,15 +425,45 @@ async function submitOrder() {
     status: "ricevuto",
   };
 
-  $("submit").disabled = true; $("submit").textContent = "Invio…";
-  const { error } = await sb.from("orders").insert(payload);
-  if (error) {
-    console.error(error);
-    toast("Errore nell'invio. Riprova.");
-    $("submit").disabled = false; $("submit").textContent = "Invia ordine";
-    return;
+  // L'ordine NON viene inserito qui: prima si paga. La funzione ricalcola gli importi
+  // lato server, crea la sessione Stripe e ritorna il client_secret. La riga in `orders`
+  // nasce nel webhook, solo a pagamento riuscito.
+  $("submit").disabled = true; $("submit").textContent = "Attendi…";
+  let data;
+  try {
+    const res = await fetch("/.netlify/functions/create-checkout", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload),
+    });
+    data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.client_secret) { toast(data.error || "Errore nell'avvio del pagamento."); resetSubmit(); return; }
+  } catch (e) {
+    console.error(e); toast("Rete non disponibile. Riprova."); resetSubmit(); return;
   }
-  showConfirmation(payload);
+  await openPayment(data.client_secret, payload);
+  resetSubmit();
+}
+function resetSubmit() { $("submit").disabled = false; $("submit").textContent = "Vai al pagamento"; }
+
+// ---------- pagamento (Stripe Embedded Checkout) ----------
+let stripeObj = null, embeddedCheckout = null;
+async function openPayment(clientSecret, payload) {
+  if (!window.Stripe || !window.STRIPE_PUBLISHABLE_KEY) { toast("Pagamenti non ancora configurati."); return; }
+  if (!stripeObj) stripeObj = window.Stripe(window.STRIPE_PUBLISHABLE_KEY);
+  if (embeddedCheckout) { try { embeddedCheckout.destroy(); } catch (e) {} embeddedCheckout = null; }
+  $("pay-modal").classList.add("show");
+  try {
+    embeddedCheckout = await stripeObj.initEmbeddedCheckout({
+      clientSecret,
+      onComplete: () => { closePayment(); showConfirmation(payload); },
+    });
+    embeddedCheckout.mount("#checkout");
+  } catch (e) {
+    console.error(e); closePayment(); toast("Impossibile aprire il pagamento.");
+  }
+}
+function closePayment() {
+  $("pay-modal").classList.remove("show");
+  if (embeddedCheckout) { try { embeddedCheckout.destroy(); } catch (e) {} embeddedCheckout = null; }
 }
 
 function showConfirmation(o) {
@@ -473,6 +503,7 @@ $("m-add").onclick = addToCart;
 $("m-qty-dec").onclick = () => { $("m-qty").value = Math.max(1, (parseInt($("m-qty").value || "1", 10) || 1) - 1); };
 $("m-qty-inc").onclick = () => { $("m-qty").value = (parseInt($("m-qty").value || "1", 10) || 1) + 1; };
 $("submit").onclick = submitOrder;
+$("pay-close").onclick = closePayment;
 $("addr-find").onclick = geocodeAddress;
 $("address").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); geocodeAddress(); } });
 $("mode-delivery").onclick = () => setMode("delivery");

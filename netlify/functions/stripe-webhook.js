@@ -1,0 +1,59 @@
+// POST /.netlify/functions/stripe-webhook
+// Stripe chiama qui (server-to-server, firmato). È l'UNICA fonte di verità del "pagato".
+// Verifica la firma sul body GREZZO, poi crea l'ordine in `orders` dalla bozza e la cancella.
+// Idempotente: lo stesso pagamento non crea ordini doppi.
+
+const Stripe = require("stripe");
+const { createClient } = require("@supabase/supabase-js");
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const supa = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+exports.handler = async (event) => {
+  const sig = event.headers["stripe-signature"];
+  // body grezzo: Netlify può consegnarlo base64; constructEvent vuole la stringa/Buffer originale, NON il JSON parsato.
+  const raw = event.isBase64Encoded ? Buffer.from(event.body || "", "base64") : event.body;
+
+  let evt;
+  try {
+    evt = stripe.webhooks.constructEvent(raw, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (e) {
+    return { statusCode: 400, body: "Firma non valida: " + (e.message || "") };
+  }
+
+  if (evt.type === "checkout.session.completed" || evt.type === "checkout.session.async_payment_succeeded") {
+    const session = evt.data.object;
+    if (session.payment_status !== "paid") return { statusCode: 200, body: "non ancora pagato" };
+
+    // idempotenza: ordine già creato per questa sessione?
+    const { data: exist } = await supa.from("orders").select("id").eq("payment_id", session.id).maybeSingle();
+    if (exist) return { statusCode: 200, body: "duplicato, skip" };
+
+    // recupera la bozza (per pending_id da metadata, fallback su session_id)
+    const pendingId = session.metadata && session.metadata.pending_id;
+    let payload = null;
+    if (pendingId) {
+      const { data: p } = await supa.from("pending_orders").select("payload").eq("id", pendingId).maybeSingle();
+      payload = p && p.payload;
+    }
+    if (!payload) {
+      const { data: p2 } = await supa.from("pending_orders").select("payload").eq("session_id", session.id).maybeSingle();
+      payload = p2 && p2.payload;
+    }
+    if (!payload) return { statusCode: 200, body: "bozza assente, skip" };
+
+    const order = Object.assign({}, payload, {
+      status: "ricevuto",
+      payment_provider: "stripe",
+      payment_id: session.id,
+      paid_at: new Date().toISOString(),
+    });
+    const { error: insErr } = await supa.from("orders").insert(order);
+    if (insErr) return { statusCode: 500, body: "insert ordine: " + insErr.message };
+
+    if (pendingId) await supa.from("pending_orders").delete().eq("id", pendingId);
+    else await supa.from("pending_orders").delete().eq("session_id", session.id);
+  }
+
+  return { statusCode: 200, body: "ok" };
+};

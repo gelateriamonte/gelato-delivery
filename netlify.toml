@@ -2,3 +2,8 @@
 [build]
   publish = "."
   command = ""
+
+# Pagamenti: funzioni serverless (Stripe). Netlify installa le deps da package.json.
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"

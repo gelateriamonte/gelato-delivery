@@ -556,6 +556,7 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
   .modal-bg{ align-items:center; }
   .modal{ border-radius:24px; }
 }
+#checkout{ min-height:320px; }
 .sheet-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
 .sheet-head > div{ flex:1; min-width:0; }
 .sheet-head .btn{ flex:none; }
