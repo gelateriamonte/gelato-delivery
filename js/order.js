@@ -41,15 +41,28 @@ const ST_BBOX = [[40.6967, 9.5776], [40.8649, 9.7287]];   // [S,W],[N,E] comune 
 let map = null, delivMarker = null, delIcon = null;
 let DELIV_LAT = null, DELIV_LNG = null, IN_ZONE = false;
 
-// point-in-polygon (ray casting) sul confine del comune
-function inSanTeodoro(lat, lng) {
-  const P = window.SAN_TEODORO_POLY || [];
+// zona consegna: custom (settings.delivery_area, anello singolo) o confine comune (più anelli)
+function deliveryRings() {
+  const a = DATA.settings && DATA.settings.delivery_area;
+  if (Array.isArray(a) && a.length >= 3) return [a];
+  return window.SAN_TEODORO_POLY || [];
+}
+// point-in-polygon (ray casting) sulla zona di consegna
+function inDeliveryZone(lat, lng) {
   let c = false;
-  for (const r of P) for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+  for (const r of deliveryRings()) for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
     const yi = r[i][0], xi = r[i][1], yj = r[j][0], xj = r[j][1];
     if (((xi > lng) !== (xj > lng)) && (lat < (yj - yi) * (lng - xi) / (xj - xi) + yi)) c = !c;
   }
   return c;
+}
+// contorno della zona disegnato sulla mappa cliente
+let zoneLayer = null;
+function drawDeliveryZone() {
+  if (!map || typeof L === "undefined") return;
+  if (zoneLayer) { map.removeLayer(zoneLayer); zoneLayer = null; }
+  const rings = deliveryRings();
+  if (rings.length) zoneLayer = L.polygon(rings, { color: "#a8552f", weight: 2, fillColor: "#a8552f", fillOpacity: .06, interactive: false }).addTo(map);
 }
 function pinIcon(color) {
   return L.divIcon({ className: "", iconSize: [28, 38], iconAnchor: [14, 37], popupAnchor: [0, -32],
@@ -95,12 +108,12 @@ function setDelivery(lat, lng, recenter, fillAddr) {
   if (fillAddr && !$("address").value.trim()) reverseFill(lat, lng);
 }
 function checkZone() {
-  IN_ZONE = (DELIV_LAT != null) && inSanTeodoro(DELIV_LAT, DELIV_LNG);
+  IN_ZONE = (DELIV_LAT != null) && inDeliveryZone(DELIV_LAT, DELIV_LNG);
   const el = $("zone-status");
   if (el) {
     if (DELIV_LAT == null) { el.textContent = ""; el.className = "zone-status"; }
-    else if (IN_ZONE) { el.textContent = "✓ Punto di consegna dentro San Teodoro"; el.className = "zone-status ok"; }
-    else { el.textContent = "✕ Fuori zona — consegniamo solo a San Teodoro"; el.className = "zone-status ko"; }
+    else if (IN_ZONE) { el.textContent = "✓ Punto di consegna dentro la zona"; el.className = "zone-status ok"; }
+    else { el.textContent = "✕ Fuori dalla zona di consegna"; el.className = "zone-status ko"; }
   }
   updateTotal();
 }
@@ -141,6 +154,9 @@ async function loadData() {
     settings: settings.data || { delivery_cost: 0, min_order: 0 },
     flavors: flavors.data, formats: formats.data, slots: slots.data,
   };
+  const slotMin = (l) => { const m = String(l).match(/(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : 9999; };
+  DATA.slots = (DATA.slots || []).slice().sort((a, b) => slotMin(a.label) - slotMin(b.label));   // fasce sempre in ordine orario
+  drawDeliveryZone();
   renderFormats();
   renderDayPick();
   await loadDaySlots();
@@ -259,7 +275,7 @@ function updateTotal() {
     banner.textContent = "Nessuna fascia disponibile per il giorno scelto. Scegli un altro giorno.";
   } else if (CART.length && !IN_ZONE) {
     banner.style.display = "block";
-    banner.textContent = "Indica sulla mappa il punto di consegna dentro San Teodoro.";
+    banner.textContent = "Indica sulla mappa un punto di consegna dentro la zona.";
   } else { banner.style.display = "none"; }
   $("submit").disabled = !(CART.length && okMin && hasSlot && IN_ZONE);
 }
@@ -314,7 +330,7 @@ async function submitOrder() {
   const phone = $("phone").value.trim();
   const address = $("address").value.trim();
   if (!name || !phone || !address) { toast("Compila nome, telefono e indirizzo."); return; }
-  if (!(IN_ZONE && DELIV_LAT != null)) { toast("Posiziona il pin di consegna dentro San Teodoro."); return; }
+  if (!(IN_ZONE && DELIV_LAT != null)) { toast("Posiziona il pin di consegna dentro la zona."); return; }
   if (!effectiveSlots().length) { toast("Nessuna fascia disponibile per il giorno scelto."); return; }
 
   // re-check capienza fascia prima dell'invio (best-effort anti-race)

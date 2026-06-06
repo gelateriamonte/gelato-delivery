@@ -51,6 +51,8 @@ create table if not exists settings (
   id            int primary key default 1,
   delivery_cost numeric(8,2) not null default 0,
   min_order     numeric(8,2) not null default 0,
+  wa_templates  jsonb,                          -- messaggi WhatsApp per stato (override dei default in admin.js)
+  delivery_area jsonb,                          -- poligono zona di consegna [[lat,lng],...] (NULL = comune San Teodoro)
   constraint settings_singleton check (id = 1)
 );
 

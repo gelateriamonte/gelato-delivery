@@ -276,6 +276,10 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .zone-status.ko{ color:var(--rosso); }
 .maplink{ color:var(--accent-ink); font-weight:600; text-decoration:underline; white-space:nowrap; }
 .route-info{ color:var(--ink-2); font-weight:600; white-space:nowrap; }
+.btn.wa{ background:#25d366; color:#fff; }
+.btn.wa:hover{ filter:brightness(1.06); }
+.wa-row{ display:flex; }
+#area-map{ position:relative; z-index:0; height:340px; border-radius:var(--r-md); border:1px solid var(--line-2); overflow:hidden; margin-top:4px; }
 .locate-btn{ color:var(--ink); cursor:pointer; }
 .locate-btn:hover{ color:var(--accent-ink); background:var(--paper-2); }
 .locate-btn svg{ display:block; margin:6px; }

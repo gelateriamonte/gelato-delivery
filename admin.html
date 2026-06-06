@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.19.3/dist/leaflet-geoman.css">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="admin">
@@ -142,6 +144,26 @@
         </div>
       </div>
       <div class="banner" style="margin-top:18px">Le modifiche si riflettono nella web app cliente dopo il refresh.</div>
+
+      <div class="admin-head" style="margin-top:30px"><h2>Messaggi WhatsApp</h2></div>
+      <p class="muted small">Inviati al cliente al cambio stato (si apre WhatsApp Web col testo, premi Invio). Segnaposti: <b>{nome}</b> <b>{giorno}</b> <b>{fascia}</b> <b>{indirizzo}</b> <b>{totale}</b>.</p>
+      <div class="panel stack">
+        <div class="field" style="margin:0"><label>Accettato</label><textarea id="wa-accettato" rows="2"></textarea></div>
+        <div class="field" style="margin:0"><label>In preparazione</label><textarea id="wa-in-preparazione" rows="2"></textarea></div>
+        <div class="field" style="margin:0"><label>In consegna</label><textarea id="wa-in-consegna" rows="2"></textarea></div>
+        <div class="field" style="margin:0"><label>Consegnato</label><textarea id="wa-consegnato" rows="2"></textarea></div>
+        <div class="field" style="margin:0"><label>Rifiutato</label><textarea id="wa-rifiutato" rows="2"></textarea></div>
+        <div class="field" style="margin:0"><label>Annullato</label><textarea id="wa-annullato" rows="2"></textarea></div>
+        <button class="btn" id="wa-save">Salva messaggi</button>
+      </div>
+
+      <div class="admin-head" style="margin-top:30px"><h2>Zona di consegna</h2></div>
+      <p class="muted small">Disegna l'area di consegna sulla mappa (icona poligono in alto a sinistra, unisci i punti; poi puoi trascinare i vertici). Vuota = vale il comune di San Teodoro. Il contorno viene mostrato al cliente.</p>
+      <div id="area-map"></div>
+      <div class="row" style="gap:8px;margin-top:12px">
+        <button class="btn sm" id="area-save">Salva zona</button>
+        <button class="btn ghost sm" id="area-reset">Ripristina San Teodoro</button>
+      </div>
     </section>
   </main>
 
@@ -150,6 +172,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="js/supabase-client.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.19.3/dist/leaflet-geoman.min.js"></script>
+  <script src="js/santeodoro-boundary.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>

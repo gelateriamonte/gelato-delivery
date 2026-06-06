@@ -3,6 +3,7 @@ const $ = (id) => document.getElementById(id);
 const euro = (n) => "€ " + Number(n || 0).toFixed(2).replace(".", ",");
 const kg = (v) => Number(v || 0).toFixed(3).replace(/0+$/, "").replace(/\.$/, "").replace(".", ",") + " kg";
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const slotMin = (l) => { const m = String(l).match(/(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : 9999; };  // minuti inizio fascia → ordine orario
 
 const STATUS_META = {
   "ricevuto":        { label: "Ricevuto",        slug: "ricevuto" },
@@ -22,6 +23,40 @@ let ACTIVE_FILTER = "all";
 let ACTIVE_DAY = "all";
 const GELATERIA = { lat: 40.8410901, lng: 9.6538693 };  // partenza consegne
 const ROUTE_CACHE = {};                                 // "lat,lng" -> {km,min} percorso auto (OSRM)
+let SETTINGS = {};                                      // riga settings (incl. wa_templates, delivery_area)
+let areaMap = null, areaLayer = null;                   // mappa disegno zona consegna (Parametri)
+// ---------- messaggi WhatsApp (default; override modificabili in Parametri) ----------
+const WA_STATUSES = ["accettato", "in preparazione", "in consegna", "consegnato", "rifiutato", "annullato"];
+const WA_DEFAULTS = {
+  "accettato": "Ciao {nome}! 🍦 Il tuo ordine da La Gelateria è confermato. Consegna {giorno}, fascia {fascia}. Grazie!",
+  "in preparazione": "Ciao {nome}, stiamo preparando il tuo gelato! Consegna {giorno}, {fascia}.",
+  "in consegna": "Ciao {nome}, il tuo gelato è in consegna 🛵 Arriviamo a: {indirizzo}.",
+  "consegnato": "Consegnato! Grazie {nome} e buon gelato 🍦 A presto!",
+  "rifiutato": "Ciao {nome}, purtroppo non possiamo evadere il tuo ordine. Ci scusiamo per il disagio.",
+  "annullato": "Ciao {nome}, il tuo ordine è stato annullato. Per qualsiasi info scrivici pure.",
+};
+const waTemplates = () => Object.assign({}, WA_DEFAULTS, SETTINGS.wa_templates || {});
+function normPhone(p) {
+  let d = String(p || "").replace(/\D/g, "");
+  if (d.startsWith("00")) d = d.slice(2);
+  if (!d.startsWith("39")) d = "39" + d;   // default Italia
+  return d;
+}
+function waMessage(o, status) {
+  const giorno = o.delivery_date ? new Date(o.delivery_date + "T00:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "2-digit", month: "long" }) : "-";
+  return (waTemplates()[status] || "")
+    .replace(/{nome}/g, o.customer_name || "")
+    .replace(/{giorno}/g, giorno)
+    .replace(/{fascia}/g, o.slot_label || "")
+    .replace(/{indirizzo}/g, o.address || "")
+    .replace(/{totale}/g, euro(o.total));
+}
+function waOpen(o, status) {
+  if (!o.customer_phone) { toast("Numero cliente mancante."); return; }
+  window.open("https://wa.me/" + normPhone(o.customer_phone) + "?text=" + encodeURIComponent(waMessage(o, status)), "_blank");
+}
+// cambia stato + apre WhatsApp col messaggio di quello stato (window.open sincrono nel gesto)
+function changeStatus(o, status) { waOpen(o, status); updateStatus(o.id, status); }
 
 // ---------- date / calendario (prossimi 7 giorni, oggi incluso) ----------
 const WD = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
@@ -77,6 +112,7 @@ document.querySelectorAll(".tab").forEach((t) => {
     document.querySelectorAll(".tabpane").forEach((p) => p.classList.add("hidden"));
     t.classList.add("active");
     $("tab-" + t.dataset.tab).classList.remove("hidden");
+    if (t.dataset.tab === "settings") setupAreaMap();
   };
 });
 
@@ -164,7 +200,7 @@ function renderSlotStats() {
       counts[o.slot_label] = (counts[o.slot_label] || 0) + 1;
     }
   });
-  const cat = (SLOTS_CATALOG || []).slice().sort((a, b) => a.sort_order - b.sort_order);
+  const cat = (SLOTS_CATALOG || []).slice().sort((a, b) => slotMin(a.label) - slotMin(b.label));
   if (!cat.length && !Object.keys(counts).length) { wrap.innerHTML = ""; return; }
   // fasce del catalogo + eventuali label storiche presenti negli ordini ma non più in catalogo
   const known = new Set(cat.map((s) => s.label));
@@ -379,8 +415,10 @@ function orderCard(o) {
     `${o.notes ? `<br><span class="k">Note</span> ${esc(o.notes)}` : ""}</div>` +
     `<div class="items">${items}</div>` +
     `<div class="foot"><span class="del">Consegna ${euro(o.delivery_cost)}</span><span class="tot">${euro(o.total)}</span></div>` +
+    (o.status !== "ricevuto" ? `<div class="wa-row"><button class="btn wa sm wa-btn">WhatsApp</button></div>` : "") +
     `<div class="actions"></div>`;
   renderActions(el.querySelector(".actions"), o);
+  const wb = el.querySelector(".wa-btn"); if (wb) wb.onclick = () => waOpen(o, o.status);
   return el;
 }
 
@@ -398,20 +436,20 @@ function renderActions(box, o) {
   if (st === "ricevuto") {
     const row = document.createElement("div"); row.className = "actrow";
     row.append(
-      mkBtn("Accetta", "btn ok sm", () => updateStatus(o.id, "accettato")),
-      mkBtn("Rifiuta", "btn danger sm", () => { if (confirm("Rifiutare questo ordine?")) updateStatus(o.id, "rifiutato"); })
+      mkBtn("Accetta", "btn ok sm", () => changeStatus(o, "accettato")),
+      mkBtn("Rifiuta", "btn danger sm", () => { if (confirm("Rifiutare questo ordine?")) changeStatus(o, "rifiutato"); })
     );
     box.append(row);
     return;
   }
 
-  // accettato / in preparazione / in consegna → step + annulla
+  // accettato / in preparazione / in consegna → step + annulla (ognuno apre WhatsApp)
   const steps = document.createElement("div"); steps.className = "actrow steps";
   PROGRESS.forEach((s) => {
-    steps.append(mkBtn(STATUS_META[s].label, "chip" + (s === st ? " sel" : ""), () => updateStatus(o.id, s)));
+    steps.append(mkBtn(STATUS_META[s].label, "chip" + (s === st ? " sel" : ""), () => changeStatus(o, s)));
   });
   const cancelRow = document.createElement("div"); cancelRow.className = "actrow";
-  cancelRow.append(mkBtn("Annulla ordine", "btn danger sm", () => { if (confirm("Annullare questo ordine?")) updateStatus(o.id, "annullato"); }));
+  cancelRow.append(mkBtn("Annulla ordine", "btn danger sm", () => { if (confirm("Annullare questo ordine?")) changeStatus(o, "annullato"); }));
   box.append(steps, cancelRow);
 }
 
@@ -527,7 +565,7 @@ async function loadSlots() {
   renderCal();
   const cat = await sb.from("time_slots").select("*").order("sort_order");
   if (cat.error) { console.error(cat.error); return; }
-  SLOTS_CATALOG = cat.data;
+  SLOTS_CATALOG = (cat.data || []).slice().sort((a, b) => slotMin(a.label) - slotMin(b.label));  // ordine orario
   const ov = await sb.from("slot_day_state").select("slot_id, active").eq("day", SELECTED_DAY);
   if (ov.error) { console.error(ov.error); }
   DAY_OVERRIDES = new Map((ov.data || []).map((r) => [r.slot_id, r.active]));
@@ -606,8 +644,11 @@ $("ns-add").onclick = async () => {
 async function loadSettings() {
   const { data, error } = await sb.from("settings").select("*").eq("id", 1).single();
   if (error) { console.error(error); return; }
+  SETTINGS = data || {};
   $("set-delivery").value = data.delivery_cost;
   $("set-min").value = data.min_order;
+  const t = waTemplates();
+  WA_STATUSES.forEach((s) => { const el = $("wa-" + STATUS_META[s].slug); if (el) el.value = t[s] || ""; });
 }
 $("set-save").onclick = async () => {
   const { error } = await sb.from("settings").update({
@@ -616,6 +657,61 @@ $("set-save").onclick = async () => {
   }).eq("id", 1);
   if (error) { console.error(error); toast("Errore salvataggio."); return; }
   toast("Parametri salvati.");
+};
+$("wa-save").onclick = async () => {
+  const tpl = {};
+  WA_STATUSES.forEach((s) => { const el = $("wa-" + STATUS_META[s].slug); if (el) tpl[s] = el.value.trim(); });
+  const { error } = await sb.from("settings").update({ wa_templates: tpl }).eq("id", 1);
+  if (error) { console.error(error); toast("Errore salvataggio messaggi."); return; }
+  SETTINGS.wa_templates = tpl;
+  toast("Messaggi WhatsApp salvati.");
+};
+
+// ---------- zona di consegna disegnabile (Parametri) ----------
+function setupAreaMap() {
+  if (!areaMap) initAreaMap();
+  else setTimeout(() => areaMap.invalidateSize(), 60);
+}
+function initAreaMap() {
+  if (typeof L === "undefined" || !L.PM || !$("area-map")) return;
+  areaMap = L.map("area-map", { center: [40.7716, 9.6704], zoom: 11 });
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(areaMap);
+  // riferimento: confine comune San Teodoro (non editabile)
+  (window.SAN_TEODORO_POLY || []).forEach((ring) =>
+    L.polygon(ring, { color: "#9b9285", weight: 1, dashArray: "4 4", fill: false, interactive: false }).addTo(areaMap));
+  areaMap.pm.addControls({ position: "topleft", drawPolygon: true, editMode: true, dragMode: true, removalMode: true,
+    rotateMode: false, drawMarker: false, drawPolyline: false, drawRectangle: false, drawCircle: false, drawCircleMarker: false, drawText: false, cutPolygon: false });
+  try { areaMap.pm.setLang("it"); } catch (e) {}
+  const area = SETTINGS.delivery_area;
+  if (Array.isArray(area) && area.length >= 3) {
+    areaLayer = L.polygon(area, { color: "#a8552f", weight: 2, fillColor: "#a8552f", fillOpacity: .1 }).addTo(areaMap);
+    areaMap.fitBounds(areaLayer.getBounds(), { padding: [20, 20] });
+  } else if (window.SAN_TEODORO_POLY) {
+    areaMap.fitBounds(L.polygon(window.SAN_TEODORO_POLY).getBounds(), { padding: [10, 10] });
+  }
+  // una sola zona: alla creazione rimuovi la precedente
+  areaMap.on("pm:create", (e) => {
+    if (areaLayer) areaMap.removeLayer(areaLayer);
+    areaLayer = e.layer;
+  });
+  setTimeout(() => areaMap.invalidateSize(), 80);
+}
+$("area-save").onclick = async () => {
+  if (!areaLayer) { toast("Disegna prima una zona sulla mappa."); return; }
+  const pts = (areaLayer.getLatLngs()[0] || []).map((p) => [+p.lat.toFixed(6), +p.lng.toFixed(6)]);
+  if (pts.length < 3) { toast("Servono almeno 3 punti."); return; }
+  const { error } = await sb.from("settings").update({ delivery_area: pts }).eq("id", 1);
+  if (error) { console.error(error); toast("Errore salvataggio zona."); return; }
+  SETTINGS.delivery_area = pts;
+  toast("Zona di consegna salvata.");
+};
+$("area-reset").onclick = async () => {
+  if (!confirm("Ripristinare la zona al comune di San Teodoro?")) return;
+  const { error } = await sb.from("settings").update({ delivery_area: null }).eq("id", 1);
+  if (error) { console.error(error); toast("Errore."); return; }
+  SETTINGS.delivery_area = null;
+  if (areaLayer && areaMap) { areaMap.removeLayer(areaLayer); areaLayer = null; }
+  toast("Zona ripristinata: comune di San Teodoro.");
 };
 
 // ---------- helper DB ----------
