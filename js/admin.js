@@ -470,7 +470,7 @@ function renderActions(box, o) {
     const row = document.createElement("div"); row.className = "actrow";
     row.append(
       mkBtn("Accetta", "btn ok sm", () => changeStatus(o, "accettato")),
-      mkBtn("Rifiuta", "btn danger sm", () => { if (confirm("Rifiutare questo ordine?")) changeStatus(o, "rifiutato"); })
+      mkBtn("Rifiuta", "btn danger sm", () => rejectOrRefund(o, "rifiutato"))
     );
     box.append(row);
     return;
@@ -481,7 +481,7 @@ function renderActions(box, o) {
     const row = document.createElement("div"); row.className = "actrow";
     row.append(mkBtn("Segna ritirato", "btn ok sm", () => changeStatus(o, "consegnato")));
     const cancelRow = document.createElement("div"); cancelRow.className = "actrow";
-    cancelRow.append(mkBtn("Annulla ordine", "btn danger sm", () => { if (confirm("Annullare questo ordine?")) changeStatus(o, "annullato"); }));
+    cancelRow.append(mkBtn("Annulla ordine", "btn danger sm", () => rejectOrRefund(o, "annullato")));
     box.append(row, cancelRow);
     return;
   }
@@ -492,7 +492,7 @@ function renderActions(box, o) {
     steps.append(mkBtn(STATUS_META[s].label, "chip" + (s === st ? " sel" : ""), () => changeStatus(o, s)));
   });
   const cancelRow = document.createElement("div"); cancelRow.className = "actrow";
-  cancelRow.append(mkBtn("Annulla ordine", "btn danger sm", () => { if (confirm("Annullare questo ordine?")) changeStatus(o, "annullato"); }));
+  cancelRow.append(mkBtn("Annulla ordine", "btn danger sm", () => rejectOrRefund(o, "annullato")));
   box.append(steps, cancelRow);
 }
 
@@ -500,6 +500,25 @@ async function updateStatus(id, status) {
   const { error } = await sb.from("orders").update({ status }).eq("id", id);
   if (error) { console.error(error); toast("Errore aggiornamento stato."); return; }
   toast("Stato aggiornato.");
+}
+
+// Rifiuto/annullamento: se l'ordine è PAGATO, rimborsa (funzione server) e poi cambia stato;
+// altrimenti cambia solo stato (comportamento storico, apre WhatsApp).
+async function rejectOrRefund(o, status) {
+  const verb = status === "rifiutato" ? "Rifiutare" : "Annullare";
+  const paid = o.payment_id && !o.refunded_at;
+  if (!confirm(paid ? `${verb} l'ordine e rimborsare ${euro(o.total)} al cliente?` : `${verb} questo ordine?`)) return;
+  if (!paid) { changeStatus(o, status); return; }
+  const res = await fetch("/.netlify/functions/refund", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ order_id: o.id, status }),
+  }).catch(() => null);
+  const data = res ? await res.json().catch(() => ({})) : {};
+  if (!res || !res.ok) { toast((data && data.error) || "Errore rimborso."); return; }
+  const i = ORDERS.findIndex((x) => x.id === o.id);
+  if (i >= 0) { ORDERS[i].status = status; ORDERS[i].refunded_at = data.refunded_at || new Date().toISOString(); }
+  renderOrders();
+  toast(data.already ? "Era già rimborsato." : "Rimborsato €" + Number(o.total).toFixed(2) + " e " + status + ".");
 }
 
 function subscribeOrders() {

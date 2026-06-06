@@ -46,6 +46,7 @@ exports.handler = async (event) => {
       status: "ricevuto",
       payment_provider: "stripe",
       payment_id: session.id,
+      payment_intent: session.payment_intent || null,   // per eventuale rimborso
       paid_at: new Date().toISOString(),
     });
     const { error: insErr } = await supa.from("orders").insert(order);
