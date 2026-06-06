@@ -383,7 +383,7 @@ async function submitOrder() {
   if (pickup) {
     const t = $("pickup-time").value;
     if (!t) { toast("Scegli un orario di ritiro disponibile."); return; }
-    address = "Ritiro in negozio"; slotLabel = "Ritiro " + t;
+    address = "Ritiro in gelateria"; slotLabel = "Ritiro " + t;
   } else {
     address = $("address").value.trim();
     if (!address) { toast("Inserisci l'indirizzo di consegna."); return; }
@@ -470,7 +470,7 @@ function showConfirmation(o) {
   $("done").classList.remove("hidden");
   const isP = o.fulfillment === "pickup";
   $("done-text").textContent = isP
-    ? `Ti contatteremo a breve. Ritiro in negozio ${dateLabel(o.delivery_date)}, ${String(o.slot_label || "").replace("Ritiro ", "ore ")}.`
+    ? `Ti contatteremo a breve. Ritiro in gelateria ${dateLabel(o.delivery_date)}, ${String(o.slot_label || "").replace("Ritiro ", "ore ")}.`
     : `Ti contatteremo a breve. Consegna prevista ${dateLabel(o.delivery_date)}, ${o.slot_label || "-"}.`;
   const rows = o.items.map((i) =>
     `<div class="cart-line"><div class="q">${i.qty}×</div>` +
