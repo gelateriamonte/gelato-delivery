@@ -21,6 +21,8 @@ const COUNTED = new Set(["ricevuto", "accettato", "in preparazione", "in consegn
 let ORDERS = [];
 let ACTIVE_FILTER = "all";
 let ACTIVE_DAY = "all";
+let ACTIVE_SLOT = "all";          // filtro fascia (slot_label) o "all"
+let HIDE_CANCELLED = true;        // nascondi rifiutati/annullati dalla vista "Tutti"
 const GELATERIA = { lat: 40.8410901, lng: 9.6538693 };  // partenza consegne
 const ROUTE_CACHE = {};                                 // "lat,lng" -> {km,min} percorso auto (OSRM)
 let SETTINGS = {};                                      // riga settings (incl. wa_templates, delivery_area)
@@ -118,6 +120,7 @@ document.querySelectorAll(".tab").forEach((t) => {
 
 // refresh manuale ordini
 $("orders-refresh").onclick = async () => { await loadOrders(); toast("Ordini aggiornati."); };
+$("orders-togglex").onclick = () => { HIDE_CANCELLED = !HIDE_CANCELLED; renderOrders(); };
 
 // ---------- INIT ----------
 async function initApp() {
@@ -159,7 +162,7 @@ function renderDays() {
     if (o.delivery_date && COUNTED.has(o.status) && o.fulfillment !== "pickup") counts[o.delivery_date] = (counts[o.delivery_date] || 0) + 1;
   });
   // chip "Tutti"
-  const all = mkBtn("", "dchip" + (ACTIVE_DAY === "all" ? " sel" : ""), () => { ACTIVE_DAY = "all"; renderOrders(); });
+  const all = mkBtn("", "dchip" + (ACTIVE_DAY === "all" ? " sel" : ""), () => { ACTIVE_DAY = "all"; ACTIVE_SLOT = "all"; renderOrders(); });
   all.innerHTML = `<div class="dwd">Tutti</div><div class="dnum">·</div><div class="dcount" style="visibility:hidden">0</div>`;
   bar.appendChild(all);
   // 7 giorni: oggi + 6
@@ -167,7 +170,7 @@ function renderDays() {
     const key = ymd(d);
     const n = counts[key] || 0;
     const b = mkBtn("", "dchip day" + (key === ACTIVE_DAY ? " sel" : "") + (i === 0 ? " today" : ""),
-      () => { ACTIVE_DAY = (ACTIVE_DAY === key ? "all" : key); renderOrders(); });
+      () => { ACTIVE_DAY = (ACTIVE_DAY === key ? "all" : key); ACTIVE_SLOT = "all"; renderOrders(); });
     b.innerHTML = `<div class="dwd">${dayName(d, i)}</div><div class="dnum">${d.getDate()}</div>` +
       `<div class="dcount${n ? " has" : ""}">${n}</div>`;
     bar.appendChild(b);
@@ -186,7 +189,8 @@ function slotStatCard(label, n, max) {
   const legend = hasMax
     ? `<span class="thermo-legend${full ? " full" : ""}"><b>${n}</b> in lavorazione / ${m}${full ? " · piena" : ""}</span>`
     : `<span class="thermo-legend"><b>${n}</b> in lavorazione · nessun limite</span>`;
-  return `<div class="slotstat${full ? " full" : ""}"><div class="slotstat-time">${esc(label)}</div>${bar}${legend}</div>`;
+  const sel = ACTIVE_SLOT === label ? " sel" : "";
+  return `<div class="slotstat${full ? " full" : ""}${sel}" data-slot="${esc(label)}" role="button" tabindex="0" title="Mostra solo gli ordini di questa fascia"><div class="slotstat-time">${esc(label)}</div>${bar}${legend}</div>`;
 }
 
 function renderSlotStats() {
@@ -215,6 +219,13 @@ function renderSlotStats() {
     `<div class="slotstats-head"><span class="eyebrow muted" style="margin:0">Fasce · ${esc(dlabel)}</span>` +
     `<span class="slotstats-tot">${tot} attiv${tot === 1 ? "o" : "i"}</span></div>` +
     `<div class="slotstats">${cards}</div>`;
+  // click su una fascia → filtra gli ordini per quella fascia (ri-click = mostra tutte)
+  wrap.querySelectorAll(".slotstat[data-slot]").forEach((el) => {
+    const s = el.dataset.slot;
+    const pick = () => { ACTIVE_SLOT = (ACTIVE_SLOT === s ? "all" : s); renderOrders(); };
+    el.onclick = pick;
+    el.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } };
+  });
 }
 
 function renderOrders() {
@@ -227,12 +238,18 @@ function renderOrders() {
   renderHistory();
   renderConsegne();
   renderTakeaway();
+  const hx = $("orders-togglex");
+  if (hx) { hx.textContent = HIDE_CANCELLED ? "Mostra rifiutati/annullati" : "Nascondi rifiutati/annullati"; hx.classList.toggle("on", HIDE_CANCELLED); }
   const list = $("orders-list");
   let shown = DEL;
   if (ACTIVE_FILTER !== "all") shown = shown.filter((o) => o.status === ACTIVE_FILTER);
   if (ACTIVE_DAY !== "all") shown = shown.filter((o) => o.delivery_date === ACTIVE_DAY);
+  if (ACTIVE_SLOT !== "all") shown = shown.filter((o) => o.slot_label === ACTIVE_SLOT);
+  // nascondi rifiutati/annullati dalla vista "Tutti" (i filtri di stato espliciti li mostrano comunque)
+  if (HIDE_CANCELLED && ACTIVE_FILTER === "all") shown = shown.filter((o) => o.status !== "rifiutato" && o.status !== "annullato");
+  const noFilter = ACTIVE_FILTER === "all" && ACTIVE_DAY === "all" && ACTIVE_SLOT === "all";
   if (!shown.length) {
-    list.innerHTML = '<p class="muted small">Nessun ordine' + (ACTIVE_FILTER === "all" && ACTIVE_DAY === "all" ? "" : " con questi filtri") + '.</p>';
+    list.innerHTML = '<p class="muted small">Nessun ordine' + (noFilter && !HIDE_CANCELLED ? "" : " con questi filtri") + '.</p>';
     return;
   }
   list.innerHTML = "";
