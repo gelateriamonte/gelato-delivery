@@ -426,9 +426,27 @@ function renderTakeaway() {
   list.forEach((o) => wrap.appendChild(orderCard(o)));
 }
 
+// iconcine metodo di pagamento: carta (generica), PayPal (logo), Satispay (glifo)
+const PAY_ICONS = {
+  card: '<svg class="payi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>',
+  paypal: '<svg class="payi" viewBox="7.056 3 37.351 45" aria-hidden="true"><path fill="#002991" d="M38.914 13.35c0 5.574-5.144 12.15-12.927 12.15H18.49l-.368 2.322L16.373 39H7.056l5.605-36h15.095c5.083 0 9.082 2.833 10.555 6.77a9.687 9.687 0 0 1 .603 3.58z"/><path fill="#60CDFF" d="M44.284 23.7A12.894 12.894 0 0 1 31.53 34.5h-5.206L24.157 48H14.89l1.483-9 1.75-11.178.367-2.322h7.497c7.773 0 12.927-6.576 12.927-12.15 3.825 1.974 6.055 5.963 5.37 10.35z"/><path fill="#008CFF" d="M38.914 13.35C37.31 12.511 35.365 12 33.248 12h-12.64L18.49 25.5h7.497c7.773 0 12.927-6.576 12.927-12.15z"/></svg>',
+  satispay: '<svg class="payi" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="6" fill="#F94C43"/><path d="M12 17.6s-4.3-2.6-4.3-5.5a2.45 2.45 0 0 1 4.3-1.55 2.45 2.45 0 0 1 4.3 1.55c0 2.9-4.3 5.5-4.3 5.5z" fill="#fff"/></svg>',
+};
+function payBadge(o) {
+  const m = (o.payment_method || "").toLowerCase();
+  let label, cls, icon = "";
+  if (m === "card") { label = "Carta"; cls = "pay-card"; icon = PAY_ICONS.card; }
+  else if (m === "paypal") { label = "PayPal"; cls = "pay-paypal"; icon = PAY_ICONS.paypal; }
+  else if (m === "satispay") { label = "Satispay"; cls = "pay-satispay"; icon = PAY_ICONS.satispay; }
+  else if (o.payment_provider === "stripe") { label = "Pagato"; cls = "pay-other"; }
+  else return "";
+  return `<span class="paybadge ${cls}">${icon}${label}</span>`;
+}
+
 function orderCard(o) {
   const meta = STATUS_META[o.status] || { label: o.status, slug: "ricevuto" };
   const isPk = o.fulfillment === "pickup";
+  const pb = payBadge(o);
   const el = document.createElement("div");
   el.className = "order";
   el.setAttribute("data-s", o.status);
@@ -445,6 +463,7 @@ function orderCard(o) {
     `<div class="meta"><span class="k">${esc(when)}</span> · ${esc(o.customer_phone)}${o.email ? " · " + esc(o.email) : ""}<br>` +
     `${esc(o.address)}${o.delivery_lat != null ? ` · <a class="maplink" href="https://www.google.com/maps?q=${o.delivery_lat},${o.delivery_lng}" target="_blank" rel="noopener">Mappa</a><span class="route-info" data-rk="${o.delivery_lat},${o.delivery_lng}"></span>` : ""}<br>` +
     `<span class="k">${isPk ? "Ritiro" : "Consegna"}</span> ${esc(cons)} · ${esc((o.slot_label || "-").replace(/^Ritiro /, "ore "))}` +
+    `${pb ? `<br><span class="k">Pagamento</span> ${pb}` : ""}` +
     `${o.notes ? `<br><span class="k">Note</span> ${esc(o.notes)}` : ""}</div>` +
     `<div class="items">${items}</div>` +
     `<div class="foot"><span class="del">${isPk ? "Ritiro" : "Consegna"} ${euro(o.delivery_cost)}</span><span class="tot">${euro(o.total)}</span></div>` +

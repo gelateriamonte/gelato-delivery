@@ -42,11 +42,22 @@ exports.handler = async (event) => {
     }
     if (!payload) return { statusCode: 200, body: "bozza assente, skip" };
 
+    // metodo effettivamente usato (card/paypal/satispay) dal PaymentIntent
+    let payment_method = null;
+    if (session.payment_intent) {
+      try {
+        const pi = await stripe.paymentIntents.retrieve(session.payment_intent, { expand: ["latest_charge"] });
+        payment_method = (pi.latest_charge && pi.latest_charge.payment_method_details && pi.latest_charge.payment_method_details.type)
+          || (Array.isArray(pi.payment_method_types) ? pi.payment_method_types[0] : null);
+      } catch (e) { /* opzionale: se fallisce, l'ordine si crea comunque */ }
+    }
+
     const order = Object.assign({}, payload, {
       status: "ricevuto",
       payment_provider: "stripe",
       payment_id: session.id,
       payment_intent: session.payment_intent || null,   // per eventuale rimborso
+      payment_method,                                    // card / paypal / satispay
       paid_at: new Date().toISOString(),
     });
     const { error: insErr } = await supa.from("orders").insert(order);
