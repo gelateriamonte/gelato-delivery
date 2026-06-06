@@ -7,3 +7,7 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+
+# Pulizia bozze ordine non pagate (gira 1×/giorno sul deploy di produzione).
+[functions."cleanup-pending"]
+  schedule = "@daily"
