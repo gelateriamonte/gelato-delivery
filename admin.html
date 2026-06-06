@@ -46,6 +46,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="orders">Ordini</button>
       <button class="tab" data-tab="lab">Laboratorio</button>
+      <button class="tab" data-tab="consegne">Consegne</button>
       <button class="tab" data-tab="history">Storico</button>
       <button class="tab" data-tab="flavors">Gusti</button>
       <button class="tab" data-tab="formats">Formati &amp; prezzi</button>
@@ -69,6 +70,12 @@
       <div class="admin-head"><h2>Laboratorio — da preparare</h2></div>
       <p class="muted small">Solo ordini <b>accettati</b>. Chili per gusto = peso del formato (dal nome) diviso per il numero di gusti scelti.</p>
       <div id="lab-list" class="labgrid"></div>
+    </section>
+
+    <section id="tab-consegne" class="tabpane hidden">
+      <div class="admin-head"><h2>Consegne in corso</h2></div>
+      <p class="muted small">Ordini in stato <b>in consegna</b>, ordinati dal più vicino alla gelateria.</p>
+      <div id="consegne-list" class="orders"></div>
     </section>
 
     <section id="tab-history" class="tabpane hidden">

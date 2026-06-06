@@ -35,6 +35,95 @@ const effectiveSlots = () => DATA.slots.filter((s) => {
   return on && !slotFull(s);
 });
 
+// ---------- mappa consegna + geofence San Teodoro ----------
+const GELATERIA = { lat: 40.8410901, lng: 9.6538693, name: "Gelateria Bm&V Montepetrosu" };
+const ST_BBOX = [[40.6967, 9.5776], [40.8649, 9.7287]];   // [S,W],[N,E] comune San Teodoro
+let map = null, delivMarker = null, delIcon = null;
+let DELIV_LAT = null, DELIV_LNG = null, IN_ZONE = false;
+
+// point-in-polygon (ray casting) sul confine del comune
+function inSanTeodoro(lat, lng) {
+  const P = window.SAN_TEODORO_POLY || [];
+  let c = false;
+  for (const r of P) for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const yi = r[i][0], xi = r[i][1], yj = r[j][0], xj = r[j][1];
+    if (((xi > lng) !== (xj > lng)) && (lat < (yj - yi) * (lng - xi) / (xj - xi) + yi)) c = !c;
+  }
+  return c;
+}
+function pinIcon(color) {
+  return L.divIcon({ className: "", iconSize: [28, 38], iconAnchor: [14, 37], popupAnchor: [0, -32],
+    html: `<svg width="28" height="38" viewBox="0 0 24 34"><path d="M12 0C5.4 0 0 5.4 0 12c0 8.5 12 22 12 22s12-13.5 12-22C24 5.4 18.6 0 12 0z" fill="${color}"/><circle cx="12" cy="12" r="4.6" fill="#fff"/></svg>` });
+}
+function initMap() {
+  if (typeof L === "undefined" || !$("map")) return;
+  map = L.map("map", { center: [GELATERIA.lat, GELATERIA.lng], zoom: 12, scrollWheelZoom: false });
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
+  delIcon = pinIcon("#a8552f");   // terracotta = punto consegna
+  L.marker([GELATERIA.lat, GELATERIA.lng], { icon: pinIcon("#2b2620") }).addTo(map)
+    .bindPopup("<b>" + esc(GELATERIA.name) + "</b><br>Partenza consegne");
+  map.fitBounds(ST_BBOX, { padding: [12, 12] });
+  map.on("click", (e) => setDelivery(e.latlng.lat, e.latlng.lng, false, true));
+  // pulsante "crocino" → posizione GPS dell'utente
+  const Locate = L.Control.extend({ options: { position: "topleft" }, onAdd() {
+    const a = L.DomUtil.create("a", "leaflet-bar locate-btn");
+    a.href = "#"; a.title = "La mia posizione"; a.setAttribute("role", "button"); a.setAttribute("aria-label", "Trova la mia posizione");
+    a.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><line x1="12" y1="1.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22.5" y2="12"/></svg>';
+    L.DomEvent.on(a, "click", L.DomEvent.stop).on(a, "click", locateMe);
+    return a;
+  } });
+  map.addControl(new Locate());
+  setTimeout(() => map.invalidateSize(), 250);
+}
+function locateMe() {
+  if (!navigator.geolocation) { toast("Geolocalizzazione non disponibile sul dispositivo."); return; }
+  toast("Cerco la tua posizione…");
+  navigator.geolocation.getCurrentPosition(
+    (pos) => setDelivery(pos.coords.latitude, pos.coords.longitude, true, true),
+    (err) => toast(err && err.code === 1 ? "Permesso posizione negato." : "Posizione non disponibile."),
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+function setDelivery(lat, lng, recenter, fillAddr) {
+  DELIV_LAT = lat; DELIV_LNG = lng;
+  if (!delivMarker) {
+    delivMarker = L.marker([lat, lng], { icon: delIcon, draggable: true }).addTo(map);
+    delivMarker.on("dragend", () => { const p = delivMarker.getLatLng(); setDelivery(p.lat, p.lng, false, true); });
+  } else delivMarker.setLatLng([lat, lng]);
+  checkZone();
+  if (recenter && map) map.fitBounds(L.latLngBounds([[lat, lng], [GELATERIA.lat, GELATERIA.lng]]), { padding: [40, 40], maxZoom: 15 });
+  if (fillAddr && !$("address").value.trim()) reverseFill(lat, lng);
+}
+function checkZone() {
+  IN_ZONE = (DELIV_LAT != null) && inSanTeodoro(DELIV_LAT, DELIV_LNG);
+  const el = $("zone-status");
+  if (el) {
+    if (DELIV_LAT == null) { el.textContent = ""; el.className = "zone-status"; }
+    else if (IN_ZONE) { el.textContent = "✓ Punto di consegna dentro San Teodoro"; el.className = "zone-status ok"; }
+    else { el.textContent = "✕ Fuori zona — consegniamo solo a San Teodoro"; el.className = "zone-status ko"; }
+  }
+  updateTotal();
+}
+async function geocodeAddress() {
+  const q = $("address").value.trim();
+  if (!q) { toast("Scrivi l'indirizzo, poi premi Trova."); return; }
+  const query = q + (/teodoro/i.test(q) ? "" : ", San Teodoro") + ", Sardegna, Italia";
+  const vb = "9.5776,40.8649,9.7287,40.6967";
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=it&viewbox=${vb}&q=${encodeURIComponent(query)}`);
+    const d = await r.json();
+    if (!d.length) { toast("Indirizzo non trovato. Trascina il pin sulla mappa."); return; }
+    setDelivery(+d[0].lat, +d[0].lon, true, false);
+  } catch (e) { console.error(e); toast("Ricerca mappa non disponibile. Trascina il pin."); }
+}
+async function reverseFill(lat, lng) {
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&lat=${lat}&lon=${lng}`);
+    const d = await r.json();
+    if (d && d.display_name) $("address").value = d.display_name.replace(/,\s*Italia$/, "");
+  } catch (e) { /* reverse opzionale */ }
+}
+
 // ---------- caricamento dati ----------
 async function loadData() {
   const [settings, flavors, formats, slots] = await Promise.all([
@@ -168,8 +257,11 @@ function updateTotal() {
   } else if (CART.length && !hasSlot) {
     banner.style.display = "block";
     banner.textContent = "Nessuna fascia disponibile per il giorno scelto. Scegli un altro giorno.";
+  } else if (CART.length && !IN_ZONE) {
+    banner.style.display = "block";
+    banner.textContent = "Indica sulla mappa il punto di consegna dentro San Teodoro.";
   } else { banner.style.display = "none"; }
-  $("submit").disabled = !(CART.length && okMin && hasSlot);
+  $("submit").disabled = !(CART.length && okMin && hasSlot && IN_ZONE);
 }
 
 // ---------- giorno + fasce ----------
@@ -222,6 +314,7 @@ async function submitOrder() {
   const phone = $("phone").value.trim();
   const address = $("address").value.trim();
   if (!name || !phone || !address) { toast("Compila nome, telefono e indirizzo."); return; }
+  if (!(IN_ZONE && DELIV_LAT != null)) { toast("Posiziona il pin di consegna dentro San Teodoro."); return; }
   if (!effectiveSlots().length) { toast("Nessuna fascia disponibile per il giorno scelto."); return; }
 
   // re-check capienza fascia prima dell'invio (best-effort anti-race)
@@ -245,6 +338,8 @@ async function submitOrder() {
     customer_phone: phone,
     email: $("email").value.trim() || null,
     address,
+    delivery_lat: DELIV_LAT,
+    delivery_lng: DELIV_LNG,
     delivery_date: SELECTED_DAY,
     slot_label: $("slot").value,
     items: CART,
@@ -301,12 +396,16 @@ $("m-add").onclick = addToCart;
 $("m-qty-dec").onclick = () => { $("m-qty").value = Math.max(1, (parseInt($("m-qty").value || "1", 10) || 1) - 1); };
 $("m-qty-inc").onclick = () => { $("m-qty").value = (parseInt($("m-qty").value || "1", 10) || 1) + 1; };
 $("submit").onclick = submitOrder;
+$("addr-find").onclick = geocodeAddress;
+$("address").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); geocodeAddress(); } });
 
 // ⚠️ PROTOTIPO: precompila i dati cliente con valori di fantasia per non
 // reinserirli a ogni test. Rimuovere in produzione.
 $("name").value = "Mario Rossi";
 $("phone").value = "333 1234567";
 $("email").value = "mario.rossi@email.it";
-$("address").value = "Via Roma 1, scala B";
+$("address").value = "Via del Tirreno, San Teodoro";
 
+initMap();
 loadData();
+if ($("address").value.trim()) setTimeout(geocodeAddress, 700);   // prototipo: pin iniziale

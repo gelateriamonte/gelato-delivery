@@ -20,6 +20,8 @@ const COUNTED = new Set(["ricevuto", "accettato", "in preparazione", "in consegn
 let ORDERS = [];
 let ACTIVE_FILTER = "all";
 let ACTIVE_DAY = "all";
+const GELATERIA = { lat: 40.8410901, lng: 9.6538693 };  // partenza consegne
+const ROUTE_CACHE = {};                                 // "lat,lng" -> {km,min} percorso auto (OSRM)
 
 // ---------- date / calendario (prossimi 7 giorni, oggi incluso) ----------
 const WD = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
@@ -138,13 +140,16 @@ function renderDays() {
 // ---------- fasce del giorno: ordini attivi (in lavorazione) per fascia ----------
 function slotStatCard(label, n, max) {
   const hasMax = max != null && Number(max) > 0;
-  const full = hasMax && n >= Number(max);
-  const near = hasMax && !full && n > 0 && n >= Number(max) - 1;
-  const cls = "slotstat" + (full ? " full" : (near ? " near" : ""));
-  const maxTxt = hasMax ? `<span class="slotstat-max">/ ${Number(max)}</span>` : "";
-  const badge = full ? `<span class="slotstat-badge">Piena</span>` : "";
-  return `<div class="${cls}"><div class="slotstat-time">${esc(label)}</div>` +
-    `<div class="slotstat-n">${n}${maxTxt}</div>${badge}</div>`;
+  const m = Number(max);
+  const full = hasMax && n >= m;
+  const pct = hasMax ? (n === 0 ? 0 : Math.max(6, Math.min(100, (n / m) * 100))) : 0;
+  const bar = hasMax
+    ? `<div class="thermo"><div class="thermo-fill${full ? " full" : ""}" style="width:${pct}%"></div></div>`
+    : "";
+  const legend = hasMax
+    ? `<span class="thermo-legend${full ? " full" : ""}"><b>${n}</b> in lavorazione / ${m}${full ? " · piena" : ""}</span>`
+    : `<span class="thermo-legend"><b>${n}</b> in lavorazione · nessun limite</span>`;
+  return `<div class="slotstat${full ? " full" : ""}"><div class="slotstat-time">${esc(label)}</div>${bar}${legend}</div>`;
 }
 
 function renderSlotStats() {
@@ -182,6 +187,7 @@ function renderOrders() {
   renderSlotStats();
   renderLab();
   renderHistory();
+  renderConsegne();
   const list = $("orders-list");
   let shown = ORDERS;
   if (ACTIVE_FILTER !== "all") shown = shown.filter((o) => o.status === ACTIVE_FILTER);
@@ -192,6 +198,7 @@ function renderOrders() {
   }
   list.innerHTML = "";
   shown.forEach((o) => list.appendChild(orderCard(o)));
+  hydrateRoutes();
 }
 
 // ========== LABORATORIO (solo ordini accettati, kg per gusto per giorno) ==========
@@ -309,6 +316,48 @@ function renderHistory() {
     `<p class="eyebrow muted">Ordini consegnati</p><div style="height:10px"></div><div class="panel">${orders}</div>`;
 }
 
+// ---------- distanza/tempo auto dalla gelateria (OSRM, no key) ----------
+// ROUTE_CACHE["lat,lng"] = Promise<{km,min}|{err}>
+function getRoute(lat, lng) {
+  const key = lat + "," + lng;
+  if (!ROUTE_CACHE[key]) {
+    ROUTE_CACHE[key] = (async () => {
+      try {
+        const u = `https://router.project-osrm.org/route/v1/driving/${GELATERIA.lng},${GELATERIA.lat};${lng},${lat}?overview=false`;
+        const d = await (await fetch(u)).json();
+        return (d.code === "Ok" && d.routes && d.routes[0])
+          ? { km: d.routes[0].distance / 1000, min: d.routes[0].duration / 60 } : { err: true };
+      } catch (e) { return { err: true }; }
+    })();
+  }
+  return ROUTE_CACHE[key];
+}
+function fillRoute(el, v) {
+  el.textContent = (!v || v.err) ? "" : ` · ${v.km.toFixed(1).replace(".", ",")} km · ${Math.round(v.min)} min`;
+}
+function hydrateRoutes() {
+  document.querySelectorAll(".route-info[data-rk]").forEach((el) => {
+    const [la, lo] = el.dataset.rk.split(",").map(Number);
+    getRoute(la, lo).then((v) => fillRoute(el, v));
+  });
+}
+
+// ========== CONSEGNE (solo "in consegna", per distanza crescente) ==========
+async function renderConsegne() {
+  const wrap = $("consegne-list");
+  if (!wrap) return;
+  const withC = ORDERS.filter((o) => o.status === "in consegna" && o.delivery_lat != null);
+  const noC = ORDERS.filter((o) => o.status === "in consegna" && o.delivery_lat == null);
+  if (!withC.length && !noC.length) { wrap.innerHTML = '<p class="hint">Nessun ordine in consegna al momento.</p>'; return; }
+  const routes = await Promise.all(withC.map((o) => getRoute(o.delivery_lat, o.delivery_lng)));
+  const arr = withC.map((o, i) => ({ o, km: (routes[i] && !routes[i].err) ? routes[i].km : Infinity }));
+  arr.sort((a, b) => a.km - b.km);
+  wrap.innerHTML = "";
+  arr.forEach(({ o }) => wrap.appendChild(orderCard(o)));
+  noC.forEach((o) => wrap.appendChild(orderCard(o)));
+  hydrateRoutes();
+}
+
 function orderCard(o) {
   const meta = STATUS_META[o.status] || { label: o.status, slug: "ricevuto" };
   const el = document.createElement("div");
@@ -325,7 +374,7 @@ function orderCard(o) {
     `<div class="top"><div class="who">${esc(o.customer_name)}</div>` +
     `<span class="status" data-s="${esc(o.status)}"><span class="led"></span>${esc(meta.label)}</span></div>` +
     `<div class="meta"><span class="k">${esc(when)}</span> · ${esc(o.customer_phone)}${o.email ? " · " + esc(o.email) : ""}<br>` +
-    `${esc(o.address)}<br>` +
+    `${esc(o.address)}${o.delivery_lat != null ? ` · <a class="maplink" href="https://www.google.com/maps?q=${o.delivery_lat},${o.delivery_lng}" target="_blank" rel="noopener">Mappa</a><span class="route-info" data-rk="${o.delivery_lat},${o.delivery_lng}"></span>` : ""}<br>` +
     `<span class="k">Consegna</span> ${esc(cons)} · ${esc(o.slot_label || "-")}` +
     `${o.notes ? `<br><span class="k">Note</span> ${esc(o.notes)}` : ""}</div>` +
     `<div class="items">${items}</div>` +

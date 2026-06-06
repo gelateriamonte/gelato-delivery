@@ -61,6 +61,8 @@ create table if not exists orders (
   customer_phone text not null,
   email          text,
   address        text not null,
+  delivery_lat   double precision,            -- posizione precisa del pin (mappa)
+  delivery_lng   double precision,
   delivery_date  date,                        -- giorno di consegna scelto
   slot_label     text,                        -- snapshot fascia scelta
   items          jsonb not null default '[]'::jsonb,  -- [{format, gusti[], qty, prezzo_unit}]

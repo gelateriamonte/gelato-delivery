@@ -264,6 +264,22 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .confirm p{ font-size:14px; color:var(--muted); margin:0 auto 26px; max-width:320px; }
 .confirm .summary{ text-align:left; }
 
+/* ---------- mappa consegna + geofence (app cliente) ---------- */
+.addr-row{ display:flex; gap:8px; align-items:center; }
+.addr-row .grow{ flex:1; min-width:0; }
+.addr-row .btn{ flex:none; }
+.map-note{ font-size:12px; color:var(--muted); line-height:1.45; margin:9px 1px; }
+#map{ position:relative; z-index:0; height:230px; border-radius:var(--r-md); border:1px solid var(--line-2); overflow:hidden; }
+.leaflet-container{ font-family:var(--sans); background:var(--paper-2); }
+.zone-status{ font-size:12.5px; font-weight:600; margin:9px 1px 0; min-height:1.1em; }
+.zone-status.ok{ color:var(--green-ink); }
+.zone-status.ko{ color:var(--rosso); }
+.maplink{ color:var(--accent-ink); font-weight:600; text-decoration:underline; white-space:nowrap; }
+.route-info{ color:var(--ink-2); font-weight:600; white-space:nowrap; }
+.locate-btn{ color:var(--ink); cursor:pointer; }
+.locate-btn:hover{ color:var(--accent-ink); background:var(--paper-2); }
+.locate-btn svg{ display:block; margin:6px; }
+
 /* ============================================================
    BACK OFFICE
    ============================================================ */
@@ -371,17 +387,17 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .slotstats-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:10px; }
 .slotstats-tot{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
 .slotstats{ display:flex; flex-wrap:wrap; gap:10px; }
-.slotstat{ position:relative; flex:0 0 auto; min-width:112px; background:var(--paper); border:1px solid var(--line);
+.slotstat{ position:relative; flex:0 0 auto; min-width:138px; background:var(--paper); border:1px solid var(--line);
   border-left:3px solid var(--line-2); border-radius:var(--r-md); box-shadow:var(--shadow-card); padding:11px 14px; }
 .slotstat-time{ font-size:12px; font-weight:600; color:var(--ink-2); font-variant-numeric:tabular-nums; white-space:nowrap; }
-.slotstat-n{ font-family:var(--serif); font-size:24px; font-weight:600; color:var(--ink); line-height:1.1; margin-top:3px; }
-.slotstat-max{ font-family:var(--serif); font-size:16px; color:var(--muted); font-weight:500; margin-left:1px; }
-.slotstat.near{ border-left-color:var(--ochre); }
-.slotstat.full{ border-left-color:var(--rosso); background:var(--rosso-soft); }
-.slotstat.full .slotstat-n{ color:var(--rosso); }
-.slotstat-badge{ position:absolute; top:9px; right:11px; font-size:9px; font-weight:700; letter-spacing:.1em;
-  text-transform:uppercase; color:var(--rosso); background:var(--paper); border:1px solid color-mix(in oklch,var(--rosso) 30%,transparent);
-  padding:2px 7px; border-radius:999px; }
+.slotstat.full{ border-left-color:var(--rosso); }
+/* termometro: barra = max consegne, riempimento verde = ordini in lavorazione */
+.thermo{ height:8px; border-radius:999px; background:var(--line); overflow:hidden; margin:9px 0 7px; }
+.thermo-fill{ height:100%; background:var(--pistachio); border-radius:999px; transition:width .25s; }
+.thermo-fill.full{ background:var(--rosso); }
+.thermo-legend{ font-size:11px; color:var(--muted); }
+.thermo-legend b{ font-family:var(--serif); font-size:16px; font-weight:600; color:var(--green-ink); margin-right:1px; }
+.thermo-legend.full b{ color:var(--rosso); }
 
 /* ---------- gestione (gusti / formati / fasce) ---------- */
 .mrow{
