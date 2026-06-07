@@ -79,9 +79,12 @@
         <div class="field"><label for="email">Email</label>
           <input id="email" type="email" placeholder="mario.rossi@email.it"></div>
         <div class="field" id="address-field"><label for="address">Indirizzo di consegna</label>
-          <div class="addr-row">
-            <input id="address" type="text" placeholder="Via Cala d'Ambra 1, San Teodoro" class="grow">
-            <button type="button" class="btn sm" id="addr-find">Trova</button>
+          <div class="addr-wrap">
+            <div class="addr-row">
+              <input id="address" type="text" placeholder="Via Cala d'Ambra 1, San Teodoro" class="grow" autocomplete="off">
+              <button type="button" class="btn sm" id="addr-find">Trova</button>
+            </div>
+            <div id="addr-suggest" class="addr-suggest" role="listbox"></div>
           </div>
           <p class="map-note">Consegniamo solo nella <b>zona evidenziata</b> sulla mappa. Premi <b>Trova</b> o trascina il pin sul punto esatto.</p>
           <div id="map"></div>

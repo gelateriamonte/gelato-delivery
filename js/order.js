@@ -191,6 +191,51 @@ async function reverseFill(lat, lng) {
   } catch (e) { /* reverse opzionale */ }
 }
 
+// ---------- autocomplete indirizzo (Photon/komoot, gratis, no key) ----------
+let _addrSeq = 0, _addrTimer = null;
+function closeAddrSuggest() { const b = $("addr-suggest"); if (b) { b.innerHTML = ""; b.style.display = "none"; } }
+function onAddrInput() {
+  const q = $("address").value.trim();
+  clearTimeout(_addrTimer);
+  if (q.length < 3) { closeAddrSuggest(); return; }
+  _addrTimer = setTimeout(() => fetchAddrSuggest(q), 300);   // debounce
+}
+async function fetchAddrSuggest(q) {
+  const seq = ++_addrSeq;
+  try {
+    const u = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${GELATERIA.lat}&lon=${GELATERIA.lng}&limit=5`;
+    const d = await (await fetch(u)).json();
+    if (seq !== _addrSeq) return;   // risposta superata da una più recente
+    renderAddrSuggest(d.features || []);
+  } catch (e) { /* suggerimenti opzionali: restano "Trova" + pin */ }
+}
+function addrLabel(p) {
+  const primary = [p.street || p.name, p.housenumber].filter(Boolean).join(" ") || p.name || "";
+  const secondary = [p.postcode, p.city || p.town || p.village || p.county, p.state].filter(Boolean).join(" ");
+  return { primary, secondary };
+}
+function renderAddrSuggest(feats) {
+  const box = $("addr-suggest"); if (!box) return;
+  box.innerHTML = "";
+  feats.forEach((f) => {
+    const p = f.properties || {}, c = f.geometry && f.geometry.coordinates;
+    if (!c) return;
+    const { primary, secondary } = addrLabel(p);
+    if (!primary) return;
+    const item = document.createElement("div");
+    item.className = "addr-item"; item.setAttribute("role", "option");
+    item.innerHTML = `<span class="ai-1">${esc(primary)}</span>${secondary ? `<span class="ai-2">${esc(secondary)}</span>` : ""}`;
+    item.onmousedown = (e) => {   // mousedown: scatta prima del blur dell'input
+      e.preventDefault();
+      $("address").value = [primary, secondary].filter(Boolean).join(", ");
+      closeAddrSuggest();
+      setDelivery(c[1], c[0], true, false);   // Photon dà [lng,lat] → piazza pin + ricentra
+    };
+    box.appendChild(item);
+  });
+  box.style.display = box.children.length ? "block" : "none";
+}
+
 // ---------- caricamento dati ----------
 async function loadData() {
   const [settings, flavors, formats, slots] = await Promise.all([
@@ -512,8 +557,13 @@ $("m-qty-dec").onclick = () => { $("m-qty").value = Math.max(1, (parseInt($("m-q
 $("m-qty-inc").onclick = () => { $("m-qty").value = (parseInt($("m-qty").value || "1", 10) || 1) + 1; };
 $("submit").onclick = submitOrder;
 $("pay-close").onclick = closePayment;
-$("addr-find").onclick = geocodeAddress;
-$("address").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); geocodeAddress(); } });
+$("addr-find").onclick = () => { closeAddrSuggest(); geocodeAddress(); };
+$("address").addEventListener("input", onAddrInput);
+$("address").addEventListener("blur", () => setTimeout(closeAddrSuggest, 150));   // ritardo: lascia scattare il click sul suggerimento
+$("address").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); closeAddrSuggest(); geocodeAddress(); }
+  else if (e.key === "Escape") closeAddrSuggest();
+});
 $("mode-delivery").onclick = () => setMode("delivery");
 $("mode-pickup").onclick = () => setMode("pickup");
 $("pickup-time").onchange = () => updateTotal();

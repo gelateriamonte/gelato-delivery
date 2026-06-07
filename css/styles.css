@@ -636,3 +636,16 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 @media (prefers-reduced-motion:reduce){
   *{ transition:none !important; animation:none !important; }
 }
+
+/* ---- autocomplete indirizzo (Photon) ---- */
+.addr-wrap { position: relative; }
+.addr-suggest {
+  display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 1200;
+  margin-top: 4px; background: #fff; border: 1px solid #e6e0d6; border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(43, 38, 32, .14); overflow-y: auto; max-height: 280px;
+}
+.addr-item { padding: 9px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 1px; border-bottom: 1px solid #f0ece3; }
+.addr-item:last-child { border-bottom: 0; }
+.addr-item:hover, .addr-item.sel { background: #f7f2e9; }
+.addr-item .ai-1 { font-weight: 600; font-size: .92rem; color: #2b2620; }
+.addr-item .ai-2 { font-size: .78rem; color: #8a8174; }
