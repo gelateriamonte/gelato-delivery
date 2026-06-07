@@ -53,7 +53,20 @@ function waMessage(o, status) {
     .replace(/{indirizzo}/g, o.address || "")
     .replace(/{totale}/g, euro(o.total));
 }
+// ---- toggle provvisorio apertura WhatsApp web (fase test) — stato per-device in localStorage ----
+const WA_KEY = "gelato_wa_web";
+const waWebEnabled = () => localStorage.getItem(WA_KEY) !== "0";   // default ON
+function setWaWeb(on) { localStorage.setItem(WA_KEY, on ? "1" : "0"); updateWaToggleBtn(); }
+function updateWaToggleBtn() {
+  const b = $("wa-toggle"); if (!b) return;
+  const on = waWebEnabled();
+  b.textContent = "WhatsApp web: " + (on ? "ON" : "OFF");
+  b.style.background = on ? "#25D366" : "#b00020";
+  b.style.color = "#fff"; b.style.borderColor = "transparent";
+}
+
 function waOpen(o, status) {
+  if (!waWebEnabled()) { toast("WhatsApp web disattivato (test)."); return; }
   if (!o.customer_phone) { toast("Numero cliente mancante."); return; }
   window.open("https://wa.me/" + normPhone(o.customer_phone) + "?text=" + encodeURIComponent(waMessage(o, status)), "_blank");
 }
@@ -122,6 +135,9 @@ document.querySelectorAll(".tab").forEach((t) => {
 // refresh manuale ordini
 $("orders-refresh").onclick = async () => { await loadOrders(); toast("Ordini aggiornati."); };
 $("orders-togglex").onclick = () => { HIDE_CANCELLED = !HIDE_CANCELLED; renderOrders(); };
+// toggle provvisorio WhatsApp web (test)
+$("wa-toggle").onclick = () => setWaWeb(!waWebEnabled());
+updateWaToggleBtn();
 
 // ---------- INIT ----------
 async function initApp() {
