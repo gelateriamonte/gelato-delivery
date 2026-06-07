@@ -540,13 +540,14 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .scope label:has(input:checked){ color:var(--ink); font-weight:600; }
 
 /* ---------- Laboratorio ---------- */
-.labgrid{ display:grid; grid-template-columns:1fr; gap:16px; }
-.labcard{ background:var(--paper); border:1px solid var(--line); border-radius:var(--r-md); box-shadow:var(--shadow-card); padding:16px 18px; }
-/* corpo card-giorno: sinistra kg/aggregato · destra vaschette per cliente */
-.labcols{ display:grid; grid-template-columns:1fr 1fr; gap:14px 28px; align-items:start; }
-.labcol{ min-width:0; }
-/* vaschette per cliente (colonna destra) */
-.labclients .labsub{ font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:#8a8174; font-weight:700; margin-bottom:6px; }
+.labgrid{ display:grid; grid-template-columns:1fr; gap:22px; }
+/* giorno = contenitore leggero (header) + 3 blocchi distinti (sx · dx · sotto) */
+.labcard{ background:transparent; border:0; box-shadow:none; padding:0; }
+.labbody{ display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; margin-top:6px; }
+.labblock{ background:var(--paper); border:1px solid var(--line); border-radius:var(--r-md); box-shadow:var(--shadow-card); padding:14px 16px; min-width:0; }
+.labblock.full{ grid-column:1 / -1; }
+.labblock .labsub{ margin-bottom:8px; }
+/* vaschette per cliente (blocco destro) */
 .labclient{ padding:8px 0; border-bottom:1px solid var(--line); }
 .labclient:last-child{ border-bottom:0; }
 .labclient-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:2px; }
@@ -645,7 +646,7 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 /* ============================================================
    RESPONSIVE
    ============================================================ */
-@media (max-width:980px){ .labcols{ grid-template-columns:1fr; } }   /* card-giorno full-width: stack sinistra/destra */
+@media (max-width:980px){ .labbody{ grid-template-columns:1fr; } }   /* blocchi sx/dx/sotto impilati */
 @media (max-width:760px){
   .orders{ grid-template-columns:1fr; }
   .subgrid{ grid-template-columns:1fr; }
@@ -711,7 +712,6 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .tabbadge.show { display: inline-block; }
 
 /* ---- Laboratorio: dettaglio vaschette ---- */
-.labvasche { margin-top: 12px; border-top: 1px solid #ece5d8; padding-top: 10px; }
 .labsub { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: #8a8174; font-weight: 700; margin-bottom: 6px; }
 .vline { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; }
 .vline .vq { font-weight: 700; color: #a8552f; min-width: 26px; }

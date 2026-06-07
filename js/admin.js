@@ -349,35 +349,42 @@ function renderLab() {
       : '<p class="hint">Solo coppette: nessun kg da preparare.</p>';
     const vasche = Object.values(info.vasche).sort((a, b) => b.qty - a.qty);
     const totVasche = vasche.reduce((s, v) => s + v.qty, 0);
-    const vascheHtml = vasche.length
-      ? `<div class="labvasche"><div class="labsub">Vaschette da preparare · ${totVasche}</div>` +
-        vasche.map((v) => `<div class="vline"><span class="vq">${v.qty}×</span><span class="vn">${esc(v.format)}${v.gusti.length ? `<small>${esc(v.gusti.join(", "))}</small>` : ""}</span></div>`).join("") +
-        `</div>`
-      : "";
-    // colonna destra: vaschette per cliente (nominativo + tipo ordine + vaschetta/gusti)
+    // BLOCCO SOTTO: vaschette da preparare (aggregato)
+    const aggHtml = vasche.length
+      ? vasche.map((v) => `<div class="vline"><span class="vq">${v.qty}×</span><span class="vn">${esc(v.format)}${v.gusti.length ? `<small>${esc(v.gusti.join(", "))}</small>` : ""}</span></div>`).join("")
+      : '<p class="hint" style="margin:0">Nessuna vaschetta da preparare.</p>';
+    // BLOCCO DX: vaschette per cliente (nominativo + tipo ordine + vaschetta/gusti)
     const clients = info.clients || [];
-    const clientsHtml = `<div class="labclients"><div class="labsub">Vaschette per cliente${clients.length ? " · " + clients.length : ""}</div>` +
-      (clients.length
-        ? clients.map((c) =>
-            `<div class="labclient">` +
-              `<div class="labclient-head"><span class="lc-name">${esc(c.name)}</span>${fulBadge(c.fulfillment)}</div>` +
-              c.vasche.map((v) => `<div class="vline"><span class="vq">${v.qty}×</span><span class="vn">${esc(v.format)}${v.gusti.length ? `<small>${esc(v.gusti.join(", "))}</small>` : ""}</span></div>`).join("") +
-            `</div>`
-          ).join("")
-        : '<p class="hint" style="margin:0">Nessuna vaschetta in questo giorno.</p>') +
-      `</div>`;
+    const clientsHtml = clients.length
+      ? clients.map((c) =>
+          `<div class="labclient">` +
+            `<div class="labclient-head"><span class="lc-name">${esc(c.name)}</span>${fulBadge(c.fulfillment)}</div>` +
+            c.vasche.map((v) => `<div class="vline"><span class="vq">${v.qty}×</span><span class="vn">${esc(v.format)}${v.gusti.length ? `<small>${esc(v.gusti.join(", "))}</small>` : ""}</span></div>`).join("") +
+          `</div>`
+        ).join("")
+      : '<p class="hint" style="margin:0">Nessuna vaschetta in questo giorno.</p>';
     const card = document.createElement("div");
     card.className = "labcard";
     card.innerHTML =
       `<div class="labhead"><span class="labday">${esc(dayName(dt, i))} ${dt.getDate()}/${dt.getMonth() + 1}</span>` +
       `<span class="count">${info.count} ordin${info.count === 1 ? "e" : "i"}</span></div>` +
-      `<div class="labcols">` +
-        `<div class="labcol">` +
+      `<div class="labbody">` +
+        // SX: chili per gusto + totale
+        `<div class="labblock">` +
+          `<div class="labsub">Chili per gusto</div>` +
           `<div class="kglist">${rows}</div>` +
           (flavs.length ? `<div class="kgtot"><span>Totale gelato</span><b>${kg(totKg)}</b></div>` : "") +
-          vascheHtml +
         `</div>` +
-        `<div class="labcol">${clientsHtml}</div>` +
+        // DX: vaschette per cliente
+        `<div class="labblock">` +
+          `<div class="labsub">Vaschette per cliente${clients.length ? " · " + clients.length : ""}</div>` +
+          clientsHtml +
+        `</div>` +
+        // SOTTO: vaschette da preparare (aggregato), a tutta larghezza
+        `<div class="labblock full">` +
+          `<div class="labsub">Vaschette da preparare${vasche.length ? " · " + totVasche : ""}</div>` +
+          aggHtml +
+        `</div>` +
       `</div>`;
     wrap.appendChild(card);
   });
