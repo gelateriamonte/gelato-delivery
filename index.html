@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>La Gelateria — Montepetrosu, San Teodoro</title>
-  <meta name="description" content="Gelateria artigianale a Montepetrosu, San Teodoro. Mantecato ogni giorno. Ordina online: consegna a domicilio o take away.">
+  <title>Gelateria BM&amp;V Monte Petrosu — San Teodoro</title>
+  <meta name="description" content="Gelateria BM&amp;V, Monte Petrosu (San Teodoro). Gelato artigianale mantecato ogni giorno. Ordina online: consegna a domicilio o take away.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -32,16 +32,11 @@
     .page{ max-width:480px; margin:0 auto; background:var(--cream); min-height:100dvh;
       position:relative; display:flex; flex-direction:column; box-shadow:var(--shadow-screen); }
 
-    /* header flottante sulla hero */
-    .top{ position:absolute; top:0; left:0; right:0; z-index:5;
-      display:flex; align-items:center; gap:11px; padding:calc(16px + env(safe-area-inset-top)) 20px 16px; }
-    .mark{ width:40px; height:40px; border-radius:11px; display:grid; place-items:center; flex:none;
-      background:rgba(253,251,247,.86); backdrop-filter:blur(6px); color:var(--accent);
-      border:1px solid rgba(168,85,47,.35); box-shadow:0 4px 14px -6px rgba(60,40,30,.5); }
-    .mark svg{ width:24px; height:24px; }
-    .brand{ display:flex; flex-direction:column; line-height:1.1; }
-    .brand b{ font-family:var(--serif); font-weight:600; color:var(--cream); font-size:21px; text-shadow:0 1px 8px rgba(40,28,20,.45); }
-    .brand span{ font-size:11.5px; color:rgba(255,255,255,.88); letter-spacing:.02em; text-shadow:0 1px 6px rgba(40,28,20,.5); }
+    /* logo grande centrato sopra la foto (placca crema per leggibilità sul gradiente scuro) */
+    .hero-logo{ position:absolute; top:calc(18px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:5;
+      background:rgba(253,251,247,.94); backdrop-filter:blur(6px); border:1px solid rgba(168,85,47,.28);
+      border-radius:18px; padding:12px 18px; box-shadow:0 10px 30px -12px rgba(40,28,20,.55); }
+    .hero-logo img{ display:block; width:128px; height:auto; }
 
     /* hero */
     .hero{ position:relative; }
@@ -114,26 +109,19 @@
 <body>
   <div class="page">
 
-    <header class="top">
-      <div class="mark"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true">
-        <circle cx="19" cy="15" r="6.1" stroke="currentColor" stroke-width="1.6"/>
-        <path d="M12.6 19 H25.4 L19 31.6 Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-      </svg></div>
-      <div class="brand"><b>La Gelateria</b><span>Montepetrosu · San Teodoro</span></div>
-    </header>
-
     <section class="hero">
       <div class="ph-hero" role="img" aria-label="Il gelato in vetrina"></div>
       <div class="scrim"></div>
+      <div class="hero-logo"><img src="img/logo-full.png" alt="Gelateria BM&amp;V Monte Petrosu"></div>
       <div class="cap">
-        <p class="eyebrow">Gelateria artigianale</p>
+        <p class="eyebrow">Monte Petrosu · San Teodoro</p>
         <h1>Il gelato come<br>si faceva <em>una volta</em>.</h1>
       </div>
     </section>
 
     <section class="sec">
       <p class="eyebrow">La nostra storia</p>
-      <p class="lede">Mantechiamo ogni giorno, con <em>latte fresco</em> e frutta di stagione, a due passi dal mare di Montepetrosu.</p>
+      <p class="lede">Mantechiamo ogni giorno, con <em>latte fresco</em> e frutta di stagione, a due passi dal mare di Monte Petrosu.</p>
       <p class="body-copy">Niente coloranti, niente fretta. Solo il gelato che ami — in gelateria o consegnato a casa nelle ore più calde, a San Teodoro e dintorni.</p>
     </section>
 
@@ -169,7 +157,7 @@
         <a class="infocard" href="https://maps.app.goo.gl/zMh9ozcPzURJgxg6A" target="_blank" rel="noopener">
           <svg class="ico" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" stroke="currentColor" stroke-width="1.6"/></svg>
           <div class="ilbl">Dove siamo</div>
-          <div class="ival">Montepetrosu</div>
+          <div class="ival">Monte Petrosu</div>
           <div class="isub">San Teodoro (SS) · consegna in zona</div>
           <div class="imap">Apri nelle mappe →</div>
         </a>

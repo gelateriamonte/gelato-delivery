@@ -110,12 +110,14 @@ h3.s-title{
 .admin .bar-in{ max-width:1040px; padding:16px 26px; }
 
 .mark{
-  width:38px; height:38px; flex:none; border-radius:50%;
-  border:1.5px solid var(--accent-line); background:var(--accent-soft);
+  width:38px; height:38px; flex:none; border-radius:50%; overflow:hidden;
+  border:1.5px solid var(--accent-line); background:var(--cream);
   display:grid; place-items:center; color:var(--accent);
 }
 .mark svg{ width:24px; height:24px; }
-.adminbar .mark{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.22); color:var(--cream); }
+.mark img{ width:30px; height:30px; object-fit:contain; display:block; }
+/* logo marrone leggibile anche sulla barra admin scura: placca crema */
+.adminbar .mark{ background:var(--cream); border-color:var(--accent-line); }
 
 .brand{ display:flex; flex-direction:column; line-height:1; }
 .brand b{ font-family:var(--serif); font-weight:600; font-size:23px; letter-spacing:.01em; color:var(--ink); white-space:nowrap; }

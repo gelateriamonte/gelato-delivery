@@ -5,3 +5,7 @@ node_modules/
 
 # Local Netlify folder
 .netlify
+
+# Materiale di design (non pubblicato): loghi sorgente + zip handoff
+Loghi/
+*.zip
