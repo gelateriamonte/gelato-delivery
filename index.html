@@ -90,6 +90,23 @@
     a.infocard{ display:block; text-decoration:none; color:inherit; transition:border-color .15s; }
     a.infocard:hover{ border-color:var(--accent-line); }
     .infocard .imap{ font-size:11px; font-weight:600; letter-spacing:.04em; color:var(--accent-ink); margin-top:9px; }
+
+    /* contatto WhatsApp (sotto Orari/Dove siamo) */
+    .wa-link{ display:flex; align-items:center; gap:13px; margin-top:12px; text-decoration:none;
+      background:var(--paper); border:1px solid var(--line); border-radius:var(--r-md); box-shadow:var(--shadow-card);
+      padding:13px 16px; transition:border-color .15s; }
+    .wa-link:hover{ border-color:#1ebe5d; }
+    .wa-ico{ width:38px; height:38px; flex:none; border-radius:10px; display:grid; place-items:center; background:#25d366; color:#fff; }
+    .wa-ico svg{ width:23px; height:23px; }
+    .wa-txt{ display:flex; flex-direction:column; line-height:1.15; }
+    .wa-txt b{ font-family:var(--serif); font-size:18px; font-weight:600; color:var(--ink); }
+    .wa-txt small{ font-size:12px; color:var(--muted); }
+
+    /* data + temperatura nella sezione "i gusti di oggi" */
+    .daily-meta{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:4px; }
+    .dm-date{ font-size:13px; font-weight:600; letter-spacing:.02em; color:var(--accent-ink); }
+    .dm-temp{ font-family:var(--serif); font-size:20px; font-weight:600; color:var(--ink); white-space:nowrap; }
+    .dm-temp:empty{ display:none; }
     .divider{ height:1px; background:var(--line-2); margin:8px 22px; }
 
     /* CTA sticky in basso */
@@ -142,7 +159,11 @@
     <div class="divider"></div>
 
     <section class="sec" id="flavors-sec" hidden>
-      <div class="sec-head"><h2>I gusti del giorno</h2></div>
+      <div class="daily-meta">
+        <span class="dm-date" id="dm-date"></span>
+        <span class="dm-temp" id="dm-temp"></span>
+      </div>
+      <div class="sec-head"><h2>I gusti di oggi</h2></div>
       <div class="flavors" id="home-flavors"></div>
     </section>
 
@@ -162,6 +183,11 @@
           <div class="imap">Apri nelle mappe →</div>
         </a>
       </div>
+      <!-- numero DUMMY: sostituire con il WhatsApp reale (formato internazionale, senza +) -->
+      <a class="wa-link" href="https://wa.me/393331234567" target="_blank" rel="noopener">
+        <span class="wa-ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.157 5.335 5.495 0 12.05 0a11.82 11.82 0 0 1 8.413 3.488 11.82 11.82 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.728-.957zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg></span>
+        <span class="wa-txt"><b>Scrivici</b><small>su WhatsApp</small></span>
+      </a>
     </section>
 
     <div style="height:10px"></div>
@@ -203,6 +229,18 @@
         }).join("");
         sec.hidden = false;
       }
+      // data di oggi (it-IT, capitalizzata) + temperatura attuale (Open-Meteo, San Teodoro)
+      (function () {
+        var de = document.getElementById("dm-date");
+        if (de) {
+          var s = new Date().toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+          de.textContent = s.replace(/(^|\s)([a-zàèéìòù])/g, function (m, p, c) { return p + c.toUpperCase(); });
+        }
+        fetch("https://api.open-meteo.com/v1/forecast?latitude=40.8411&longitude=9.6539&current=temperature_2m")
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (j) { var t = j && j.current && j.current.temperature_2m; var te = document.getElementById("dm-temp"); if (te && t != null) te.textContent = Math.round(t) + "°"; })
+          .catch(function () {});
+      })();
       var cfg = window.SUPABASE_CONFIG;
       if (!cfg || !cfg.url) return;
       fetch(cfg.url + "/rest/v1/flavors?select=name,description&daily=eq.true&available=eq.true&order=sort_order", {
