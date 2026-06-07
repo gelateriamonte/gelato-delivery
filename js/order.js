@@ -1,4 +1,5 @@
 // ============ Mobile app — composizione e invio ordine ============
+const t = (k, v) => window.I18N.t(k, v);
 const $ = (id) => document.getElementById(id);
 const euro = (n) => "€ " + Number(n || 0).toFixed(2).replace(".", ",");
 
@@ -60,14 +61,14 @@ function renderPickupTimes() {
   const sel = $("pickup-time"); if (!sel) return;
   sel.innerHTML = "";
   const oh = openingFor(SELECTED_DAY);
-  if (!oh || oh.closed) { sel.innerHTML = '<option value="">Chiuso in questo giorno</option>'; updateTotal(); return; }
+  if (!oh || oh.closed) { sel.innerHTML = `<option value="">${t("order.slot.closedDay")}</option>`; updateTotal(); return; }
   let start = hmToMin(oh.open), end = hmToMin(oh.close);
   if (SELECTED_DAY === ymd(DAYS[0])) {   // oggi: da ora + 30 min
     const n = new Date(); start = Math.max(start, Math.ceil((n.getHours() * 60 + n.getMinutes() + 30) / 30) * 30);
   }
   const opts = [];
   for (let m = start; m <= end; m += 30) opts.push(String(Math.floor(m / 60) % 24).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"));
-  if (!opts.length) { sel.innerHTML = '<option value="">Nessun orario disponibile oggi</option>'; updateTotal(); return; }
+  if (!opts.length) { sel.innerHTML = `<option value="">${t("order.slot.noPickupTimesToday")}</option>`; updateTotal(); return; }
   opts.forEach((t) => sel.appendChild(new Option(t, t)));
   updateTotal();
 }
@@ -75,7 +76,7 @@ function renderOpeningHours() {
   const el = $("opening-hours"); if (!el) return;
   const oh = openingHours();
   const days = [["lun", "Lun"], ["mar", "Mar"], ["mer", "Mer"], ["gio", "Gio"], ["ven", "Ven"], ["sab", "Sab"], ["dom", "Dom"]];
-  el.innerHTML = days.map(([k, lbl]) => { const h = oh[k] || {}; return `<div class="oh-row"><span>${lbl}</span><span>${h.closed ? "chiuso" : esc((h.open || "-") + "–" + (h.close || "-"))}</span></div>`; }).join("");
+  el.innerHTML = days.map(([k, lbl]) => { const h = oh[k] || {}; return `<div class="oh-row"><span>${lbl}</span><span>${h.closed ? t("common.closed") : esc((h.open || "-") + "–" + (h.close || "-"))}</span></div>`; }).join("");
 }
 function setMode(mode) {
   MODE = mode;
@@ -85,7 +86,7 @@ function setMode(mode) {
   $("slot-field").style.display = del ? "" : "none";
   $("pickup-field").style.display = del ? "none" : "";
   const af = $("address-field"); if (af) af.style.display = del ? "" : "none";
-  const dl = $("day-label"); if (dl) dl.textContent = del ? "Giorno di consegna" : "Giorno di ritiro";
+  const dl = $("day-label"); if (dl) dl.textContent = del ? t("order.form.deliveryDay") : t("order.form.pickupDay");
   if (del) renderSlotSelect(); else { renderPickupTimes(); renderOpeningHours(); }
   renderCart();
 }
@@ -130,13 +131,13 @@ function initMap() {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
   delIcon = pinIcon("#a8552f");   // terracotta = punto consegna
   L.marker([GELATERIA.lat, GELATERIA.lng], { icon: pinIcon("#2b2620") }).addTo(map)
-    .bindPopup("<b>" + esc(GELATERIA.name) + "</b><br>Partenza consegne");
+    .bindPopup("<b>" + esc(GELATERIA.name) + "</b><br>" + t("order.map.departurePoint"));
   map.fitBounds(ST_BBOX, { padding: [12, 12] });
   map.on("click", (e) => setDelivery(e.latlng.lat, e.latlng.lng, false, true));
   // pulsante "crocino" → posizione GPS dell'utente
   const Locate = L.Control.extend({ options: { position: "topleft" }, onAdd() {
     const a = L.DomUtil.create("a", "leaflet-bar locate-btn");
-    a.href = "#"; a.title = "La mia posizione"; a.setAttribute("role", "button"); a.setAttribute("aria-label", "Trova la mia posizione");
+    a.href = "#"; a.title = t("order.map.myLocationTitle"); a.setAttribute("role", "button"); a.setAttribute("aria-label", t("order.map.findMyLocation"));
     a.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><line x1="12" y1="1.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22.5" y2="12"/></svg>';
     L.DomEvent.on(a, "click", L.DomEvent.stop).on(a, "click", locateMe);
     return a;
@@ -145,7 +146,7 @@ function initMap() {
   // pulsante reset → torna alla vista iniziale (tutta la zona coperta)
   const Reset = L.Control.extend({ options: { position: "topleft" }, onAdd() {
     const a = L.DomUtil.create("a", "leaflet-bar locate-btn reset-btn");
-    a.href = "#"; a.title = "Reset vista"; a.setAttribute("role", "button"); a.setAttribute("aria-label", "Torna alla vista iniziale (tutta la zona)");
+    a.href = "#"; a.title = t("order.map.resetViewTitle"); a.setAttribute("role", "button"); a.setAttribute("aria-label", t("order.map.resetViewAria"));
     a.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 8 3 3 8 3"/><polyline points="21 8 21 3 16 3"/><polyline points="3 16 3 21 8 21"/><polyline points="21 16 21 21 16 21"/></svg>';
     L.DomEvent.on(a, "click", L.DomEvent.stop).on(a, "click", resetView);
     return a;
@@ -155,11 +156,11 @@ function initMap() {
 }
 function resetView() { if (map) map.fitBounds(ST_BBOX, { padding: [12, 12] }); }
 function locateMe() {
-  if (!navigator.geolocation) { toast("Geolocalizzazione non disponibile sul dispositivo."); return; }
-  toast("Cerco la tua posizione…");
+  if (!navigator.geolocation) { toast(t("order.toast.geolocationUnavailable")); return; }
+  toast(t("order.toast.locating"));
   navigator.geolocation.getCurrentPosition(
     (pos) => setDelivery(pos.coords.latitude, pos.coords.longitude, true, true),
-    (err) => toast(err && err.code === 1 ? "Permesso posizione negato." : "Posizione non disponibile."),
+    (err) => toast(err && err.code === 1 ? t("order.toast.locationDenied") : t("order.toast.locationUnavailable")),
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
 }
@@ -178,22 +179,22 @@ function checkZone() {
   const el = $("zone-status");
   if (el) {
     if (DELIV_LAT == null) { el.textContent = ""; el.className = "zone-status"; }
-    else if (IN_ZONE) { el.textContent = "✓ Punto di consegna dentro la zona"; el.className = "zone-status ok"; }
-    else { el.textContent = "✕ Fuori dalla zona di consegna"; el.className = "zone-status ko"; }
+    else if (IN_ZONE) { el.textContent = t("order.zone.inZone"); el.className = "zone-status ok"; }
+    else { el.textContent = t("order.zone.outOfZone"); el.className = "zone-status ko"; }
   }
   updateTotal();
 }
 async function geocodeAddress() {
   const q = $("address").value.trim();
-  if (!q) { toast("Scrivi l'indirizzo, poi premi Trova."); return; }
+  if (!q) { toast(t("order.toast.enterAddressThenFind")); return; }
   const query = q + (/teodoro/i.test(q) ? "" : ", San Teodoro") + ", Sardegna, Italia";
   const vb = "9.5776,40.8649,9.7287,40.6967";
   try {
     const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=it&viewbox=${vb}&q=${encodeURIComponent(query)}`);
     const d = await r.json();
-    if (!d.length) { toast("Indirizzo non trovato. Trascina il pin sulla mappa."); return; }
+    if (!d.length) { toast(t("order.toast.addressNotFound")); return; }
     setDelivery(+d[0].lat, +d[0].lon, true, false);
-  } catch (e) { console.error(e); toast("Ricerca mappa non disponibile. Trascina il pin."); }
+  } catch (e) { console.error(e); toast(t("order.toast.mapSearchUnavailable")); }
 }
 async function reverseFill(lat, lng) {
   try {
@@ -257,9 +258,9 @@ async function loadData() {
     sb.from("time_slots").select("*").order("sort_order"),
   ]);
   if (settings.error || flavors.error || formats.error || slots.error) {
-    toast("Errore nel caricamento. Riprova tra poco.");
+    toast(t("order.toast.loadError"));
     console.error(settings.error || flavors.error || formats.error || slots.error);
-    const fw = $("formats"); if (fw) fw.innerHTML = '<p class="hint">Impossibile caricare il menù. Ricarica la pagina.</p>';
+    const fw = $("formats"); if (fw) fw.innerHTML = `<p class="hint">${t("order.error.menuLoadFailed")}</p>`;
     return;
   }
   DATA = {
@@ -277,31 +278,31 @@ async function loadData() {
 
 // ---------- prodotti (raggruppati per categoria: Vaschette / Altri prodotti) ----------
 const PRODUCT_CATS = [
-  { key: "vaschetta", label: "Vaschette" },
-  { key: "altro", label: "Altri prodotti" },
+  { key: "vaschetta", label: "product.category.tubs" },
+  { key: "altro", label: "product.category.other" },
 ];
 // category null -> vaschetta; valori inattesi -> altro (niente prodotti nascosti)
 const normCat = (f) => ((f.category || "vaschetta") === "vaschetta" ? "vaschetta" : "altro");
 function renderFormats() {
   const wrap = $("formats");
   wrap.innerHTML = "";
-  if (!DATA.formats.length) { wrap.innerHTML = '<p class="hint">Nessun prodotto disponibile al momento.</p>'; return; }
+  if (!DATA.formats.length) { wrap.innerHTML = `<p class="hint">${t("order.products.none")}</p>`; return; }
   PRODUCT_CATS.forEach((c) => {
     const rows = DATA.formats.filter((f) => normCat(f) === c.key);
     if (!rows.length) return;
     const head = document.createElement("p");
-    head.className = "fmt-group-head"; head.textContent = c.label;
+    head.className = "fmt-group-head"; head.textContent = t(c.label);
     wrap.appendChild(head);
     rows.forEach((f) => {
       const n = f.max_flavors;
       const el = document.createElement("div");
       el.className = "fmt";
-      const desc = n > 0 ? `${n} gust${n === 1 ? "o" : "i"}` : "Senza scelta gusti";
+      const desc = n > 0 ? (n === 1 ? t("product.flavorCount.singular", { n: n }) : t("product.flavorCount.plural", { n: n })) : t("product.noFlavorChoice");
       el.innerHTML =
         `<div class="meta"><div class="name">${esc(f.name)}</div>` +
         `<div class="desc">${desc}</div></div>` +
         `<div class="price">${euro(f.price)}</div>` +
-        `<button class="btn sm">${n > 0 ? "Scegli" : "Aggiungi"}</button>`;
+        `<button class="btn sm">${n > 0 ? t("product.btn.choose") : t("product.btn.add")}</button>`;
       el.querySelector("button").onclick = () => openModal(f);
       wrap.appendChild(el);
     });
@@ -314,11 +315,11 @@ function openModal(format) {
   const n = format.max_flavors;
   const flavWrap = $("m-flavors"), hint = $("m-hint");
   $("m-eyebrow").textContent =
-    (n > 0 ? `${n} gust${n === 1 ? "o" : "i"}` : "Prodotto") + ` · ${euro(format.price)}`;
+    (n > 0 ? (n === 1 ? t("product.flavorCount.singular", { n: n }) : t("product.flavorCount.plural", { n: n })) : t("order.modal.productEyebrow")) + ` · ${euro(format.price)}`;
   $("m-title").textContent = format.name;
   if (n > 0) {
     hint.style.display = "";
-    hint.textContent = `Scegli fino a ${n} gust${n === 1 ? "o" : "i"} per questo prodotto.`;
+    hint.textContent = n === 1 ? t("order.modal.flavorHint", { n: n }) : t("order.modal.flavorHintPlural", { n: n });
     flavWrap.style.display = "";
     renderModalFlavors();
   } else {
@@ -334,7 +335,7 @@ function closeModal() { $("modal").classList.remove("show"); }
 function renderModalFlavors() {
   const wrap = $("m-flavors");
   wrap.innerHTML = "";
-  if (!DATA.flavors.length) { wrap.innerHTML = '<p class="hint">Nessun gusto disponibile.</p>'; return; }
+  if (!DATA.flavors.length) { wrap.innerHTML = `<p class="hint">${t("order.modal.noFlavors")}</p>`; return; }
   DATA.flavors.forEach((g) => {
     const sel = modalChosen.includes(g.name);
     const full = modalChosen.length >= modalFormat.max_flavors;
@@ -352,7 +353,7 @@ function renderModalFlavors() {
 }
 
 function addToCart() {
-  if (modalFormat.max_flavors > 0 && modalChosen.length === 0) { toast("Scegli almeno un gusto."); return; }
+  if (modalFormat.max_flavors > 0 && modalChosen.length === 0) { toast(t("order.toast.chooseFlavor")); return; }
   const qty = Math.max(1, parseInt($("m-qty").value || "1", 10));
   CART.push({
     format_id: modalFormat.id,
@@ -365,7 +366,7 @@ function addToCart() {
   });
   closeModal();
   renderCart();
-  toast("Aggiunto al carrello.");
+  toast(t("order.toast.addedToCart"));
 }
 
 // ---------- carrello ----------
@@ -377,16 +378,16 @@ function renderCart() {
     `<div class="cart-line"><div class="q">${item.qty}×</div>` +
     `<div class="body"><div class="t">${esc(item.format)}</div>${item.gusti.length ? `<div class="g">${esc(item.gusti.join(", "))}</div>` : ""}</div>` +
     `<div class="lp">${euro(item.prezzo_unit * item.qty)}</div>` +
-    `<button class="btn icon rm" data-i="${i}" aria-label="Rimuovi">✕</button></div>`
+    `<button class="btn icon rm" data-i="${i}" aria-label="${t("order.cart.removeItem")}">✕</button></div>`
   ).join("");
   const sub = subtotal();
   const delivery = deliveryCost();
   lines.innerHTML =
     `<div class="cart">${rows}` +
     `<div class="cart-foot">` +
-    `<div class="r"><span>Subtotale</span><span>${euro(sub)}</span></div>` +
-    `<div class="r"><span>${isPickup() ? "Ritiro" : "Consegna"}</span><span>${euro(delivery)}</span></div>` +
-    `<div class="r tot"><b>Totale</b><span class="v">${euro(sub + delivery)}</span></div>` +
+    `<div class="r"><span>${t("order.cart.subtotal")}</span><span>${euro(sub)}</span></div>` +
+    `<div class="r"><span>${isPickup() ? t("common.pickup") : t("common.delivery")}</span><span>${euro(delivery)}</span></div>` +
+    `<div class="r tot"><b>${t("common.total")}</b><span class="v">${euro(sub + delivery)}</span></div>` +
     `</div></div>`;
   lines.querySelectorAll(".rm").forEach((btn) => {
     btn.onclick = () => { CART.splice(parseInt(btn.dataset.i, 10), 1); renderCart(); };
@@ -406,7 +407,7 @@ function renderCouponMsg(disc) {
   const m = $("coupon-msg"); if (!m) return;
   if (COUPON) {
     m.style.display = "block"; m.className = "coupon-msg ok";
-    m.textContent = `✓ ${COUPON.code} applicato${disc > 0 ? `: −${euro(disc)}` : ""}`;
+    m.textContent = t("order.coupon.applied", { code: COUPON.code }) + (disc > 0 ? `: −${euro(disc)}` : "");
   } else if (!$("coupon").value.trim()) {
     m.style.display = "none";   // campo vuoto: nascondi (gli errori restano finché c'è testo)
   }
@@ -428,11 +429,11 @@ async function applyCoupon() {
   const fail = (txt) => { COUPON = null; if (m) { m.style.display = "block"; m.className = "coupon-msg ko"; m.textContent = "✕ " + txt; } updateTotal(); };
   if (!code) { COUPON = null; if (m) m.style.display = "none"; updateTotal(); return; }
   const { data, error } = await sb.from("discount_codes").select("*").ilike("code", code).maybeSingle();
-  if (error) return fail("Verifica non riuscita, riprova.");
-  if (!data) return fail("Codice non valido.");
-  if (!data.active) return fail("Codice non attivo.");
-  if (data.kind === "oneoff" && (data.burned || data.used_count > 0)) return fail("Codice già utilizzato.");
-  if (data.kind !== "oneoff" && await couponUsedByCustomer(data.code)) return fail("Hai già usato questo codice: è valido una volta per cliente.");
+  if (error) return fail(t("order.coupon.checkFailed"));
+  if (!data) return fail(t("order.coupon.invalid"));
+  if (!data.active) return fail(t("order.coupon.inactive"));
+  if (data.kind === "oneoff" && (data.burned || data.used_count > 0)) return fail(t("order.coupon.alreadyUsed"));
+  if (data.kind !== "oneoff" && await couponUsedByCustomer(data.code)) return fail(t("order.coupon.onePerCustomer"));
   COUPON = data;
   updateTotal();   // mostra il successo + aggiorna il totale
 }
@@ -461,16 +462,16 @@ function updateTotal() {
   const banner = $("min-banner");
   if (CART.length && !okMin) {
     banner.style.display = "block";
-    banner.textContent = `Ordine minimo ${euro(min)}. Mancano ${euro(min - sub)}.`;
+    banner.textContent = t("order.minBanner.belowMinimum", { min: euro(min), diff: euro(min - sub) });
   } else if (CART.length && pickup && !pickupOk) {
     banner.style.display = "block";
-    banner.textContent = "Scegli un orario di ritiro disponibile.";
+    banner.textContent = t("order.minBanner.choosePickupTime");
   } else if (CART.length && !pickup && !hasSlot) {
     banner.style.display = "block";
-    banner.textContent = "Nessuna fascia disponibile per il giorno scelto. Scegli un altro giorno.";
+    banner.textContent = t("order.minBanner.noSlotForDay");
   } else if (CART.length && !pickup && !IN_ZONE) {
     banner.style.display = "block";
-    banner.textContent = "Indica sulla mappa un punto di consegna dentro la zona.";
+    banner.textContent = t("order.minBanner.pinInZone");
   } else { banner.style.display = "none"; }
   const ready = pickup ? pickupOk : (hasSlot && IN_ZONE);
   $("submit").disabled = !(CART.length && okMin && ready);
@@ -509,7 +510,7 @@ function renderSlotSelect() {
   s.innerHTML = "";
   const slots = effectiveSlots();
   if (!slots.length) {
-    s.innerHTML = '<option value="">Nessuna fascia disponibile</option>';
+    s.innerHTML = `<option value="">${t("order.slot.noneAvailable")}</option>`;
   } else {
     slots.forEach((sl) => {
       const o = document.createElement("option");
@@ -524,22 +525,22 @@ function renderSlotSelect() {
 async function submitOrder() {
   const name = $("name").value.trim();
   const phone = $("phone").value.trim();
-  if (!name || !phone) { toast("Compila nome e telefono."); return; }
+  if (!name || !phone) { toast(t("order.toast.fillNamePhone")); return; }
   const pickup = isPickup();
   let address, slotLabel, lat = null, lng = null;
   if (pickup) {
-    const t = $("pickup-time").value;
-    if (!t) { toast("Scegli un orario di ritiro disponibile."); return; }
-    address = "Ritiro in gelateria"; slotLabel = "Ritiro " + t;
+    const tval = $("pickup-time").value;
+    if (!tval) { toast(t("order.toast.choosePickupTime")); return; }
+    address = t("order.pickup.atShop"); slotLabel = "Ritiro " + tval;
   } else {
     address = $("address").value.trim();
-    if (!address) { toast("Inserisci l'indirizzo di consegna."); return; }
-    if (!(IN_ZONE && DELIV_LAT != null)) { toast("Posiziona il pin di consegna dentro la zona."); return; }
-    if (!effectiveSlots().length) { toast("Nessuna fascia disponibile per il giorno scelto."); return; }
+    if (!address) { toast(t("order.toast.enterDeliveryAddress")); return; }
+    if (!(IN_ZONE && DELIV_LAT != null)) { toast(t("order.toast.pinInZone")); return; }
+    if (!effectiveSlots().length) { toast(t("order.toast.noSlotForDay")); return; }
     // re-check capienza fascia prima dell'invio (best-effort anti-race)
     const chosen = $("slot").value;
     if (!effectiveSlots().some((s) => s.label === chosen)) {   // cutoff/anticipo superato o fascia spenta nel frattempo
-      toast("Questa fascia non è più disponibile. Scegline un'altra.");
+      toast(t("order.toast.slotNoLongerAvailable"));
       await loadDaySlots(); return;
     }
     const slotObj = DATA.slots.find((s) => s.label === chosen);
@@ -548,7 +549,7 @@ async function submitOrder() {
         .select("id", { count: "exact", head: true })
         .eq("delivery_date", SELECTED_DAY).eq("slot_label", chosen).in("status", LAVORAZIONE);
       if (!capErr && count != null && count >= Number(slotObj.max_deliveries)) {
-        toast("Questa fascia si è appena riempita. Scegli un'altra fascia.");
+        toast(t("order.toast.slotJustFilled"));
         await loadDaySlots();
         return;
       }
@@ -575,31 +576,32 @@ async function submitOrder() {
     coupon_code: COUPON ? COUPON.code : null,
     notes: $("notes").value.trim() || null,
     status: "ricevuto",
+    lang: (window.I18N ? I18N.lang() : "it"),   // locale per Stripe Checkout
   };
 
   // L'ordine NON viene inserito qui: prima si paga. La funzione ricalcola gli importi
   // lato server, crea la sessione Stripe e ritorna il client_secret. La riga in `orders`
   // nasce nel webhook, solo a pagamento riuscito.
-  $("submit").disabled = true; $("submit").textContent = "Attendi…";
+  $("submit").disabled = true; $("submit").textContent = t("order.submit.waiting");
   let data;
   try {
     const res = await fetch("/.netlify/functions/create-checkout", {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload),
     });
     data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.client_secret) { toast(data.error || "Errore nell'avvio del pagamento."); resetSubmit(); return; }
+    if (!res.ok || !data.client_secret) { toast(data.error || t("order.toast.paymentStartError")); resetSubmit(); return; }
   } catch (e) {
-    console.error(e); toast("Rete non disponibile. Riprova."); resetSubmit(); return;
+    console.error(e); toast(t("order.toast.networkUnavailable")); resetSubmit(); return;
   }
   await openPayment(data.client_secret);
   resetSubmit();
 }
-function resetSubmit() { $("submit").disabled = false; $("submit").textContent = "Vai al pagamento"; }
+function resetSubmit() { $("submit").disabled = false; $("submit").textContent = t("order.submit.goToPayment"); }
 
 // ---------- pagamento (Stripe Embedded Checkout) ----------
 let stripeObj = null, embeddedCheckout = null;
 async function openPayment(clientSecret) {
-  if (!window.Stripe || !window.STRIPE_PUBLISHABLE_KEY) { toast("Pagamenti non ancora configurati."); return; }
+  if (!window.Stripe || !window.STRIPE_PUBLISHABLE_KEY) { toast(t("order.toast.paymentsNotConfigured")); return; }
   if (!stripeObj) stripeObj = window.Stripe(window.STRIPE_PUBLISHABLE_KEY);
   if (embeddedCheckout) { try { embeddedCheckout.destroy(); } catch (e) {} embeddedCheckout = null; }
   $("pay-modal").classList.add("show");
@@ -608,7 +610,7 @@ async function openPayment(clientSecret) {
     embeddedCheckout = await stripeObj.initEmbeddedCheckout({ fetchClientSecret: async () => clientSecret });
     embeddedCheckout.mount("#checkout");
   } catch (e) {
-    console.error(e); closePayment(); toast("Impossibile aprire il pagamento.");
+    console.error(e); closePayment(); toast(t("order.toast.paymentOpenError"));
   }
 }
 function closePayment() {
@@ -622,8 +624,8 @@ function showConfirmation(o) {
   $("done").classList.remove("hidden");
   const isP = o.fulfillment === "pickup";
   $("done-text").textContent = isP
-    ? `Ti contatteremo a breve. Ritiro in gelateria ${dateLabel(o.delivery_date)}, ${String(o.slot_label || "").replace("Ritiro ", "ore ")}.`
-    : `Ti contatteremo a breve. Consegna prevista ${dateLabel(o.delivery_date)}, ${o.slot_label || "-"}.`;
+    ? t("order.confirm.pickup", { date: dateLabel(o.delivery_date), time: String(o.slot_label || "").replace("Ritiro ", "") })
+    : t("order.confirm.delivery", { date: dateLabel(o.delivery_date), slot: o.slot_label || "-" });
   const rows = o.items.map((i) =>
     `<div class="cart-line"><div class="q">${i.qty}×</div>` +
     `<div class="body"><div class="t">${esc(i.format)}</div>${(i.gusti && i.gusti.length) ? `<div class="g">${esc(i.gusti.join(", "))}</div>` : ""}</div>` +
@@ -632,8 +634,8 @@ function showConfirmation(o) {
   $("done-summary").innerHTML =
     rows +
     `<div class="cart-foot">` +
-    `<div class="r"><span>${isP ? "Ritiro" : "Consegna"}</span><span>${euro(o.delivery_cost)}</span></div>` +
-    `<div class="r tot"><b>Totale</b><span class="v">${euro(o.total)}</span></div>` +
+    `<div class="r"><span>${isP ? t("common.pickup") : t("common.delivery")}</span><span>${euro(o.delivery_cost)}</span></div>` +
+    `<div class="r tot"><b>${t("common.total")}</b><span class="v">${euro(o.total)}</span></div>` +
     `</div>`;
   window.scrollTo(0, 0);
 }
@@ -680,3 +682,14 @@ $("address").value = "Via Lu Pitrali, San Teodoro";   // default di prova (fase 
 initMap();
 loadData();
 if ($("address").value.trim()) setTimeout(geocodeAddress, 700);   // prototipo: pin iniziale
+
+// ricablaggio testi dinamici al cambio lingua (i testi statici li gestisce i18n.js)
+if (window.I18N) I18N.onLangChange(function () {
+  try {
+    renderFormats();
+    renderCart();
+    if (isPickup()) { renderPickupTimes(); renderOpeningHours(); } else { renderSlotSelect(); }
+    const dl = $("day-label"); if (dl) dl.textContent = isPickup() ? t("order.form.pickupDay") : t("order.form.deliveryDay");
+    updateTotal();
+  } catch (e) { console.error(e); }
+});

@@ -133,6 +133,7 @@ exports.handler = async (event) => {
       session = await stripe.checkout.sessions.create({
         ui_mode: "embedded_page",
         mode: "payment",
+        locale: (body.lang === "en" ? "en" : "it"),   // lingua scelta dal cliente
         line_items,
         ...(stripeDiscounts ? { discounts: stripeDiscounts } : {}),
         return_url: origin + "/grazie.html?session_id={CHECKOUT_SESSION_ID}",

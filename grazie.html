@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>La Gelateria — Grazie</title>
+  <title data-i18n="grazie.pageTitle">La Gelateria — Grazie</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -18,8 +18,8 @@
           <path d="M12.6 19 H25.4 L19 31.6 Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
         </svg>
       </div>
-      <div class="brand"><b>La Gelateria</b><span>Consegna a domicilio</span></div>
-      <div class="right">gelato<br>artigianale</div>
+      <div class="brand"><b>La Gelateria</b><span data-i18n="home.brand.tagline">Consegna a domicilio</span></div>
+      <div class="right" data-i18n-html="home.brand.artisanal">gelato<br>artigianale</div>
     </div>
   </header>
 
@@ -31,12 +31,13 @@
             <path d="M7 14.4 L11.6 19 L21 8.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
-        <p class="eyebrow">Grazie</p>
-        <h2>Pagamento ricevuto</h2>
-        <p>Ordine confermato e pagato. Ti contatteremo a breve per la consegna o il ritiro.</p>
-        <button class="btn ghost block" style="margin-top:22px" onclick="location.href='ordina.html'">Nuovo ordine</button>
+        <p class="eyebrow" data-i18n="grazie.eyebrow">Grazie</p>
+        <h2 data-i18n="grazie.heading">Pagamento ricevuto</h2>
+        <p data-i18n="grazie.body">Ordine confermato e pagato. Ti contatteremo a breve per la consegna o il ritiro.</p>
+        <button class="btn ghost block" style="margin-top:22px" onclick="location.href='ordina.html'" data-i18n="grazie.newOrder">Nuovo ordine</button>
       </div>
     </section>
   </main>
+  <script src="js/i18n.js"></script>
 </body>
 </html>

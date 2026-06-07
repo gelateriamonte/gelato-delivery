@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Gelateria BM&amp;V Monte Petrosu — San Teodoro</title>
-  <meta name="description" content="Gelateria BM&amp;V, Monte Petrosu (San Teodoro). Gelato artigianale mantecato ogni giorno. Ordina online: consegna a domicilio o take away.">
+  <title data-i18n="home.meta.title">Gelateria BM&amp;V Monte Petrosu — San Teodoro</title>
+  <meta name="description" data-i18n-attr="content:home.meta.description" content="Gelateria BM&amp;V, Monte Petrosu (San Teodoro). Gelato artigianale mantecato ogni giorno. Ordina online: consegna a domicilio o take away.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -37,6 +37,14 @@
       background:rgba(253,251,247,.94); backdrop-filter:blur(6px); border:1px solid rgba(168,85,47,.28);
       border-radius:18px; padding:12px 18px; box-shadow:0 10px 30px -12px rgba(40,28,20,.55); }
     .hero-logo img{ display:block; width:128px; height:auto; }
+
+    /* switcher lingua IT/EN (sopra la hero, in alto a destra) */
+    .lang-switch{ position:absolute; top:calc(14px + env(safe-area-inset-top)); right:16px; z-index:6;
+      display:flex; gap:2px; background:rgba(253,251,247,.9); backdrop-filter:blur(6px);
+      border:1px solid rgba(168,85,47,.28); border-radius:999px; padding:3px; box-shadow:0 4px 14px -6px rgba(60,40,30,.5); }
+    .lang-switch button{ appearance:none; border:0; background:transparent; cursor:pointer; font-family:var(--sans);
+      font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--muted); padding:4px 9px; border-radius:999px; transition:background .15s,color .15s; }
+    .lang-switch button.on{ background:var(--accent); color:var(--cream); }
 
     /* hero */
     .hero{ position:relative; }
@@ -135,35 +143,39 @@
 </head>
 <body>
   <div class="page">
+    <div class="lang-switch" aria-label="Lingua">
+      <button type="button" data-lang-btn="it">IT</button>
+      <button type="button" data-lang-btn="en">EN</button>
+    </div>
 
     <section class="hero">
-      <div class="ph-hero" role="img" aria-label="Il gelato in vetrina"></div>
+      <div class="ph-hero" role="img" data-i18n-attr="aria-label:home.hero.imgAlt" aria-label="Il gelato in vetrina"></div>
       <div class="scrim"></div>
-      <div class="hero-logo"><img src="img/logo-full.png" alt="Gelateria BM&amp;V Monte Petrosu"></div>
+      <div class="hero-logo"><img src="img/logo-full.png" data-i18n-attr="alt:home.hero.logoAlt" alt="Gelateria BM&amp;V Monte Petrosu"></div>
       <div class="cap">
-        <p class="eyebrow">Monte Petrosu · San Teodoro</p>
-        <h1>Il gelato come<br>si faceva <em>una volta</em>.</h1>
+        <p class="eyebrow" data-i18n="home.hero.eyebrow">Monte Petrosu · San Teodoro</p>
+        <h1 data-i18n-html="home.hero.title">Il gelato come<br>si faceva <em>una volta</em>.</h1>
       </div>
     </section>
 
     <section class="sec">
-      <p class="eyebrow">La nostra storia</p>
-      <p class="lede">Mantechiamo ogni giorno, con <em>latte fresco</em> e frutta di stagione, a due passi dal mare di Monte Petrosu.</p>
-      <p class="body-copy">Niente coloranti, niente fretta. Solo il gelato che ami — in gelateria o consegnato a casa nelle ore più calde, a San Teodoro e dintorni.</p>
+      <p class="eyebrow" data-i18n="home.story.eyebrow">La nostra storia</p>
+      <p class="lede" data-i18n-html="home.story.lede">Mantechiamo ogni giorno, con <em>latte fresco</em> e frutta di stagione, a due passi dal mare di Monte Petrosu.</p>
+      <p class="body-copy" data-i18n="home.story.body">Niente coloranti, niente fretta. Solo il gelato che ami — in gelateria o consegnato a casa nelle ore più calde, a San Teodoro e dintorni.</p>
     </section>
 
     <section class="sec" style="padding-top:8px;padding-bottom:14px">
-      <div class="sec-head"><h2>Dal laboratorio</h2><span class="more">Scorri →</span></div>
+      <div class="sec-head"><h2 data-i18n="home.carousel.title">Dal laboratorio</h2><span class="more" data-i18n="home.carousel.scroll">Scorri →</span></div>
     </section>
     <div class="carousel">
       <div class="slide"><div class="ph-card" data-emoji="🍨"></div>
-        <div class="scap"><b>Le vaschette</b>da 600g a 1,7&nbsp;Kg</div></div>
+        <div class="scap"><b data-i18n="home.carousel.slide1.title">Le vaschette</b><span data-i18n="home.carousel.slide1.caption">da 600g a 1,7&nbsp;Kg</span></div></div>
       <div class="slide"><div class="ph-card" data-emoji="🍦"></div>
-        <div class="scap"><b>I gusti del giorno</b>fino a 6 in una vaschetta</div></div>
+        <div class="scap"><b data-i18n="home.carousel.slide2.title">I gusti del giorno</b><span data-i18n="home.carousel.slide2.caption">fino a 6 in una vaschetta</span></div></div>
       <div class="slide"><div class="ph-card" data-emoji="🥄"></div>
-        <div class="scap"><b>Il laboratorio</b>mantecato ogni mattina</div></div>
+        <div class="scap"><b data-i18n="home.carousel.slide3.title">Il laboratorio</b><span data-i18n="home.carousel.slide3.caption">mantecato ogni mattina</span></div></div>
       <div class="slide"><div class="ph-card" data-emoji="🛵"></div>
-        <div class="scap"><b>Consegna o take away</b>a San Teodoro</div></div>
+        <div class="scap"><b data-i18n="home.carousel.slide4.title">Consegna o take away</b><span data-i18n="home.carousel.slide4.caption">a San Teodoro</span></div></div>
     </div>
 
     <div class="divider"></div>
@@ -179,8 +191,8 @@
           <span class="dm-wind" id="dm-wind"></span>
         </div>
       </div>
-      <div class="sec-head"><h2>Gusti del giorno</h2></div>
-      <p class="daily-intro">Oltre ai classici oggi proponiamo anche:</p>
+      <div class="sec-head"><h2 data-i18n="home.daily.title">Gusti del giorno</h2></div>
+      <p class="daily-intro" data-i18n="home.daily.intro">Oltre ai classici oggi proponiamo anche:</p>
       <div class="flavors" id="home-flavors"></div>
     </section>
 
@@ -188,35 +200,36 @@
       <div class="infogrid">
         <div class="infocard">
           <svg class="ico" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <div class="ilbl">Orari</div>
+          <div class="ilbl" data-i18n="home.info.hoursLabel">Orari</div>
           <div class="ival">16:00 – 22:00</div>
-          <div class="isub">Tutti i giorni</div>
+          <div class="isub" data-i18n="home.info.hoursSub">Tutti i giorni</div>
         </div>
         <a class="infocard" href="https://maps.app.goo.gl/zMh9ozcPzURJgxg6A" target="_blank" rel="noopener">
           <svg class="ico" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" stroke="currentColor" stroke-width="1.6"/></svg>
-          <div class="ilbl">Dove siamo</div>
+          <div class="ilbl" data-i18n="home.info.locationLabel">Dove siamo</div>
           <div class="ival">Monte Petrosu</div>
-          <div class="isub">San Teodoro (SS) · consegna in zona</div>
-          <div class="imap">Apri nelle mappe →</div>
+          <div class="isub" data-i18n="home.info.locationSub">San Teodoro (SS) · consegna in zona</div>
+          <div class="imap" data-i18n="home.info.openMaps">Apri nelle mappe →</div>
         </a>
       </div>
       <!-- numero DUMMY: sostituire col WhatsApp reale (formato internazionale, senza +) -->
       <a class="wa-link" href="https://wa.me/393331234567" target="_blank" rel="noopener">
       <span class="wa-ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.157 5.335 5.495 0 12.05 0a11.82 11.82 0 0 1 8.413 3.488 11.82 11.82 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.728-.957zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg></span>
-      <span class="wa-txt"><b>Scrivici</b><small>su WhatsApp</small></span>
+      <span class="wa-txt"><b data-i18n="home.wa.title">Scrivici</b><small data-i18n="home.wa.subtitle">su WhatsApp</small></span>
       </a>
     </section>
 
     <div style="height:10px"></div>
 
     <div class="cta">
-      <a href="ordina.html"><span>Ordina ora</span><span class="arr">→</span></a>
-      <p class="note">Consegna a domicilio o take away · ordine minimo € 25</p>
+      <a href="ordina.html"><span data-i18n="home.cta.button">Ordina ora</span><span class="arr">→</span></a>
+      <p class="note" data-i18n="home.cta.note">Consegna a domicilio o take away · ordine minimo € 25</p>
     </div>
 
   </div>
 
   <!-- Gusti del giorno: prelevati da Supabase (flavors con daily=true) -->
+  <script src="js/i18n.js"></script>
   <script src="config.js"></script>
   <script>
     (function () {
@@ -252,17 +265,21 @@
         var WX = {sun:"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round'><circle cx='12' cy='12' r='4.2'/><path d='M12 2.5v2M12 19.5v2M4.4 4.4l1.4 1.4M18.2 18.2l1.4 1.4M2.5 12h2M19.5 12h2M4.4 19.6l1.4-1.4M18.2 5.8l1.4-1.4'/></svg>",pcloud:"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><circle cx='8.5' cy='7.5' r='3'/><path d='M8.5 1.8v1.6M3.8 7.5H2.2M4.6 3.6 5.7 4.7M12.4 3.6 11.3 4.7'/><path d='M7.5 19.5h8.7a3.2 3.2 0 0 0 .3-6.39A4.6 4.6 0 0 0 8.3 12.8a3.6 3.6 0 0 0-.8 6.7Z'/></svg>",cloud:"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linejoin='round'><path d='M7 18h9.5a3.5 3.5 0 0 0 .4-6.98A5.2 5.2 0 0 0 7.4 9.2 4 4 0 0 0 7 18Z'/></svg>",rain:"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M7 15h9.5a3.5 3.5 0 0 0 .4-6.98A5.2 5.2 0 0 0 7.4 6.2 4 4 0 0 0 7 15Z'/><path d='M8.5 18l-1 2.4M12 18l-1 2.4M15.5 18l-1 2.4'/></svg>",snow:"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M7 14h9.5a3.5 3.5 0 0 0 .4-6.98A5.2 5.2 0 0 0 7.4 5.2 4 4 0 0 0 7 14Z'/><path d='M8.5 18h.01M12 19.5h.01M15.5 18h.01M10.2 21h.01M13.7 21h.01'/></svg>",storm:"<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M7 15h9.5a3.5 3.5 0 0 0 .4-6.98A5.2 5.2 0 0 0 7.4 6.2 4 4 0 0 0 7 15Z'/><path d='M12.5 12.5l-2.2 4.2h2.8l-2.1 3.8'/></svg>"};
         function wxCat(c){ if(c===0)return"sun"; if(c===1||c===2)return"pcloud"; if(c===3||c===45||c===48)return"cloud"; if((c>=51&&c<=67)||(c>=80&&c<=82))return"rain"; if((c>=71&&c<=77)||c===85||c===86)return"snow"; if(c>=95)return"storm"; return"cloud"; }
         function windName(d){ if(d==null)return""; d=((d%360)+360)%360; var n=["Tramontana","Grecale","Levante","Scirocco","Ostro","Libeccio","Ponente","Maestrale"]; return n[Math.round(d/45)%8]; }
-        var now = new Date();
-        var de = document.getElementById("dm-date");
-        if (de) { var s = now.toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long", year:"numeric" }); de.textContent = s.replace(/(^|\s)([a-zàèéìòù])/g, function (m,p,c) { return p + c.toUpperCase(); }); }
-        var sa = document.getElementById("dm-saint");
-        if (sa) { var k = (now.getMonth()+1) + "-" + now.getDate(); if (SAINTS[k]) sa.textContent = SAINTS[k]; }
+        function locale() { return (window.I18N && I18N.lang() === "en") ? "en-GB" : "it-IT"; }
+        function capit(s) { return s.replace(/(^|\s)([a-zàèéìòù])/g, function (m, p, c) { return p + c.toUpperCase(); }); }
+        function setDate() { var de = document.getElementById("dm-date"); if (de) de.textContent = capit(new Date().toLocaleDateString(locale(), { weekday: "long", day: "numeric", month: "long", year: "numeric" })); }
+        var lastWx = null;
+        function renderWx() { var c = lastWx; if (!c) return;
+          var te = document.getElementById("dm-temp"); if (te && c.temperature_2m != null) te.textContent = Math.round(c.temperature_2m) + "°";
+          var ic = document.getElementById("dm-ico"); if (ic && c.weather_code != null) ic.innerHTML = WX[wxCat(c.weather_code)] || WX.cloud;
+          var wi = document.getElementById("dm-wind"); if (wi) { var nm = windName(c.wind_direction_10m), sp = c.wind_speed_10m; wi.textContent = (sp != null && sp < 4) ? (window.I18N ? I18N.t("home.weather.noWind") : "Vento assente") : (nm || ""); } }
+        setDate();
+        var nowd = new Date(), sa = document.getElementById("dm-saint");
+        if (sa) { var k = (nowd.getMonth() + 1) + "-" + nowd.getDate(); if (SAINTS[k]) sa.textContent = SAINTS[k]; }
+        if (window.I18N) I18N.onLangChange(function () { setDate(); renderWx(); });
         fetch("https://api.open-meteo.com/v1/forecast?latitude=40.8411&longitude=9.6539&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m")
           .then(function (r) { return r.ok ? r.json() : null; })
-          .then(function (j) { var c = j && j.current; if (!c) return;
-            var te = document.getElementById("dm-temp"); if (te && c.temperature_2m != null) te.textContent = Math.round(c.temperature_2m) + "\u00b0";
-            var ic = document.getElementById("dm-ico"); if (ic && c.weather_code != null) ic.innerHTML = WX[wxCat(c.weather_code)] || WX.cloud;
-            var wi = document.getElementById("dm-wind"); if (wi) { var nm = windName(c.wind_direction_10m), sp = c.wind_speed_10m; wi.textContent = (sp != null && sp < 4) ? "Vento assente" : (nm || ""); } })
+          .then(function (j) { var c = j && j.current; if (!c) return; lastWx = c; renderWx(); })
           .catch(function () {});
       })();
       var cfg = window.SUPABASE_CONFIG;
