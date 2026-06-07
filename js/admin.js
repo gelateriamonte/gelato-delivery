@@ -1023,14 +1023,21 @@ function buildFlavorRow(f) {
   wireAvailRadios(el, (val) => updateRow("flavors", f.id, { available: val }));
   el.querySelector(".btn.icon").onclick = async () => { await delRow("flavors", f.id); loadFlavors(); };
   frow.appendChild(el);
-  // microdescrizione (per la home) — visibile quando "gusto del giorno" è attivo
+  // microdescrizioni (home) — visibili quando "gusto del giorno" è attivo: IT + EN
   const desc = document.createElement("input");
   desc.className = "g-desc";
-  desc.placeholder = "Microdescrizione per la home (es. tostato)";
+  desc.placeholder = "Microdescrizione IT (es. tostato)";
   desc.value = f.description || "";
   desc.style.display = daily ? "" : "none";
   desc.onchange = () => updateRow("flavors", f.id, { description: desc.value.trim() || null });
   frow.appendChild(desc);
+  const descEn = document.createElement("input");
+  descEn.className = "g-desc g-desc-en";
+  descEn.placeholder = "Microdescrizione EN (es. toasted)";
+  descEn.value = f.description_en || "";
+  descEn.style.display = daily ? "" : "none";
+  descEn.onchange = () => updateRow("flavors", f.id, { description_en: descEn.value.trim() || null });
+  frow.appendChild(descEn);
   star.onclick = () => {
     special = !special; f.special = special; paintStar();
     updateRow("flavors", f.id, { special });
@@ -1039,6 +1046,7 @@ function buildFlavorRow(f) {
   dailyBtn.onclick = () => {
     daily = !daily; f.daily = daily; paintDaily();
     desc.style.display = daily ? "" : "none";
+    descEn.style.display = daily ? "" : "none";
     if (daily) desc.focus();
     updateRow("flavors", f.id, { daily });
     if (FLAVOR_FILTER.special || FLAVOR_FILTER.daily) renderFlavorsList();
