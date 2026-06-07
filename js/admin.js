@@ -327,9 +327,11 @@ function renderLab() {
 function renderHistory() {
   const wrap = $("history-list");
   if (!wrap) return;
-  const done = ORDERS.filter((o) => o.status === "consegnato");
+  const done = ORDERS.filter((o) => o.status === "consegnato");   // consegne a domicilio + ritiri take away (entrambi → "consegnato")
   wrap.innerHTML = "";
-  if (!done.length) { wrap.innerHTML = '<p class="muted small">Nessun ordine consegnato.</p>'; return; }
+  if (!done.length) { wrap.innerHTML = '<p class="muted small">Nessun ordine completato.</p>'; return; }
+  const nDom = done.filter((o) => o.fulfillment !== "pickup").length;   // a domicilio
+  const nRit = done.length - nDom;                                       // ritiri take away
 
   let fatturato = 0, prodotti = 0, consegne = 0;
   const byFormat = {};   // nome -> { qty, rev }
@@ -359,7 +361,9 @@ function renderHistory() {
     `<div class="eco-row"><span>di cui prodotti</span><span>${euro(prodotti)}</span></div>` +
     `<div class="eco-row"><span>di cui consegne</span><span>${euro(consegne)}</span></div>` +
     `<div class="eco-row sep"><span>Scontrino medio</span><b>${euro(media)}</b></div>` +
-    `<div class="eco-row"><span>Ordini consegnati</span><span>${done.length}</span></div>` +
+    `<div class="eco-row sep"><span>Ordini completati</span><b>${done.length}</b></div>` +
+    `<div class="eco-row"><span>· a domicilio</span><span>${nDom}</span></div>` +
+    `<div class="eco-row"><span>· ritiri (take away)</span><span>${nRit}</span></div>` +
     `</div>`;
 
   // breakdown per formato
@@ -374,7 +378,10 @@ function renderHistory() {
   const orders = done.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map((o) => {
     const when = new Date(o.created_at).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" });
     const cons = o.delivery_date ? new Date(o.delivery_date + "T00:00:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) : "-";
-    return `<div class="brk hxrow" data-oid="${esc(o.id)}" role="button" tabindex="0" title="Vedi dettaglio completo" style="cursor:pointer"><div class="bn">${esc(o.customer_name)}<small>${esc(when)} · ${esc(cons)} · ${esc(o.slot_label || "-")}</small></div><div class="bv">${euro(o.total)} ›</div></div>`;
+    const tag = o.fulfillment === "pickup"
+      ? '<span style="font-size:.64rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#f3e7da;color:#a8552f;margin-left:6px">🏪 Ritiro</span>'
+      : '<span style="font-size:.64rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#e7f0e7;color:#2f6f3f;margin-left:6px">🛵 Consegna</span>';
+    return `<div class="brk hxrow" data-oid="${esc(o.id)}" role="button" tabindex="0" title="Vedi dettaglio completo" style="cursor:pointer"><div class="bn">${esc(o.customer_name)}${tag}<small>${esc(when)} · ${esc(cons)} · ${esc(o.slot_label || "-")}</small></div><div class="bv">${euro(o.total)} ›</div></div>`;
   }).join("");
 
   wrap.innerHTML =
@@ -387,7 +394,7 @@ function renderHistory() {
       `</div>` +
     `</div>` +
     `<div style="height:22px"></div>` +
-    `<p class="eyebrow muted">Ordini consegnati</p><div style="height:10px"></div><div class="panel">${orders}</div>`;
+    `<p class="eyebrow muted">Ordini completati <span class="muted" style="font-weight:400">(consegne + ritiri)</span></p><div style="height:10px"></div><div class="panel">${orders}</div>`;
 
   // click su una riga → dettaglio completo in overlay
   wrap.querySelectorAll(".hxrow[data-oid]").forEach((el) => {
