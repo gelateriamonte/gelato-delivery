@@ -3,6 +3,10 @@
   publish = "."
   command = ""
 
+# A ogni deploy di produzione: avvisa il titolare su Telegram ("nuova versione, ricarica").
+[[plugins]]
+  package = "./netlify/plugins/notify-telegram"
+
 # Pagamenti: funzioni serverless (Stripe). Netlify installa le deps da package.json.
 [functions]
   directory = "netlify/functions"
