@@ -5,6 +5,7 @@
 
 const Stripe = require("stripe");
 const { createClient } = require("@supabase/supabase-js");
+const { notifyOrder } = require("./lib/telegram");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supa = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -62,6 +63,9 @@ exports.handler = async (event) => {
     });
     const { error: insErr } = await supa.from("orders").insert(order);
     if (insErr) return { statusCode: 500, body: "insert ordine: " + insErr.message };
+
+    // notifica Telegram al titolare (best-effort: non deve mai far fallire la risposta a Stripe)
+    try { await notifyOrder(order); } catch (e) { console.error("telegram notify:", e.message); }
 
     if (pendingId) await supa.from("pending_orders").delete().eq("id", pendingId);
     else await supa.from("pending_orders").delete().eq("session_id", session.id);

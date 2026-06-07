@@ -96,6 +96,7 @@ function tryLogin() {
   const ok = $("pw").value === window.ADMIN_PASSWORD;
   if (!ok) { toast("Password errata."); return; }
   sessionStorage.setItem("gelato_admin", "1");
+  unlockAudio(); ensureNotifyPermission();   // gesto utente: sblocca audio + chiede permesso notifiche
   enterApp();
 }
 function enterApp() {
@@ -544,7 +545,7 @@ function subscribeOrders() {
   sb.channel("orders-rt")
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, (p) => {
       ORDERS.unshift(p.new); renderOrders();
-      toast("Nuovo ordine ricevuto."); beep();
+      toast("Nuovo ordine ricevuto."); beep(); notifyNewOrder(p.new);
     })
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, (p) => {
       const i = ORDERS.findIndex((o) => o.id === p.new.id);
@@ -855,12 +856,46 @@ function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.classList.add("show");
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
 }
+// ---------- AVVISI NUOVO ORDINE: audio robusto + notifica browser ----------
+// L'AudioContext parte "suspended" finché non c'è un gesto utente: senza sblocco il
+// primo beep è muto. Lo sblocchiamo al login e al primo gesto (copre l'auto-login da reload).
+let _audioCtx = null;
+function unlockAudio() {
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === "suspended") _audioCtx.resume();
+  } catch (e) { /* audio non disponibile */ }
+}
+function ensureNotifyPermission() {
+  try {
+    if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
+  } catch (e) { /* notifiche non disponibili */ }
+}
+// primo gesto utile, ovunque: sblocca audio + chiede permesso notifiche (una volta sola)
+["pointerdown", "keydown"].forEach((ev) =>
+  document.addEventListener(ev, () => { unlockAudio(); ensureNotifyPermission(); }, { once: true }));
+
 function beep() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.value = 880; g.gain.value = 0.08;
-    o.start(); o.stop(ctx.currentTime + 0.18);
+    unlockAudio();
+    const ctx = _audioCtx; if (!ctx) return;
+    const tone = (freq, at, dur) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq; g.gain.value = 0.08;
+      o.start(ctx.currentTime + at); o.stop(ctx.currentTime + at + dur);
+    };
+    tone(880, 0, 0.18); tone(1175, 0.22, 0.18);   // due toni: più riconoscibile di un beep secco
   } catch (e) { /* audio non disponibile */ }
+}
+
+function notifyNewOrder(o) {
+  try {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    const tipo = o.fulfillment === "pickup" ? "Ritiro" : "Consegna";
+    const dd = String(o.delivery_date || "").replace(/^(\d{4})-(\d{2})-(\d{2}).*/, "$3/$2");
+    const body = [o.customer_name, tipo, dd, o.slot_label].filter(Boolean).join(" · ");
+    const n = new Notification("🍦 Nuovo ordine — " + euro(o.total), { body, tag: "ordine-" + o.id, renotify: true });
+    n.onclick = () => { window.focus(); n.close(); };
+  } catch (e) { /* ignora */ }
 }
