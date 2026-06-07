@@ -573,7 +573,7 @@ $("pickup-time").onchange = () => updateTotal();
 $("name").value = "Mario Rossi";
 $("phone").value = "333 1234567";
 $("email").value = "mario.rossi@email.it";
-$("address").value = "Via del Tirreno, San Teodoro";
+$("address").value = "Via Lu Pitrali, San Teodoro";   // default di prova (fase test)
 
 initMap();
 loadData();
