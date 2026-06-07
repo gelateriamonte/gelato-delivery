@@ -299,10 +299,15 @@ function renderLab() {
   const byDay = {};   // delivery_date -> { count, flavors: {nome: grammi} }
   ORDERS.forEach((o) => {
     if (o.status !== "accettato" || !o.delivery_date) return;
-    const d = byDay[o.delivery_date] || (byDay[o.delivery_date] = { count: 0, flavors: {} });
+    const d = byDay[o.delivery_date] || (byDay[o.delivery_date] = { count: 0, flavors: {}, vasche: {} });
     d.count++;
     (o.items || []).forEach((it) => {
       const g = formatGrams(it.format), gusti = it.gusti || [];
+      if (g > 0) {   // formato pesato = vaschetta: dettaglio per combinazione formato+gusti
+        const key = it.format + "|" + gusti.join(",");
+        const v = d.vasche[key] || (d.vasche[key] = { format: it.format, gusti, qty: 0 });
+        v.qty += (it.qty || 1);
+      }
       if (!g || !gusti.length) return;                 // coppette / senza gusti: niente kg
       const per = (g * (it.qty || 1)) / gusti.length;  // peso diviso per n. gusti
       gusti.forEach((n) => { d.flavors[n] = (d.flavors[n] || 0) + per; });
@@ -320,13 +325,21 @@ function renderLab() {
     const rows = flavs.length
       ? flavs.map(([n, g]) => `<div class="kgline"><span class="kn">${esc(n)}</span><span class="kv">${kg(g / 1000)}</span></div>`).join("")
       : '<p class="hint">Solo coppette: nessun kg da preparare.</p>';
+    const vasche = Object.values(info.vasche).sort((a, b) => b.qty - a.qty);
+    const totVasche = vasche.reduce((s, v) => s + v.qty, 0);
+    const vascheHtml = vasche.length
+      ? `<div class="labvasche"><div class="labsub">Vaschette da preparare · ${totVasche}</div>` +
+        vasche.map((v) => `<div class="vline"><span class="vq">${v.qty}×</span><span class="vn">${esc(v.format)}${v.gusti.length ? `<small>${esc(v.gusti.join(", "))}</small>` : ""}</span></div>`).join("") +
+        `</div>`
+      : "";
     const card = document.createElement("div");
     card.className = "labcard";
     card.innerHTML =
       `<div class="labhead"><span class="labday">${esc(dayName(dt, i))} ${dt.getDate()}/${dt.getMonth() + 1}</span>` +
       `<span class="count">${info.count} ordin${info.count === 1 ? "e" : "i"}</span></div>` +
       `<div class="kglist">${rows}</div>` +
-      (flavs.length ? `<div class="kgtot"><span>Totale gelato</span><b>${kg(totKg)}</b></div>` : "");
+      (flavs.length ? `<div class="kgtot"><span>Totale gelato</span><b>${kg(totKg)}</b></div>` : "") +
+      vascheHtml;
     wrap.appendChild(card);
   });
   if (!any) wrap.innerHTML = '<p class="hint">Nessun ordine accettato da preparare.</p>';

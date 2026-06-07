@@ -657,3 +657,11 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
   line-height: 18px; text-align: center; vertical-align: middle;
 }
 .tabbadge.show { display: inline-block; }
+
+/* ---- Laboratorio: dettaglio vaschette ---- */
+.labvasche { margin-top: 12px; border-top: 1px solid #ece5d8; padding-top: 10px; }
+.labsub { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: #8a8174; font-weight: 700; margin-bottom: 6px; }
+.vline { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; }
+.vline .vq { font-weight: 700; color: #a8552f; min-width: 26px; }
+.vline .vn { font-size: .9rem; }
+.vline .vn small { display: block; color: #8a8174; font-size: .76rem; }
