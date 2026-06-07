@@ -672,6 +672,12 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .coupon-msg.ko { color: #b00020; }
 
 /* ---- codici sconto (admin) ---- */
+.dc-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.dc-form .field { margin: 0; }
+.dc-form .dc-code { flex: 2 1 170px; }
+.dc-form .dc-mid  { flex: 1 1 150px; }
+.dc-form .dc-val  { flex: 0 1 110px; }
+.dc-form .btn { flex: none; }
 .dc-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid #f0ece3; }
 .dc-row:last-child { border-bottom: 0; }
 .dc-row.off { opacity: .55; }

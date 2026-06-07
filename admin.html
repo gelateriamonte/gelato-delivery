@@ -158,13 +158,13 @@
       <div class="admin-head" style="margin-top:30px"><h2>Codici sconto</h2></div>
       <p class="muted small"><b>Sempre valido</b> = riutilizzabile all'infinito · <b>One-off</b> = si brucia al primo utilizzo. Lo sconto (€ o %) si applica al totale ordine. Il conteggio mostra quante volte è stato usato.</p>
       <div class="panel">
-        <div class="setrow" style="flex-wrap:wrap;gap:10px;align-items:flex-end">
-          <div class="field" style="margin:0;min-width:130px"><label>Codice</label><input id="dc-code" type="text" placeholder="ESTATE10" autocomplete="off" style="text-transform:uppercase"></div>
-          <div class="field" style="margin:0"><label>Validità</label>
-            <select id="dc-kind"><option value="always">Sempre valido</option><option value="oneoff">One-off (usa e brucia)</option></select></div>
-          <div class="field" style="margin:0"><label>Sconto</label>
-            <select id="dc-dtype"><option value="fixed">€ fisso</option><option value="percent">% percento</option></select></div>
-          <div class="field" style="margin:0;max-width:100px"><label>Valore</label><input id="dc-value" type="number" min="0" step="0.50" placeholder="5"></div>
+        <div class="dc-form">
+          <div class="field dc-code"><label>Codice</label><input id="dc-code" type="text" placeholder="ESTATE10" autocomplete="off" style="text-transform:uppercase"></div>
+          <div class="field dc-mid"><label>Validità</label>
+            <div class="select-wrap"><select id="dc-kind"><option value="always">Sempre valido</option><option value="oneoff">One-off (usa e brucia)</option></select></div></div>
+          <div class="field dc-mid"><label>Sconto</label>
+            <div class="select-wrap"><select id="dc-dtype"><option value="fixed">€ fisso</option><option value="percent">% percento</option></select></div></div>
+          <div class="field dc-val"><label>Valore</label><input id="dc-value" type="number" min="0" step="0.50" placeholder="5"></div>
           <button class="btn" id="dc-add">Crea codice</button>
         </div>
       </div>
