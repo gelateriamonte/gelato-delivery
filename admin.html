@@ -53,7 +53,7 @@
       <button class="tab" data-tab="takeaway">Take away<span class="tabbadge" id="badge-takeaway"></span></button>
       <button class="tab" data-tab="history">Storico</button>
       <button class="tab" data-tab="flavors">Gusti</button>
-      <button class="tab" data-tab="formats">Formati &amp; prezzi</button>
+      <button class="tab" data-tab="formats">Prodotti</button>
       <button class="tab" data-tab="slots">Fasce orarie</button>
       <button class="tab" data-tab="settings">Parametri</button>
     </div>
@@ -98,6 +98,7 @@
 
     <section id="tab-flavors" class="tabpane hidden">
       <div class="admin-head"><h2>Gusti ordinabili</h2></div>
+      <p class="muted small">Stellina ★ = gusto speciale (solo back office). Trascina ⠿ per ordinare.</p>
       <div class="addrow">
         <input id="nf-name" class="grow" placeholder="Nuovo gusto (es. Mango)">
         <button class="btn sm" id="nf-add">Aggiungi</button>
@@ -106,19 +107,26 @@
     </section>
 
     <section id="tab-formats" class="tabpane hidden">
-      <div class="admin-head"><h2>Formati &amp; prezzi</h2></div>
+      <div class="admin-head"><h2>Prodotti</h2></div>
+      <p class="muted small">Trascina la maniglia ⠿ per ordinare: l'ordine si riflette sul menù del cliente.</p>
       <div class="panel stack" style="margin-bottom:14px">
-        <div class="field" style="margin:0"><label>Nome formato</label>
-          <input id="nfo-name" placeholder="Es. Vaschetta 1kg"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field" style="margin:0"><label>Categoria</label>
+            <div class="select-wrap"><select id="nfo-cat">
+              <option value="vaschetta">Vaschette</option>
+              <option value="altro">Altri prodotti</option>
+            </select></div></div>
           <div class="field" style="margin:0"><label>N. gusti max</label>
-            <input id="nfo-max" type="number" min="1" value="1"></div>
-          <div class="field" style="margin:0"><label>Prezzo €</label>
-            <input id="nfo-price" type="number" min="0" step="0.50" value="0"></div>
+            <input id="nfo-max" type="number" min="0" value="1"></div>
         </div>
-        <button class="btn sm" id="nfo-add">Aggiungi formato</button>
+        <div class="field" style="margin:0"><label>Nome prodotto</label>
+          <input id="nfo-name" placeholder="Es. Vaschetta 1kg"></div>
+        <div class="field" style="margin:0"><label>Prezzo €</label>
+          <input id="nfo-price" type="number" min="0" step="0.50" value="0"></div>
+        <p class="muted small" style="margin:0">Gusti max <b>0</b> = il cliente aggiunge il prodotto senza scegliere gusti.</p>
+        <button class="btn sm" id="nfo-add">Aggiungi prodotto</button>
       </div>
-      <div id="formats-list" class="stack"></div>
+      <div id="formats-list"></div>
     </section>
 
     <section id="tab-slots" class="tabpane hidden">

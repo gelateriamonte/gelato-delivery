@@ -12,6 +12,7 @@ create table if not exists flavors (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
   available   boolean not null default true,
+  special     boolean not null default false,   -- gusto "speciale" (stellina, solo back office)
   sort_order  int not null default 0,
   created_at  timestamptz not null default now()
 );
@@ -20,7 +21,8 @@ create table if not exists flavors (
 create table if not exists formats (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,                 -- es. "Coppetta media (2 gusti)"
-  max_flavors int  not null default 1,
+  category    text not null default 'vaschetta', -- 'vaschetta' | 'altro' (raggruppamento Prodotti)
+  max_flavors int  not null default 1,        -- 0 = nessun gusto (aggiunta diretta)
   price       numeric(8,2) not null default 0,
   available   boolean not null default true,
   sort_order  int not null default 0,

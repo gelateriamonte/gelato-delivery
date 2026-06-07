@@ -832,6 +832,73 @@ function subscribeOrders() {
     });
 }
 
+// ========== RIORDINO DRAG (maniglia ⠿, pointer events: desktop + touch) ==========
+// Trascinando la .drag-handle si riordinano le righe; al rilascio si scrive
+// sort_order sequenziale (onCommit riceve gli id nel nuovo ordine del container).
+function enableDragSort(container, handleSel, rowSel, onCommit) {
+  const ids = () => [...container.querySelectorAll(rowSel)].map((r) => r.dataset.id);
+  container.querySelectorAll(handleSel).forEach((h) => {
+    h.style.touchAction = "none";
+    h.addEventListener("pointerdown", (e) => startDrag(e, h));
+  });
+  function startDrag(e, h) {
+    const row = h.closest(rowSel);
+    if (!row) return;
+    e.preventDefault();
+    const startY = e.clientY, pid = e.pointerId, before = ids();
+    let lifted = false, ph = null, oy = 0, ox = 0, w = 0;
+    const onMove = (ev) => {
+      const dy = ev.clientY - startY;
+      if (!lifted) {
+        if (Math.abs(dy) < 4) return;          // soglia: evita lift su click
+        const r = row.getBoundingClientRect();
+        oy = r.top; ox = r.left; w = r.width;
+        ph = document.createElement("div");
+        ph.className = "drag-ph"; ph.style.height = r.height + "px";
+        row.parentNode.insertBefore(ph, row.nextSibling);
+        row.classList.add("dragging");
+        row.style.position = "fixed"; row.style.left = ox + "px";
+        row.style.width = w + "px"; row.style.zIndex = "60"; row.style.pointerEvents = "none";
+        lifted = true;
+      }
+      row.style.top = (oy + dy) + "px";
+      const sibs = [...container.querySelectorAll(rowSel)].filter((s) => s !== row);
+      let placed = false;
+      for (const s of sibs) {
+        const r = s.getBoundingClientRect();
+        if (ev.clientY < r.top + r.height / 2) { s.parentNode.insertBefore(ph, s); placed = true; break; }
+      }
+      if (!placed && sibs.length) sibs[sibs.length - 1].after(ph);
+    };
+    const onUp = () => {
+      h.removeEventListener("pointermove", onMove);
+      h.removeEventListener("pointerup", onUp);
+      h.removeEventListener("pointercancel", onUp);
+      try { h.releasePointerCapture(pid); } catch (_) {}
+      if (lifted) {
+        row.classList.remove("dragging");
+        row.removeAttribute("style");          // pulisce gli inline del drag
+        ph.parentNode.insertBefore(row, ph);
+        ph.remove();
+      }
+      if (lifted && JSON.stringify(before) !== JSON.stringify(ids())) onCommit(ids());
+    };
+    try { h.setPointerCapture(pid); } catch (_) {}
+    h.addEventListener("pointermove", onMove);
+    h.addEventListener("pointerup", onUp);
+    h.addEventListener("pointercancel", onUp);
+  }
+}
+async function persistOrder(table, orderedIds) {
+  await Promise.all(orderedIds.map((id, i) => sb.from(table).update({ sort_order: i + 1 }).eq("id", id)));
+}
+// sort_order del nuovo item = max corrente + 1 (sempre in fondo, monotono;
+// coerente col renumber 1..N del drag — niente wrap come Date.now()%100000)
+async function nextSortOrder(table) {
+  const { data } = await sb.from(table).select("sort_order").order("sort_order", { ascending: false }).limit(1);
+  return ((data && data[0] && data[0].sort_order) || 0) + 1;
+}
+
 // ========== GUSTI ==========
 async function loadFlavors() {
   const { data, error } = await sb.from("flavors").select("*").order("sort_order");
@@ -840,58 +907,100 @@ async function loadFlavors() {
   list.innerHTML = "";
   data.forEach((f) => {
     const el = document.createElement("div");
-    el.className = "mrow";
+    el.className = "mrow"; el.dataset.id = f.id;
     el.innerHTML =
+      `<span class="drag-handle" title="Trascina per ordinare">⠿</span>` +
       `<input class="g-name grow" value="${esc(f.name)}">` +
+      `<button class="star-btn" type="button" aria-label="Gusto speciale">☆</button>` +
       availRadios("fl-" + f.id, f.available) +
       `<button class="btn icon">✕</button>`;
     const name = el.querySelector(".g-name");
     name.onchange = () => updateRow("flavors", f.id, { name: name.value.trim() });
+    const star = el.querySelector(".star-btn");
+    let special = !!f.special;
+    const paintStar = () => { star.classList.toggle("on", special); star.textContent = special ? "★" : "☆"; };
+    paintStar();
+    star.onclick = () => { special = !special; paintStar(); updateRow("flavors", f.id, { special }); };
     wireAvailRadios(el, (val) => updateRow("flavors", f.id, { available: val }));
     el.querySelector(".btn.icon").onclick = async () => { await delRow("flavors", f.id); loadFlavors(); };
     list.appendChild(el);
   });
+  enableDragSort(list, ".drag-handle", ".mrow", (orderedIds) => persistOrder("flavors", orderedIds));
 }
 $("nf-add").onclick = async () => {
   const name = $("nf-name").value.trim(); if (!name) return;
-  const order = Date.now() % 100000;
+  const order = await nextSortOrder("flavors");
   await sb.from("flavors").insert({ name, sort_order: order });
   $("nf-name").value = ""; loadFlavors();
 };
 
-// ========== FORMATI ==========
+// ========== PRODOTTI (ex Formati) — due categorie: Vaschette / Altri prodotti ==========
+const FORMAT_CATS = [
+  { key: "vaschetta", label: "Vaschette" },
+  { key: "altro", label: "Altri prodotti" },
+];
+// category null -> vaschetta (default migration); qualsiasi valore inatteso ->
+// altro, così nessun prodotto sparisce da back office e cliente.
+const normFmtCat = (f) => ((f.category || "vaschetta") === "vaschetta" ? "vaschetta" : "altro");
+function buildFormatCard(f) {
+  const el = document.createElement("div");
+  el.className = "fmt-card"; el.dataset.id = f.id;
+  const cur = f.category || "vaschetta";
+  const catOpts = FORMAT_CATS.map((c) => `<option value="${c.key}"${cur === c.key ? " selected" : ""}>${esc(c.label)}</option>`).join("");
+  el.innerHTML =
+    `<div class="fmt-card-top">` +
+      `<span class="drag-handle" title="Trascina per ordinare">⠿</span>` +
+      `<input class="f-name grow" value="${esc(f.name)}">` +
+    `</div>` +
+    `<div class="grid2">` +
+      `<div class="field" style="margin:0"><label>Categoria</label><div class="select-wrap"><select class="f-cat">${catOpts}</select></div></div>` +
+      `<div class="field" style="margin:0"><label>Gusti max</label><input class="f-max" type="number" min="0" value="${f.max_flavors}"></div>` +
+    `</div>` +
+    `<div class="field" style="margin:0"><label>Prezzo €</label><input class="f-price" type="number" min="0" step="0.50" value="${f.price}"></div>` +
+    `<div class="foot">` + availRadios("fo-" + f.id, f.available) + `<button class="btn icon" style="width:auto;padding:8px 14px">Elimina</button></div>`;
+  const name = el.querySelector(".f-name"), max = el.querySelector(".f-max"), price = el.querySelector(".f-price"), cat = el.querySelector(".f-cat");
+  const del = el.querySelector(".foot .btn.icon");
+  name.onchange = () => updateRow("formats", f.id, { name: name.value.trim() });
+  max.onchange = () => updateRow("formats", f.id, { max_flavors: parseInt(max.value || "0", 10) });
+  price.onchange = () => updateRow("formats", f.id, { price: parseFloat(price.value || "0") });
+  cat.onchange = async () => { await updateRow("formats", f.id, { category: cat.value }); loadFormats(); };
+  wireAvailRadios(el, (val) => updateRow("formats", f.id, { available: val }));
+  del.onclick = async () => { await delRow("formats", f.id); loadFormats(); };
+  return el;
+}
+// renumber globale (vaschette poi altri, ordine DOM) dopo un drag in una categoria
+function persistFormatsOrder() {
+  const ids = [...$("formats-list").querySelectorAll(".fmt-card")].map((c) => c.dataset.id);
+  return persistOrder("formats", ids);
+}
 async function loadFormats() {
   const { data, error } = await sb.from("formats").select("*").order("sort_order");
   if (error) { console.error(error); return; }
-  const list = $("formats-list");
-  list.innerHTML = "";
-  data.forEach((f) => {
-    const el = document.createElement("div");
-    el.className = "fmt-card";
-    el.innerHTML =
-      `<input class="f-name" value="${esc(f.name)}">` +
-      `<div class="grid2">` +
-      `<div class="field" style="margin:0"><label>Gusti max</label><input class="f-max" type="number" min="1" value="${f.max_flavors}"></div>` +
-      `<div class="field" style="margin:0"><label>Prezzo €</label><input class="f-price" type="number" min="0" step="0.50" value="${f.price}"></div>` +
-      `</div>` +
-      `<div class="foot">` + availRadios("fo-" + f.id, f.available) + `<button class="btn icon" style="width:auto;padding:8px 14px">Elimina</button></div>`;
-    const name = el.querySelector(".f-name"), max = el.querySelector(".f-max"), price = el.querySelector(".f-price");
-    const del = el.querySelector(".foot .btn.icon");
-    name.onchange = () => updateRow("formats", f.id, { name: name.value.trim() });
-    max.onchange = () => updateRow("formats", f.id, { max_flavors: parseInt(max.value || "1", 10) });
-    price.onchange = () => updateRow("formats", f.id, { price: parseFloat(price.value || "0") });
-    wireAvailRadios(el, (val) => updateRow("formats", f.id, { available: val }));
-    del.onclick = async () => { await delRow("formats", f.id); loadFormats(); };
-    list.appendChild(el);
+  const root = $("formats-list");
+  root.innerHTML = "";
+  FORMAT_CATS.forEach((c) => {
+    const rows = data.filter((f) => normFmtCat(f) === c.key);
+    const group = document.createElement("div");
+    group.className = "fmt-group"; group.dataset.cat = c.key;
+    group.innerHTML = `<p class="fmt-cat-head">${esc(c.label)}</p>`;
+    const listEl = document.createElement("div");
+    listEl.className = "fmt-list stack";
+    if (!rows.length) listEl.innerHTML = `<p class="muted small" style="margin:0;padding:2px 0">Nessun prodotto.</p>`;
+    rows.forEach((f) => listEl.appendChild(buildFormatCard(f)));
+    group.appendChild(listEl);
+    root.appendChild(group);
+    enableDragSort(listEl, ".drag-handle", ".fmt-card", () => persistFormatsOrder());
   });
 }
 $("nfo-add").onclick = async () => {
   const name = $("nfo-name").value.trim(); if (!name) return;
+  const order = await nextSortOrder("formats");
   await sb.from("formats").insert({
     name,
-    max_flavors: parseInt($("nfo-max").value || "1", 10),
+    category: $("nfo-cat").value,
+    max_flavors: parseInt($("nfo-max").value || "0", 10),
     price: parseFloat($("nfo-price").value || "0"),
-    sort_order: Date.now() % 100000,
+    sort_order: order,
   });
   $("nfo-name").value = ""; $("nfo-max").value = 1; $("nfo-price").value = 0;
   loadFormats();

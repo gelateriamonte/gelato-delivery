@@ -263,34 +263,58 @@ async function loadData() {
   renderCart();
 }
 
-// ---------- formati ----------
+// ---------- prodotti (raggruppati per categoria: Vaschette / Altri prodotti) ----------
+const PRODUCT_CATS = [
+  { key: "vaschetta", label: "Vaschette" },
+  { key: "altro", label: "Altri prodotti" },
+];
+// category null -> vaschetta; valori inattesi -> altro (niente prodotti nascosti)
+const normCat = (f) => ((f.category || "vaschetta") === "vaschetta" ? "vaschetta" : "altro");
 function renderFormats() {
   const wrap = $("formats");
-  if (!DATA.formats.length) { wrap.innerHTML = '<p class="hint">Nessun prodotto disponibile al momento.</p>'; return; }
   wrap.innerHTML = "";
-  DATA.formats.forEach((f) => {
-    const el = document.createElement("div");
-    el.className = "fmt";
-    el.innerHTML =
-      `<div class="meta"><div class="name">${esc(f.name)}</div>` +
-      `<div class="desc">${f.max_flavors} gust${f.max_flavors === 1 ? "o" : "i"}</div></div>` +
-      `<div class="price">${euro(f.price)}</div>` +
-      `<button class="btn sm">Scegli</button>`;
-    el.querySelector("button").onclick = () => openModal(f);
-    wrap.appendChild(el);
+  if (!DATA.formats.length) { wrap.innerHTML = '<p class="hint">Nessun prodotto disponibile al momento.</p>'; return; }
+  PRODUCT_CATS.forEach((c) => {
+    const rows = DATA.formats.filter((f) => normCat(f) === c.key);
+    if (!rows.length) return;
+    const head = document.createElement("p");
+    head.className = "fmt-group-head"; head.textContent = c.label;
+    wrap.appendChild(head);
+    rows.forEach((f) => {
+      const n = f.max_flavors;
+      const el = document.createElement("div");
+      el.className = "fmt";
+      const desc = n > 0 ? `${n} gust${n === 1 ? "o" : "i"}` : "Senza scelta gusti";
+      el.innerHTML =
+        `<div class="meta"><div class="name">${esc(f.name)}</div>` +
+        `<div class="desc">${desc}</div></div>` +
+        `<div class="price">${euro(f.price)}</div>` +
+        `<button class="btn sm">${n > 0 ? "Scegli" : "Aggiungi"}</button>`;
+      el.querySelector("button").onclick = () => openModal(f);
+      wrap.appendChild(el);
+    });
   });
 }
 
 // ---------- modale gusti ----------
 function openModal(format) {
   modalFormat = format; modalChosen = [];
+  const n = format.max_flavors;
+  const flavWrap = $("m-flavors"), hint = $("m-hint");
   $("m-eyebrow").textContent =
-    `${format.max_flavors} gust${format.max_flavors === 1 ? "o" : "i"} · ${euro(format.price)}`;
+    (n > 0 ? `${n} gust${n === 1 ? "o" : "i"}` : "Prodotto") + ` · ${euro(format.price)}`;
   $("m-title").textContent = format.name;
-  $("m-hint").textContent =
-    `Scegli fino a ${format.max_flavors} gust${format.max_flavors === 1 ? "o" : "i"} per questo formato.`;
+  if (n > 0) {
+    hint.style.display = "";
+    hint.textContent = `Scegli fino a ${n} gust${n === 1 ? "o" : "i"} per questo prodotto.`;
+    flavWrap.style.display = "";
+    renderModalFlavors();
+  } else {
+    hint.style.display = "none";
+    flavWrap.style.display = "none";
+    flavWrap.innerHTML = "";
+  }
   $("m-qty").value = 1;
-  renderModalFlavors();
   $("modal").classList.add("show");
 }
 function closeModal() { $("modal").classList.remove("show"); }
@@ -316,7 +340,7 @@ function renderModalFlavors() {
 }
 
 function addToCart() {
-  if (modalChosen.length === 0) { toast("Scegli almeno un gusto."); return; }
+  if (modalFormat.max_flavors > 0 && modalChosen.length === 0) { toast("Scegli almeno un gusto."); return; }
   const qty = Math.max(1, parseInt($("m-qty").value || "1", 10));
   CART.push({
     format_id: modalFormat.id,
@@ -337,7 +361,7 @@ function renderCart() {
   if (!CART.length) { lines.innerHTML = ""; updateTotal(); return; }
   const rows = CART.map((item, i) =>
     `<div class="cart-line"><div class="q">${item.qty}×</div>` +
-    `<div class="body"><div class="t">${esc(item.format)}</div><div class="g">${esc(item.gusti.join(", "))}</div></div>` +
+    `<div class="body"><div class="t">${esc(item.format)}</div>${item.gusti.length ? `<div class="g">${esc(item.gusti.join(", "))}</div>` : ""}</div>` +
     `<div class="lp">${euro(item.prezzo_unit * item.qty)}</div>` +
     `<button class="btn icon rm" data-i="${i}" aria-label="Rimuovi">✕</button></div>`
   ).join("");
@@ -584,7 +608,7 @@ function showConfirmation(o) {
     : `Ti contatteremo a breve. Consegna prevista ${dateLabel(o.delivery_date)}, ${o.slot_label || "-"}.`;
   const rows = o.items.map((i) =>
     `<div class="cart-line"><div class="q">${i.qty}×</div>` +
-    `<div class="body"><div class="t">${esc(i.format)}</div><div class="g">${esc(i.gusti.join(", "))}</div></div>` +
+    `<div class="body"><div class="t">${esc(i.format)}</div>${(i.gusti && i.gusti.length) ? `<div class="g">${esc(i.gusti.join(", "))}</div>` : ""}</div>` +
     `<div class="lp">${euro(i.prezzo_unit * i.qty)}</div></div>`
   ).join("");
   $("done-summary").innerHTML =
