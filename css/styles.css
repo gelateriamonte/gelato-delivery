@@ -540,8 +540,20 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .scope label:has(input:checked){ color:var(--ink); font-weight:600; }
 
 /* ---------- Laboratorio ---------- */
-.labgrid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.labgrid{ display:grid; grid-template-columns:1fr; gap:16px; }
 .labcard{ background:var(--paper); border:1px solid var(--line); border-radius:var(--r-md); box-shadow:var(--shadow-card); padding:16px 18px; }
+/* corpo card-giorno: sinistra kg/aggregato · destra vaschette per cliente */
+.labcols{ display:grid; grid-template-columns:1fr 1fr; gap:14px 28px; align-items:start; }
+.labcol{ min-width:0; }
+/* vaschette per cliente (colonna destra) */
+.labclients .labsub{ font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:#8a8174; font-weight:700; margin-bottom:6px; }
+.labclient{ padding:8px 0; border-bottom:1px solid var(--line); }
+.labclient:last-child{ border-bottom:0; }
+.labclient-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:2px; }
+.lc-name{ font-weight:600; color:var(--ink); font-size:14px; }
+.labful{ font-size:.64rem; font-weight:700; padding:1px 7px; border-radius:6px; white-space:nowrap; }
+.labful-pk{ background:#f3e7da; color:#a8552f; }
+.labful-del{ background:#e7f0e7; color:#2f6f3f; }
 .labhead{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
 .labday{ font-family:var(--serif); font-size:18px; font-weight:600; color:var(--ink); white-space:nowrap; }
 .kglist{ display:flex; flex-direction:column; }
@@ -633,7 +645,7 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 /* ============================================================
    RESPONSIVE
    ============================================================ */
-@media (max-width:980px){ .labgrid{ grid-template-columns:repeat(2,1fr); } }
+@media (max-width:980px){ .labcols{ grid-template-columns:1fr; } }   /* card-giorno full-width: stack sinistra/destra */
 @media (max-width:760px){
   .orders{ grid-template-columns:1fr; }
   .subgrid{ grid-template-columns:1fr; }

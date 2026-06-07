@@ -305,26 +305,35 @@ function vaschettaName(kg) {
 function itemGrams(it) { return (it.peso_kg != null) ? Number(it.peso_kg) * 1000 : formatGrams(it.format); }
 // e' una vaschetta? category esplicita (nuovi ordini) con fallback al peso-da-nome (ordini vecchi)
 function itemIsVaschetta(it) { return (it.category != null) ? (it.category === "vaschetta") : (formatGrams(it.format) > 0); }
+// badge tipo ordine (consegna / take away)
+function fulBadge(ful) {
+  return ful === "pickup"
+    ? '<span class="labful labful-pk">🏪 Take away</span>'
+    : '<span class="labful labful-del">🛵 Consegna</span>';
+}
 
 function renderLab() {
   const wrap = $("lab-list");
   if (!wrap) return;
-  const byDay = {};   // delivery_date -> { count, flavors: {nome: grammi} }
+  const byDay = {};   // delivery_date -> { count, flavors:{nome:grammi}, vasche:{}, clients:[] }
   ORDERS.forEach((o) => {
     if (o.status !== "accettato" || !o.delivery_date) return;
-    const d = byDay[o.delivery_date] || (byDay[o.delivery_date] = { count: 0, flavors: {}, vasche: {} });
+    const d = byDay[o.delivery_date] || (byDay[o.delivery_date] = { count: 0, flavors: {}, vasche: {}, clients: [] });
     d.count++;
+    const orderVasche = [];   // vaschette di QUESTO ordine (per la lista per-cliente)
     (o.items || []).forEach((it) => {
       const gusti = it.gusti || [], g = itemGrams(it);
       if (itemIsVaschetta(it)) {   // vaschetta: dettaglio per combinazione formato+gusti
         const key = it.format + "|" + gusti.join(",");
         const v = d.vasche[key] || (d.vasche[key] = { format: it.format, gusti, qty: 0 });
         v.qty += (it.qty || 1);
+        orderVasche.push({ format: it.format, gusti, qty: it.qty || 1 });
       }
       if (!itemIsVaschetta(it) || !g || !gusti.length) return;  // non-vaschetta / senza gusti: niente kg
       const per = (g * (it.qty || 1)) / gusti.length;  // peso diviso per n. gusti
       gusti.forEach((n) => { d.flavors[n] = (d.flavors[n] || 0) + per; });
     });
+    if (orderVasche.length) d.clients.push({ name: o.customer_name, fulfillment: o.fulfillment, vasche: orderVasche });
   });
 
   wrap.innerHTML = "";
@@ -345,14 +354,31 @@ function renderLab() {
         vasche.map((v) => `<div class="vline"><span class="vq">${v.qty}×</span><span class="vn">${esc(v.format)}${v.gusti.length ? `<small>${esc(v.gusti.join(", "))}</small>` : ""}</span></div>`).join("") +
         `</div>`
       : "";
+    // colonna destra: vaschette per cliente (nominativo + tipo ordine + vaschetta/gusti)
+    const clients = info.clients || [];
+    const clientsHtml = `<div class="labclients"><div class="labsub">Vaschette per cliente${clients.length ? " · " + clients.length : ""}</div>` +
+      (clients.length
+        ? clients.map((c) =>
+            `<div class="labclient">` +
+              `<div class="labclient-head"><span class="lc-name">${esc(c.name)}</span>${fulBadge(c.fulfillment)}</div>` +
+              c.vasche.map((v) => `<div class="vline"><span class="vq">${v.qty}×</span><span class="vn">${esc(v.format)}${v.gusti.length ? `<small>${esc(v.gusti.join(", "))}</small>` : ""}</span></div>`).join("") +
+            `</div>`
+          ).join("")
+        : '<p class="hint" style="margin:0">Nessuna vaschetta in questo giorno.</p>') +
+      `</div>`;
     const card = document.createElement("div");
     card.className = "labcard";
     card.innerHTML =
       `<div class="labhead"><span class="labday">${esc(dayName(dt, i))} ${dt.getDate()}/${dt.getMonth() + 1}</span>` +
       `<span class="count">${info.count} ordin${info.count === 1 ? "e" : "i"}</span></div>` +
-      `<div class="kglist">${rows}</div>` +
-      (flavs.length ? `<div class="kgtot"><span>Totale gelato</span><b>${kg(totKg)}</b></div>` : "") +
-      vascheHtml;
+      `<div class="labcols">` +
+        `<div class="labcol">` +
+          `<div class="kglist">${rows}</div>` +
+          (flavs.length ? `<div class="kgtot"><span>Totale gelato</span><b>${kg(totKg)}</b></div>` : "") +
+          vascheHtml +
+        `</div>` +
+        `<div class="labcol">${clientsHtml}</div>` +
+      `</div>`;
     wrap.appendChild(card);
   });
   if (!any) wrap.innerHTML = '<p class="hint">Nessun ordine accettato da preparare.</p>';
