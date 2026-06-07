@@ -670,6 +670,8 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .coupon-msg { margin-top: 6px; font-size: .85rem; font-weight: 600; }
 .coupon-msg.ok { color: #2f6f3f; }
 .coupon-msg.ko { color: #b00020; }
+#coupon:disabled{ background:var(--paper-2); color:var(--faint); cursor:not-allowed; }
+#coupon-gate{ margin:7px 1px 0; }
 
 /* ---- codici sconto (admin) ---- */
 .dc-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }

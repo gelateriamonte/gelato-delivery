@@ -94,9 +94,10 @@
           <textarea id="notes" rows="2" placeholder="Citofono Rossi, 2º piano"></textarea></div>
         <div class="field"><label for="coupon">Codice sconto (opzionale)</label>
           <div class="addr-row">
-            <input id="coupon" type="text" placeholder="Es. ESTATE10" autocomplete="off" style="text-transform:uppercase">
-            <button type="button" class="btn sm" id="coupon-apply">Applica</button>
+            <input id="coupon" type="text" placeholder="Es. ESTATE10" autocomplete="off" style="text-transform:uppercase" disabled>
+            <button type="button" class="btn sm" id="coupon-apply" disabled>Applica</button>
           </div>
+          <p class="map-note" id="coupon-gate">Inserisci <b>nome</b>, <b>telefono</b> ed <b>email</b> per usare un codice sconto.</p>
           <div id="coupon-msg" class="coupon-msg" style="display:none"></div>
         </div>
       </div>

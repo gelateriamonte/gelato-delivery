@@ -399,6 +399,16 @@ async function applyCoupon() {
   updateTotal();   // mostra il successo + aggiorna il totale
 }
 
+// Campo sconto abilitato solo con nome + telefono + email compilati.
+function syncCouponGate() {
+  const ready = !!($("name").value.trim() && $("phone").value.trim() && $("email").value.trim());
+  const inp = $("coupon"), btn = $("coupon-apply"), gate = $("coupon-gate");
+  if (inp) inp.disabled = !ready;
+  if (btn) btn.disabled = !ready;
+  if (gate) gate.style.display = ready ? "none" : "block";
+  if (!ready && COUPON) { COUPON = null; const m = $("coupon-msg"); if (m) m.style.display = "none"; updateTotal(); }
+}
+
 function updateTotal() {
   const sub = subtotal();
   const delivery = CART.length ? deliveryCost() : 0;
@@ -605,6 +615,7 @@ $("pay-close").onclick = closePayment;
 $("coupon-apply").onclick = applyCoupon;
 $("coupon").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyCoupon(); } });
 $("coupon").addEventListener("input", () => { if (!$("coupon").value.trim()) { COUPON = null; updateTotal(); } });
+["name", "phone", "email"].forEach((id) => $(id).addEventListener("input", syncCouponGate));
 $("addr-find").onclick = () => { closeAddrSuggest(); geocodeAddress(); };
 $("address").addEventListener("input", onAddrInput);
 $("address").addEventListener("blur", () => setTimeout(closeAddrSuggest, 150));   // ritardo: lascia scattare il click sul suggerimento
@@ -621,6 +632,7 @@ $("pickup-time").onchange = () => updateTotal();
 $("name").value = "Mario Rossi";
 $("phone").value = "333 1234567";
 $("email").value = "mario.rossi@email.it";
+syncCouponGate();   // stato iniziale del campo sconto
 $("address").value = "Via Lu Pitrali, San Teodoro";   // default di prova (fase test)
 
 initMap();
