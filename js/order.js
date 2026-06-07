@@ -373,6 +373,17 @@ function renderCouponMsg(disc) {
     m.style.display = "none";   // campo vuoto: nascondi (gli errori restano finché c'è testo)
   }
 }
+// codici 'always': una sola volta per cliente. Cerca un ordine pagato con stesso codice + telefono/email.
+async function couponUsedByCustomer(code) {
+  const phoneDigits = ($("phone").value || "").replace(/\D/g, "");
+  const emailNorm = ($("email").value || "").trim().toLowerCase();
+  if (!phoneDigits && !emailNorm) return false;   // contatti non ancora inseriti → controlla il server al checkout
+  const { data } = await sb.from("orders").select("customer_phone,email").ilike("coupon_code", code);
+  return (data || []).some((o) =>
+    (phoneDigits && o.customer_phone && String(o.customer_phone).replace(/\D/g, "") === phoneDigits) ||
+    (emailNorm && o.email && String(o.email).trim().toLowerCase() === emailNorm)
+  );
+}
 async function applyCoupon() {
   const code = $("coupon").value.trim().toUpperCase();
   const m = $("coupon-msg");
@@ -383,6 +394,7 @@ async function applyCoupon() {
   if (!data) return fail("Codice non valido.");
   if (!data.active) return fail("Codice non attivo.");
   if (data.kind === "oneoff" && (data.burned || data.used_count > 0)) return fail("Codice già utilizzato.");
+  if (data.kind !== "oneoff" && await couponUsedByCustomer(data.code)) return fail("Hai già usato questo codice: è valido una volta per cliente.");
   COUPON = data;
   updateTotal();   // mostra il successo + aggiorna il totale
 }

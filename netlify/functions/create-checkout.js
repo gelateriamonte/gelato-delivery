@@ -82,6 +82,18 @@ exports.handler = async (event) => {
       const { data: dc } = await supa.from("discount_codes").select("*").ilike("code", code).maybeSingle();
       if (!dc || !dc.active) return json(400, { error: "Codice sconto non valido." });
       if (dc.kind === "oneoff" && (dc.burned || dc.used_count > 0)) return json(400, { error: "Codice sconto già utilizzato." });
+      // codici 'always' (riutilizzabili): una sola volta per cliente — stessa coppia codice + telefono/email.
+      // Conta solo gli ordini PAGATI (in `orders`); i tentativi abbandonati non bruciano il codice.
+      if (dc.kind !== "oneoff") {
+        const phoneDigits = String(customer_phone || "").replace(/\D/g, "");
+        const emailNorm = (email || "").trim().toLowerCase();
+        const { data: prev } = await supa.from("orders").select("customer_phone,email").ilike("coupon_code", dc.code);
+        const giaUsato = (prev || []).some((o) =>
+          (phoneDigits && o.customer_phone && String(o.customer_phone).replace(/\D/g, "") === phoneDigits) ||
+          (emailNorm && o.email && String(o.email).trim().toLowerCase() === emailNorm)
+        );
+        if (giaUsato) return json(409, { error: "Hai già usato questo codice: è valido una volta per cliente." });
+      }
       discountCents = dc.discount_type === "percent"
         ? Math.round(amount * Number(dc.value) / 100)
         : Math.round(Number(dc.value) * 100);
