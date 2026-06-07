@@ -665,3 +665,20 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .vline .vq { font-weight: 700; color: #a8552f; min-width: 26px; }
 .vline .vn { font-size: .9rem; }
 .vline .vn small { display: block; color: #8a8174; font-size: .76rem; }
+
+/* ---- codice sconto (cliente) ---- */
+.coupon-msg { margin-top: 6px; font-size: .85rem; font-weight: 600; }
+.coupon-msg.ok { color: #2f6f3f; }
+.coupon-msg.ko { color: #b00020; }
+
+/* ---- codici sconto (admin) ---- */
+.dc-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid #f0ece3; }
+.dc-row:last-child { border-bottom: 0; }
+.dc-row.off { opacity: .55; }
+.dc-main { flex: 1; min-width: 0; }
+.dc-main small { display: block; color: #8a8174; font-size: .76rem; margin-top: 2px; }
+.dc-val { color: #a8552f; font-weight: 700; }
+.dc-tag { font-size: .64rem; font-weight: 700; padding: 1px 6px; border-radius: 6px; margin-left: 4px; }
+.dc-tag.always { background: #e7f0e7; color: #2f6f3f; }
+.dc-tag.oneoff { background: #f3e7da; color: #a8552f; }
+.dc-actions { display: flex; gap: 6px; flex: none; }

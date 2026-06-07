@@ -142,7 +142,7 @@ updateWaToggleBtn();
 
 // ---------- INIT ----------
 async function initApp() {
-  await Promise.all([loadOrders(), loadFlavors(), loadFormats(), loadSlots(), loadSettings(), purgeOldSlotState()]);
+  await Promise.all([loadOrders(), loadFlavors(), loadFormats(), loadSlots(), loadSettings(), loadDiscounts(), purgeOldSlotState()]);
   renderOrders();   // re-render con SLOTS_CATALOG caricato (statistiche fasce del giorno)
   subscribeOrders();
 }
@@ -715,6 +715,7 @@ function orderCard(o, bare) {   // bare=true → vista sola lettura (no WhatsApp
     `${esc(o.address)}${o.delivery_lat != null ? ` · <a class="maplink" href="https://www.google.com/maps?q=${o.delivery_lat},${o.delivery_lng}" target="_blank" rel="noopener">Mappa</a><span class="route-info" data-rk="${o.delivery_lat},${o.delivery_lng}"></span>` : ""}<br>` +
     `<span class="k">${isPk ? "Ritiro" : "Consegna"}</span> ${esc(cons)} · ${esc((o.slot_label || "-").replace(/^Ritiro /, "ore "))}` +
     `${pb ? `<br><span class="k">Pagamento</span> ${pb}` : ""}` +
+    `${o.coupon_code ? `<br><span class="k">Sconto</span> ${esc(o.coupon_code)} (−${euro(o.discount)})` : ""}` +
     `${o.notes ? `<br><span class="k">Note</span> ${esc(o.notes)}` : ""}</div>` +
     `<div class="items">${items}</div>` +
     `<div class="foot"><span class="del">${isPk ? "Ritiro" : "Consegna"} ${euro(o.delivery_cost)}</span><span class="tot">${euro(o.total)}</span></div>` +
@@ -1016,6 +1017,61 @@ $("set-save").onclick = async () => {
   if (error) { console.error(error); toast("Errore salvataggio."); return; }
   toast("Parametri salvati.");
 };
+
+// ========== CODICI SCONTO ==========
+let DISCOUNTS = [];
+async function loadDiscounts() {
+  const { data, error } = await sb.from("discount_codes").select("*").order("created_at", { ascending: false });
+  if (error) { console.error(error); return; }
+  DISCOUNTS = data || [];
+  renderDiscounts();
+}
+function renderDiscounts() {
+  const wrap = $("dc-list"); if (!wrap) return;
+  if (!DISCOUNTS.length) { wrap.innerHTML = '<p class="muted small" style="margin:0">Nessun codice sconto creato.</p>'; return; }
+  wrap.innerHTML = DISCOUNTS.map((d) => {
+    const val = d.discount_type === "percent" ? `${Number(d.value)}%` : euro(d.value);
+    const kindB = d.kind === "oneoff"
+      ? `<span class="dc-tag oneoff">One-off${d.burned ? " · bruciato" : ""}</span>`
+      : `<span class="dc-tag always">Sempre</span>`;
+    return `<div class="dc-row${d.active ? "" : " off"}">` +
+      `<div class="dc-main"><b>${esc(d.code)}</b> <span class="dc-val">−${val}</span> ${kindB}` +
+      `<small>usato ${d.used_count} volt${d.used_count === 1 ? "a" : "e"}${d.active ? "" : " · disattivato"}</small></div>` +
+      `<div class="dc-actions">` +
+      (d.burned ? "" : `<button class="btn ghost sm" data-act="toggle" data-id="${d.id}">${d.active ? "Disattiva" : "Attiva"}</button>`) +
+      `<button class="btn danger sm" data-act="del" data-id="${d.id}">Elimina</button>` +
+      `</div></div>`;
+  }).join("");
+  wrap.querySelectorAll("[data-act]").forEach((b) => {
+    b.onclick = () => {
+      const d = DISCOUNTS.find((x) => x.id === b.dataset.id); if (!d) return;
+      if (b.dataset.act === "toggle") toggleDiscount(d); else delDiscount(d);
+    };
+  });
+}
+async function addDiscount() {
+  const code = $("dc-code").value.trim().toUpperCase();
+  if (!code) { toast("Inserisci un codice."); return; }
+  const value = Number($("dc-value").value);
+  if (!(value > 0)) { toast("Valore sconto non valido."); return; }
+  const { error } = await sb.from("discount_codes").insert({ code, kind: $("dc-kind").value, discount_type: $("dc-dtype").value, value });
+  if (error) { toast(/duplicate|unique/i.test(error.message || "") ? "Codice già esistente." : "Errore creazione."); return; }
+  $("dc-code").value = ""; $("dc-value").value = "";
+  toast("Codice creato."); loadDiscounts();
+}
+async function toggleDiscount(d) {
+  const { error } = await sb.from("discount_codes").update({ active: !d.active }).eq("id", d.id);
+  if (error) { toast("Errore."); return; }
+  loadDiscounts();
+}
+async function delDiscount(d) {
+  if (!confirm(`Eliminare il codice ${d.code}?`)) return;
+  const { error } = await sb.from("discount_codes").delete().eq("id", d.id);
+  if (error) { toast("Errore."); return; }
+  loadDiscounts();
+}
+$("dc-add").onclick = addDiscount;
+$("dc-code").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addDiscount(); } });
 $("wa-save").onclick = async () => {
   const tpl = {};
   WA_STATUSES.forEach((s) => { const el = $("wa-" + STATUS_META[s].slug); if (el) tpl[s] = el.value.trim(); });

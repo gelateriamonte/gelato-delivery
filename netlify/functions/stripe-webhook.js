@@ -64,6 +64,18 @@ exports.handler = async (event) => {
     const { error: insErr } = await supa.from("orders").insert(order);
     if (insErr) return { statusCode: 500, body: "insert ordine: " + insErr.message };
 
+    // traccia/brucia il codice sconto usato (best-effort)
+    if (order.coupon_code) {
+      try {
+        const { data: dc } = await supa.from("discount_codes").select("id,kind,used_count").ilike("code", order.coupon_code).maybeSingle();
+        if (dc) {
+          const upd = { used_count: (dc.used_count || 0) + 1 };
+          if (dc.kind === "oneoff") { upd.burned = true; upd.active = false; }   // one-off: consumato
+          await supa.from("discount_codes").update(upd).eq("id", dc.id);
+        }
+      } catch (e) { console.error("coupon burn:", e.message); }
+    }
+
     // notifica Telegram al titolare (best-effort: non deve mai far fallire la risposta a Stripe)
     try { await notifyOrder(order); } catch (e) { console.error("telegram notify:", e.message); }
 

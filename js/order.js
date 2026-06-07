@@ -84,6 +84,7 @@ const GELATERIA = { lat: 40.8410901, lng: 9.6538693, name: "Gelateria Bm&V Monte
 const ST_BBOX = [[40.6967, 9.5776], [40.8649, 9.7287]];   // [S,W],[N,E] comune San Teodoro
 let map = null, delivMarker = null, delIcon = null;
 let DELIV_LAT = null, DELIV_LNG = null, IN_ZONE = false;
+let COUPON = null;   // codice sconto applicato (riga di discount_codes), o null
 
 // zona consegna: custom (settings.delivery_area, anello singolo) o confine comune (più anelli)
 function deliveryRings() {
@@ -357,10 +358,41 @@ function renderCart() {
 
 function subtotal() { return CART.reduce((s, i) => s + i.prezzo_unit * i.qty, 0); }
 
+// ---------- codice sconto ----------
+function couponDiscount(base) {
+  if (!COUPON || base <= 0) return 0;
+  let d = COUPON.discount_type === "percent" ? base * Number(COUPON.value) / 100 : Number(COUPON.value);
+  return Math.round(Math.min(d, base) * 100) / 100;
+}
+function renderCouponMsg(disc) {
+  const m = $("coupon-msg"); if (!m) return;
+  if (COUPON && disc > 0) {
+    m.style.display = "block"; m.className = "coupon-msg ok";
+    m.textContent = `✓ ${COUPON.code} applicato: −${euro(disc)}`;
+  } else if (!COUPON && !$("coupon").value.trim()) {
+    m.style.display = "none";   // campo vuoto: nascondi (gli errori restano finché c'è testo)
+  }
+}
+async function applyCoupon() {
+  const code = $("coupon").value.trim().toUpperCase();
+  const m = $("coupon-msg");
+  const fail = (txt) => { COUPON = null; if (m) { m.style.display = "block"; m.className = "coupon-msg ko"; m.textContent = "✕ " + txt; } updateTotal(); };
+  if (!code) { COUPON = null; if (m) m.style.display = "none"; updateTotal(); return; }
+  const { data, error } = await sb.from("discount_codes").select("*").ilike("code", code).maybeSingle();
+  if (error) return fail("Verifica non riuscita, riprova.");
+  if (!data) return fail("Codice non valido.");
+  if (!data.active) return fail("Codice non attivo.");
+  if (data.kind === "oneoff" && (data.burned || data.used_count > 0)) return fail("Codice già utilizzato.");
+  COUPON = data;
+  updateTotal();   // mostra il successo + aggiorna il totale
+}
+
 function updateTotal() {
   const sub = subtotal();
   const delivery = CART.length ? deliveryCost() : 0;
-  $("total").textContent = euro(sub + delivery);
+  const disc = couponDiscount(sub + delivery);
+  $("total").textContent = euro(sub + delivery - disc);
+  renderCouponMsg(disc);
   const min = Number(DATA.settings.min_order);
   const okMin = sub >= min;
   const pickup = isPickup();
@@ -476,6 +508,7 @@ async function submitOrder() {
     subtotal: sub,
     delivery_cost: delivery,
     total: sub + delivery,
+    coupon_code: COUPON ? COUPON.code : null,
     notes: $("notes").value.trim() || null,
     status: "ricevuto",
   };
@@ -557,6 +590,9 @@ $("m-qty-dec").onclick = () => { $("m-qty").value = Math.max(1, (parseInt($("m-q
 $("m-qty-inc").onclick = () => { $("m-qty").value = (parseInt($("m-qty").value || "1", 10) || 1) + 1; };
 $("submit").onclick = submitOrder;
 $("pay-close").onclick = closePayment;
+$("coupon-apply").onclick = applyCoupon;
+$("coupon").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyCoupon(); } });
+$("coupon").addEventListener("input", () => { if (!$("coupon").value.trim()) { COUPON = null; updateTotal(); } });
 $("addr-find").onclick = () => { closeAddrSuggest(); geocodeAddress(); };
 $("address").addEventListener("input", onAddrInput);
 $("address").addEventListener("blur", () => setTimeout(closeAddrSuggest, 150));   // ritardo: lascia scattare il click sul suggerimento

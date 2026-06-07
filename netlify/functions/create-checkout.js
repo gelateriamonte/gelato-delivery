@@ -75,17 +75,43 @@ exports.handler = async (event) => {
     const amount = subtotalCents + deliveryCents;
     if (amount <= 0) return json(400, { error: "Totale non valido." });
 
+    // 2b) Codice sconto: validazione AUTOREVOLE lato server (sul totale prodotti+consegna).
+    let discountCents = 0, couponCode = null;
+    if (body.coupon_code) {
+      const code = String(body.coupon_code).trim();
+      const { data: dc } = await supa.from("discount_codes").select("*").ilike("code", code).maybeSingle();
+      if (!dc || !dc.active) return json(400, { error: "Codice sconto non valido." });
+      if (dc.kind === "oneoff" && (dc.burned || dc.used_count > 0)) return json(400, { error: "Codice sconto già utilizzato." });
+      discountCents = dc.discount_type === "percent"
+        ? Math.round(amount * Number(dc.value) / 100)
+        : Math.round(Number(dc.value) * 100);
+      discountCents = Math.max(0, Math.min(discountCents, amount));
+      couponCode = dc.code;
+    }
+    const finalAmount = amount - discountCents;
+    if (finalAmount <= 0) return json(400, { error: "Sconto troppo alto per questo ordine." });
+
     // 3) Bozza ordine (importi server, autorevoli). status finale = 'ricevuto' (lo mette il webhook).
     const payload = {
       customer_name, customer_phone, email: email || null, address: address || null,
       delivery_lat: delivery_lat == null ? null : delivery_lat,
       delivery_lng: delivery_lng == null ? null : delivery_lng,
       delivery_date, slot_label, fulfillment: isPickup ? "pickup" : "delivery",
-      items, subtotal: subtotalCents / 100, delivery_cost: deliveryCents / 100, total: amount / 100,
+      items, subtotal: subtotalCents / 100, delivery_cost: deliveryCents / 100,
+      coupon_code: couponCode, discount: discountCents / 100, total: finalAmount / 100,
       notes: notes || null,
     };
-    const { data: pend, error: pErr } = await supa.from("pending_orders").insert({ payload, amount }).select("id").single();
+    const { data: pend, error: pErr } = await supa.from("pending_orders").insert({ payload, amount: finalAmount }).select("id").single();
     if (pErr) return json(500, { error: "Errore creazione bozza." });
+
+    // sconto Stripe (coupon usa-e-getta amount_off): applicato all'intera sessione
+    let stripeDiscounts;
+    if (discountCents > 0) {
+      try {
+        const c = await stripe.coupons.create({ amount_off: discountCents, currency: "eur", duration: "once", name: "Sconto " + couponCode });
+        stripeDiscounts = [{ coupon: c.id }];
+      } catch (e) { /* se fallisce il coupon Stripe, si paga pieno: meglio bloccare */ return json(502, { error: "Errore applicazione sconto." }); }
+    }
 
     // 4) Checkout Session embedded — NIENTE payment_method_types (metodi dinamici da dashboard).
     // ui_mode 'embedded_page' (API nuova): form in pagina; a pagamento fatto redirect a return_url.
@@ -96,9 +122,10 @@ exports.handler = async (event) => {
         ui_mode: "embedded_page",
         mode: "payment",
         line_items,
+        ...(stripeDiscounts ? { discounts: stripeDiscounts } : {}),
         return_url: origin + "/grazie.html?session_id={CHECKOUT_SESSION_ID}",
         customer_email: email || undefined,
-        metadata: { pending_id: pend.id },
+        metadata: { pending_id: pend.id, coupon_code: couponCode || "" },
         payment_intent_data: { metadata: { pending_id: pend.id } },
       });
     } catch (e) {
