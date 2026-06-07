@@ -502,6 +502,15 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .star-btn:hover{ border-color:var(--accent); }
 .star-btn.on{ color:#e0a82e; border-color:#edcf86; background:#fcf4df; }
 
+/* ---- gusto del giorno (☀) + microdescrizione home ---- */
+.frow{ display:flex; flex-direction:column; gap:7px; }
+.daily-btn{ flex:none; width:34px; height:34px; padding:0; border:1px solid var(--line); border-radius:9px;
+  background:transparent; color:var(--line-2); font-size:16px; line-height:1; cursor:pointer;
+  transition:color .15s, border-color .15s, background .15s; }
+.daily-btn:hover{ border-color:var(--accent); }
+.daily-btn.on{ color:var(--accent); border-color:var(--accent-line); background:var(--accent-soft); }
+.g-desc{ width:100%; font-size:13.5px; padding:10px 12px; background:var(--paper-2); }
+
 /* ---- prodotti: categorie + maniglia in cima alla card (back office) ---- */
 .fmt-group + .fmt-group{ margin-top:26px; }
 .fmt-cat-head{
@@ -686,8 +695,9 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
   .mrow .btn.icon{ flex:none; padding:8px 8px; }
   /* riordino + stellina compatti: la riga gusto resta su una sola linea */
   .mrow .drag-handle{ padding:4px 1px; font-size:16px; }
-  .mrow .star-btn{ width:30px; height:30px; font-size:15px; }
-  .mrow .g-name{ min-width:72px; }
+  .mrow .star-btn, .mrow .daily-btn{ width:29px; height:29px; font-size:14px; }
+  .mrow{ gap:6px; }
+  .mrow .g-name{ min-width:52px; }
   /* add-row: i select prendono larghezza utile, va a capo */
   .addrow{ flex-wrap:wrap; }
   .addrow .select-wrap.grow{ flex:1 1 40%; min-width:118px; }

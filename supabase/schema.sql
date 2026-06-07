@@ -13,6 +13,8 @@ create table if not exists flavors (
   name        text not null,
   available   boolean not null default true,
   special     boolean not null default false,   -- gusto "speciale" (stellina, solo back office)
+  daily       boolean not null default false,   -- "gusto del giorno": mostrato in home
+  description text,                              -- microdescrizione (usata in home per i gusti del giorno)
   sort_order  int not null default 0,
   created_at  timestamptz not null default now()
 );

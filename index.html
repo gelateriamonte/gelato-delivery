@@ -84,9 +84,6 @@
     .fmeta{ flex:1; min-width:0; }
     .fname{ font-family:var(--serif); font-size:20px; font-weight:600; color:var(--ink); line-height:1.05; }
     .fdesc{ font-size:12.5px; color:var(--muted); margin-top:3px; }
-    .ftag{ font-size:9.5px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink);
-      background:var(--accent-soft); border:1px solid var(--accent-line); padding:4px 9px; border-radius:999px; white-space:nowrap; }
-    .ftag.classic{ color:var(--muted); background:var(--paper-2); border-color:var(--line-2); }
 
     /* info servizio */
     .infogrid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -156,28 +153,9 @@
 
     <div class="divider"></div>
 
-    <section class="sec">
-      <div class="sec-head"><h2>I nostri gusti</h2></div>
-      <div class="flavors">
-        <div class="flavor"><span class="dab" style="background:#9fae66"></span>
-          <div class="fmeta"><div class="fname">Pistacchio</div><div class="fdesc">tostato</div></div>
-          <span class="ftag classic">Classico</span></div>
-        <div class="flavor"><span class="dab" style="background:#5b4636"></span>
-          <div class="fmeta"><div class="fname">Cioccolato</div><div class="fdesc">fondente</div></div>
-          <span class="ftag classic">Classico</span></div>
-        <div class="flavor"><span class="dab" style="background:#bb9162"></span>
-          <div class="fmeta"><div class="fname">Nocciola</div><div class="fdesc">tonda e gentile</div></div>
-          <span class="ftag classic">Classico</span></div>
-        <div class="flavor"><span class="dab" style="background:#d8923f"></span>
-          <div class="fmeta"><div class="fname">Aranzada</div><div class="fdesc">mandorla e scorza d'arancia</div></div>
-          <span class="ftag">Specialità sarda</span></div>
-        <div class="flavor"><span class="dab" style="background:#ece1cc"></span>
-          <div class="fmeta"><div class="fname">Ricotta e fichi</div><div class="fdesc">cremoso e delicato</div></div>
-          <span class="ftag">Novità</span></div>
-        <div class="flavor"><span class="dab" style="background:#d99a96"></span>
-          <div class="fmeta"><div class="fname">Fragola</div><div class="fdesc">frutto intero</div></div>
-          <span class="ftag">Stagione</span></div>
-      </div>
+    <section class="sec" id="flavors-sec" hidden>
+      <div class="sec-head"><h2>I gusti del giorno</h2></div>
+      <div class="flavors" id="home-flavors"></div>
     </section>
 
     <section class="sec" style="padding-top:6px">
@@ -206,5 +184,44 @@
     </div>
 
   </div>
+
+  <!-- Gusti del giorno: prelevati da Supabase (flavors con daily=true) -->
+  <script src="config.js"></script>
+  <script>
+    (function () {
+      // colore pallino per i gusti noti (fallback neutro per gli altri)
+      var DAB = {
+        "fiordilatte": "#f3ead7", "crema": "#ecd9a3", "stracciatella": "#f0e7d6",
+        "cioccolato": "#5b4636", "bacio": "#4a342a", "nocciola": "#bb9162",
+        "pistacchio": "#9fae66", "limone": "#e6c84f", "fragola": "#d99a96",
+        "ricotta e fichi": "#ece1cc", "aranzada": "#d8923f", "variegato amarena": "#b23b4e"
+      };
+      function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+      function dabColor(name) {
+        var n = String(name || "").toLowerCase();
+        for (var k in DAB) { if (n.indexOf(k) === 0 || n === k) return DAB[k]; }
+        return "#cbb9a3";
+      }
+      function render(rows) {
+        var sec = document.getElementById("flavors-sec");
+        var wrap = document.getElementById("home-flavors");
+        if (!sec || !wrap || !Array.isArray(rows) || !rows.length) return;   // niente gusti del giorno -> sezione nascosta
+        wrap.innerHTML = rows.map(function (f) {
+          var d = f.description ? '<div class="fdesc">' + esc(f.description) + "</div>" : "";
+          return '<div class="flavor"><span class="dab" style="background:' + dabColor(f.name) + '"></span>' +
+            '<div class="fmeta"><div class="fname">' + esc(f.name) + "</div>" + d + "</div></div>";
+        }).join("");
+        sec.hidden = false;
+      }
+      var cfg = window.SUPABASE_CONFIG;
+      if (!cfg || !cfg.url) return;
+      fetch(cfg.url + "/rest/v1/flavors?select=name,description&daily=eq.true&available=eq.true&order=sort_order", {
+        headers: { apikey: cfg.anonKey, Authorization: "Bearer " + cfg.anonKey }
+      })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(render)
+        .catch(function () { /* lascia la sezione nascosta */ });
+    })();
+  </script>
 </body>
 </html>

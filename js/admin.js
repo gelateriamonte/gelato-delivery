@@ -952,12 +952,15 @@ async function loadFlavors() {
   const list = $("flavors-list");
   list.innerHTML = "";
   data.forEach((f) => {
+    const frow = document.createElement("div");
+    frow.className = "frow"; frow.dataset.id = f.id;
     const el = document.createElement("div");
-    el.className = "mrow"; el.dataset.id = f.id;
+    el.className = "mrow";
     el.innerHTML =
       `<span class="drag-handle" title="Trascina per ordinare">⠿</span>` +
       `<input class="g-name grow" value="${esc(f.name)}">` +
-      `<button class="star-btn" type="button" aria-label="Gusto speciale">☆</button>` +
+      `<button class="star-btn" type="button" aria-label="Gusto speciale" title="Gusto speciale">☆</button>` +
+      `<button class="daily-btn" type="button" aria-label="Gusto del giorno" title="Gusto del giorno (mostrato in home)">☀</button>` +
       availRadios("fl-" + f.id, f.available) +
       `<button class="btn icon">✕</button>`;
     const name = el.querySelector(".g-name");
@@ -967,11 +970,30 @@ async function loadFlavors() {
     const paintStar = () => { star.classList.toggle("on", special); star.textContent = special ? "★" : "☆"; };
     paintStar();
     star.onclick = () => { special = !special; paintStar(); updateRow("flavors", f.id, { special }); };
+    const dailyBtn = el.querySelector(".daily-btn");
+    let daily = !!f.daily;
+    const paintDaily = () => dailyBtn.classList.toggle("on", daily);
+    paintDaily();
     wireAvailRadios(el, (val) => updateRow("flavors", f.id, { available: val }));
     el.querySelector(".btn.icon").onclick = async () => { await delRow("flavors", f.id); loadFlavors(); };
-    list.appendChild(el);
+    frow.appendChild(el);
+    // microdescrizione (per la home) — visibile quando "gusto del giorno" è attivo
+    const desc = document.createElement("input");
+    desc.className = "g-desc";
+    desc.placeholder = "Microdescrizione per la home (es. tostato)";
+    desc.value = f.description || "";
+    desc.style.display = daily ? "" : "none";
+    desc.onchange = () => updateRow("flavors", f.id, { description: desc.value.trim() || null });
+    frow.appendChild(desc);
+    dailyBtn.onclick = () => {
+      daily = !daily; paintDaily();
+      desc.style.display = daily ? "" : "none";
+      if (daily) desc.focus();
+      updateRow("flavors", f.id, { daily });
+    };
+    list.appendChild(frow);
   });
-  enableDragSort(list, ".drag-handle", ".mrow", (orderedIds) => persistOrder("flavors", orderedIds));
+  enableDragSort(list, ".drag-handle", ".frow", (orderedIds) => persistOrder("flavors", orderedIds));
 }
 $("nf-add").onclick = async () => {
   const name = $("nf-name").value.trim(); if (!name) return;
