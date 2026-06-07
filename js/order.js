@@ -130,8 +130,18 @@ function initMap() {
     return a;
   } });
   map.addControl(new Locate());
+  // pulsante reset → torna alla vista iniziale (tutta la zona coperta)
+  const Reset = L.Control.extend({ options: { position: "topleft" }, onAdd() {
+    const a = L.DomUtil.create("a", "leaflet-bar locate-btn reset-btn");
+    a.href = "#"; a.title = "Reset vista"; a.setAttribute("role", "button"); a.setAttribute("aria-label", "Torna alla vista iniziale (tutta la zona)");
+    a.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 8 3 3 8 3"/><polyline points="21 8 21 3 16 3"/><polyline points="3 16 3 21 8 21"/><polyline points="21 16 21 21 16 21"/></svg>';
+    L.DomEvent.on(a, "click", L.DomEvent.stop).on(a, "click", resetView);
+    return a;
+  } });
+  map.addControl(new Reset());
   setTimeout(() => map.invalidateSize(), 250);
 }
+function resetView() { if (map) map.fitBounds(ST_BBOX, { padding: [12, 12] }); }
 function locateMe() {
   if (!navigator.geolocation) { toast("Geolocalizzazione non disponibile sul dispositivo."); return; }
   toast("Cerco la tua posizione…");
