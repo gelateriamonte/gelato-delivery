@@ -366,10 +366,10 @@ function couponDiscount(base) {
 }
 function renderCouponMsg(disc) {
   const m = $("coupon-msg"); if (!m) return;
-  if (COUPON && disc > 0) {
+  if (COUPON) {
     m.style.display = "block"; m.className = "coupon-msg ok";
-    m.textContent = `✓ ${COUPON.code} applicato: −${euro(disc)}`;
-  } else if (!COUPON && !$("coupon").value.trim()) {
+    m.textContent = `✓ ${COUPON.code} applicato${disc > 0 ? `: −${euro(disc)}` : ""}`;
+  } else if (!$("coupon").value.trim()) {
     m.style.display = "none";   // campo vuoto: nascondi (gli errori restano finché c'è testo)
   }
 }
