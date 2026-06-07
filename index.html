@@ -91,16 +91,16 @@
     a.infocard:hover{ border-color:var(--accent-line); }
     .infocard .imap{ font-size:11px; font-weight:600; letter-spacing:.04em; color:var(--accent-ink); margin-top:9px; }
 
-    /* contatto WhatsApp (sotto Orari/Dove siamo) */
-    .wa-link{ display:flex; align-items:center; gap:13px; margin-top:12px; text-decoration:none;
-      background:var(--paper); border:1px solid var(--line); border-radius:var(--r-md); box-shadow:var(--shadow-card);
-      padding:13px 16px; transition:border-color .15s; }
+    /* contatto WhatsApp (sotto Orari/Dove siamo) — pillola compatta, non a tutta larghezza */
+    .wa-link{ display:inline-flex; align-items:center; gap:9px; margin-top:14px; text-decoration:none;
+      background:var(--paper); border:1px solid var(--line); border-radius:999px; box-shadow:var(--shadow-card);
+      padding:6px 15px 6px 6px; transition:border-color .15s; }
     .wa-link:hover{ border-color:#1ebe5d; }
-    .wa-ico{ width:38px; height:38px; flex:none; border-radius:10px; display:grid; place-items:center; background:#25d366; color:#fff; }
-    .wa-ico svg{ width:23px; height:23px; }
-    .wa-txt{ display:flex; flex-direction:column; line-height:1.15; }
-    .wa-txt b{ font-family:var(--serif); font-size:18px; font-weight:600; color:var(--ink); }
-    .wa-txt small{ font-size:12px; color:var(--muted); }
+    .wa-ico{ width:30px; height:30px; flex:none; border-radius:50%; display:grid; place-items:center; background:#25d366; color:#fff; }
+    .wa-ico svg{ width:18px; height:18px; }
+    .wa-txt{ display:flex; flex-direction:column; line-height:1.12; }
+    .wa-txt b{ font-size:14px; font-weight:600; color:var(--ink); }
+    .wa-txt small{ font-size:10.5px; color:var(--muted); }
 
     /* data + temperatura nella sezione "i gusti di oggi" */
     .daily-meta{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:4px; }
