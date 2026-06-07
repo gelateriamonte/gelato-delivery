@@ -246,9 +246,18 @@ function renderSlotStats() {
   });
 }
 
+// badge conteggio sui tab Ordini / Take away: solo ordini ATTIVI (COUNTED: ricevuto/accettato/in prep/in consegna), per tipo
+function updateTabBadges() {
+  const act = (pk) => ORDERS.filter((o) => (pk ? o.fulfillment === "pickup" : o.fulfillment !== "pickup") && COUNTED.has(o.status)).length;
+  const set = (id, n) => { const b = $(id); if (b) { b.textContent = n; b.classList.toggle("show", n > 0); } };
+  set("badge-orders", act(false));
+  set("badge-takeaway", act(true));
+}
+
 function renderOrders() {
   const DEL = ORDERS.filter((o) => o.fulfillment !== "pickup" && o.status !== "consegnato");   // Ordini = consegne non ancora evase (consegnati → Storico; ritiri → Take away)
-  $("orders-count").textContent = DEL.length;
+  $("orders-count").textContent = ORDERS.filter((o) => o.fulfillment !== "pickup" && COUNTED.has(o.status)).length;   // solo attivi: ricevuto/accettato/in prep/in consegna
+  updateTabBadges();
   renderFilters();
   renderDays();
   renderSlotStats();
