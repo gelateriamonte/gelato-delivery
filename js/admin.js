@@ -443,20 +443,74 @@ function consegneToday() {
 }
 
 // OSRM Trip (TSP): coords [[lat,lng],...] con la gelateria prima. Cache per set di coordinate.
-function osrmTrip(coords) {
-  const key = coords.map((c) => c[0].toFixed(5) + "," + c[1].toFixed(5)).join(";");
+// OSRM Table: matrice durate (sec) tra tutti i punti. coords [[lat,lng],...]. Cache.
+function osrmTable(coords) {
+  const key = "T" + coords.map((c) => c[0].toFixed(5) + "," + c[1].toFixed(5)).join(";");
   if (!TRIP_CACHE[key]) {
     TRIP_CACHE[key] = (async () => {
       try {
         const path = coords.map((c) => c[1] + "," + c[0]).join(";");   // OSRM vuole lng,lat
-        const u = `https://router.project-osrm.org/trip/v1/driving/${path}?source=first&roundtrip=true&geometries=geojson&overview=full`;
+        const u = `https://router.project-osrm.org/table/v1/driving/${path}?annotations=duration`;
         const d = await (await fetch(u)).json();
-        if (d.code !== "Ok" || !d.trips || !d.trips[0]) return { err: true };
-        return { waypoints: d.waypoints, legs: d.trips[0].legs, geometry: d.trips[0].geometry.coordinates };
+        if (d.code !== "Ok" || !d.durations) return { err: true };
+        return { dur: d.durations };
       } catch (e) { return { err: true }; }
     })();
   }
   return TRIP_CACHE[key];
+}
+
+// OSRM Route su waypoint GIÀ ordinati: geometria reale + legs (per la polyline). coords [[lat,lng],...].
+function osrmRoute(coords) {
+  const key = "R" + coords.map((c) => c[0].toFixed(5) + "," + c[1].toFixed(5)).join(";");
+  if (!TRIP_CACHE[key]) {
+    TRIP_CACHE[key] = (async () => {
+      try {
+        const path = coords.map((c) => c[1] + "," + c[0]).join(";");
+        const u = `https://router.project-osrm.org/route/v1/driving/${path}?geometries=geojson&overview=full`;
+        const d = await (await fetch(u)).json();
+        if (d.code !== "Ok" || !d.routes || !d.routes[0]) return { err: true };
+        return { geometry: d.routes[0].geometry.coordinates, legs: d.routes[0].legs };
+      } catch (e) { return { err: true }; }
+    })();
+  }
+  return TRIP_CACHE[key];
+}
+
+// TSP sulla matrice durate (0=gelateria, 1..n=consegne). roundtrip = include il rientro.
+// Esatto per n<=8 (brute force), euristico (nearest-neighbor + 2-opt) oltre.
+// Tie-break tra ordini di pari costo: parte dalla consegna più vicina alla gelateria (display intuitivo).
+function solveOrder(dur, n, roundtrip) {
+  const cost = (perm) => {
+    let t = dur[0][perm[0]];
+    for (let k = 0; k < perm.length - 1; k++) t += dur[perm[k]][perm[k + 1]];
+    if (roundtrip) t += dur[perm[perm.length - 1]][0];
+    return t;
+  };
+  let best = null, bestCost = Infinity;
+  const consider = (perm) => {
+    const c = cost(perm);
+    if (c < bestCost - 1e-6) { bestCost = c; best = perm.slice(); }
+    else if (Math.abs(c - bestCost) < 1e-6 && best && dur[0][perm[0]] < dur[0][best[0]]) best = perm.slice();
+  };
+  const idx = []; for (let i = 1; i <= n; i++) idx.push(i);
+  if (n <= 8) {
+    const permute = (arr, m) => { if (!arr.length) { consider(m); return; } for (let i = 0; i < arr.length; i++) permute(arr.slice(0, i).concat(arr.slice(i + 1)), m.concat(arr[i])); };
+    permute(idx, []);
+  } else {
+    let cur = 0; const left = idx.slice(); let tour = [];
+    while (left.length) { left.sort((a, b) => dur[cur][a] - dur[cur][b]); const nx = left.shift(); tour.push(nx); cur = nx; }
+    let improved = true;
+    while (improved) {
+      improved = false;
+      for (let i = 0; i < tour.length - 1; i++) for (let j = i + 1; j < tour.length; j++) {
+        const a = tour.slice(); const seg = a.slice(i, j + 1).reverse(); a.splice(i, seg.length, ...seg);
+        if (cost(a) < cost(tour) - 1e-6) { tour = a; improved = true; }
+      }
+    }
+    best = tour;
+  }
+  return best.map((i) => i - 1);   // 0-based negli `orders`
 }
 
 function renderConsegne() {
@@ -503,12 +557,13 @@ async function drawConsegne() {
 }
 
 async function buildSlotRoute(orders, mapId) {
-  const coords = [[GELATERIA.lat, GELATERIA.lng]].concat(orders.map((o) => [o.delivery_lat, o.delivery_lng]));
-  const trip = await osrmTrip(coords);
+  const pts = orders.map((o) => [o.delivery_lat, o.delivery_lng]);
+  const coords = [[GELATERIA.lat, GELATERIA.lng]].concat(pts);
   const listEl = $(mapId + "-list"), totEl = $(mapId + "-tot");
   if (!listEl) return;
 
-  if (trip.err) {   // fallback: ordina per distanza stradale crescente, mappa con soli marker
+  const tab = await osrmTable(coords);
+  if (tab.err) {   // fallback: ordina per distanza stradale crescente, mappa con soli marker
     const routes = await Promise.all(orders.map((o) => getRoute(o.delivery_lat, o.delivery_lng)));
     const arr = orders.map((o, i) => ({ o, km: (routes[i] && !routes[i].err) ? routes[i].km : Infinity }))
       .sort((a, b) => a.km - b.km).map((x, i) => ({ o: x.o, n: i + 1 }));
@@ -518,17 +573,24 @@ async function buildSlotRoute(orders, mapId) {
     return;
   }
 
-  const wp = trip.waypoints;
-  const seq = orders.map((o, i) => ({ o, pos: wp[i + 1].waypoint_index })).sort((a, b) => a.pos - b.pos);
-  const legDur = trip.legs.map((l) => l.duration);
-  const cumAt = (p) => legDur.slice(0, p).reduce((s, d) => s + d, 0);
-  const rows = seq.map((x, idx) => ({ o: x.o, n: idx + 1, cum: cumAt(x.pos), leg: legDur[x.pos - 1] }));
+  // ordine ottimale: minor TEMPO TOTALE del giro (roundtrip), partendo dal più vicino tra i pari-ottimo
+  const order = solveOrder(tab.dur, orders.length, true);
+  const ordered = order.map((i) => orders[i]);
+  // tempi di guida cumulati dalla matrice (0 = gelateria)
+  const seqI = [0].concat(order.map((i) => i + 1));
+  const legSec = []; for (let k = 0; k < seqI.length - 1; k++) legSec.push(tab.dur[seqI[k]][seqI[k + 1]]);
+  let acc = 0;
+  const rows = ordered.map((o, idx) => { acc += legSec[idx]; return { o, n: idx + 1, cum: acc, leg: legSec[idx] }; });
   listEl.innerHTML = numberedRows(rows, null);
+  const totSec = acc + tab.dur[seqI[seqI.length - 1]][0];   // + rientro in gelateria
 
-  const totSec = legDur.reduce((s, d) => s + d, 0);
-  const totDist = trip.legs.reduce((s, l) => s + (l.distance || 0), 0);
-  if (totEl) totEl.textContent = `${fmtKm(totDist)} · ${fmtMin(totSec)} (incl. rientro)`;
-  drawConsegneMap(mapId, seq.map((x) => x.o), trip.geometry);
+  // geometria reale del percorso ordinato (polyline) + km totali
+  const routeCoords = [[GELATERIA.lat, GELATERIA.lng]].concat(order.map((i) => pts[i])).concat([[GELATERIA.lat, GELATERIA.lng]]);
+  const route = await osrmRoute(routeCoords);
+  let geometry = null, totDist = null;
+  if (!route.err) { geometry = route.geometry; totDist = route.legs.reduce((s, l) => s + (l.distance || 0), 0); }
+  if (totEl) totEl.textContent = `${totDist != null ? fmtKm(totDist) + " · " : ""}${fmtMin(totSec)} (incl. rientro)`;
+  drawConsegneMap(mapId, ordered, geometry);
 }
 
 function numberedRows(rows, noteHtml) {
