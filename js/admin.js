@@ -16,8 +16,8 @@ const STATUS_META = {
 };
 const PROGRESS = ["in preparazione", "in consegna", "consegnato"];
 const TERMINAL = new Set(["consegnato", "rifiutato", "annullato"]);
-const FILTERS = ["all", "ricevuto", "accettato", "in preparazione", "in consegna", "consegnato", "rifiutato", "annullato"];
-const COUNTED = new Set(["ricevuto", "accettato", "in preparazione", "in consegna", "consegnato"]); // per contatore giorni (no rifiutati/annullati)
+const FILTERS = ["all", "ricevuto", "accettato", "in preparazione", "in consegna", "rifiutato", "annullato"]; // no "consegnato": consegnati → Storico
+const COUNTED = new Set(["ricevuto", "accettato", "in preparazione", "in consegna"]); // per contatore giorni (no consegnati/rifiutati/annullati)
 let ORDERS = [];
 let ACTIVE_FILTER = "all";
 let ACTIVE_DAY = "all";
@@ -157,7 +157,7 @@ async function loadOrders() {
 function renderFilters() {
   const bar = $("orders-filter");
   bar.innerHTML = "";
-  const DEL = ORDERS.filter((o) => o.fulfillment !== "pickup");
+  const DEL = ORDERS.filter((o) => o.fulfillment !== "pickup" && o.status !== "consegnato");
   const counts = {};
   DEL.forEach((o) => { counts[o.status] = (counts[o.status] || 0) + 1; });
   FILTERS.forEach((f) => {
@@ -246,7 +246,7 @@ function renderSlotStats() {
 }
 
 function renderOrders() {
-  const DEL = ORDERS.filter((o) => o.fulfillment !== "pickup");   // Ordini = solo consegne (i ritiri → Take away)
+  const DEL = ORDERS.filter((o) => o.fulfillment !== "pickup" && o.status !== "consegnato");   // Ordini = consegne non ancora evase (consegnati → Storico; ritiri → Take away)
   $("orders-count").textContent = DEL.length;
   renderFilters();
   renderDays();
@@ -373,7 +373,7 @@ function renderHistory() {
   const orders = done.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map((o) => {
     const when = new Date(o.created_at).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" });
     const cons = o.delivery_date ? new Date(o.delivery_date + "T00:00:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) : "-";
-    return `<div class="brk"><div class="bn">${esc(o.customer_name)}<small>${esc(when)} · ${esc(cons)} · ${esc(o.slot_label || "-")}</small></div><div class="bv">${euro(o.total)}</div></div>`;
+    return `<div class="brk hxrow" data-oid="${esc(o.id)}" role="button" tabindex="0" title="Vedi dettaglio completo" style="cursor:pointer"><div class="bn">${esc(o.customer_name)}<small>${esc(when)} · ${esc(cons)} · ${esc(o.slot_label || "-")}</small></div><div class="bv">${euro(o.total)} ›</div></div>`;
   }).join("");
 
   wrap.innerHTML =
@@ -387,6 +387,15 @@ function renderHistory() {
     `</div>` +
     `<div style="height:22px"></div>` +
     `<p class="eyebrow muted">Ordini consegnati</p><div style="height:10px"></div><div class="panel">${orders}</div>`;
+
+  // click su una riga → dettaglio completo in overlay
+  wrap.querySelectorAll(".hxrow[data-oid]").forEach((el) => {
+    const o = ORDERS.find((x) => x.id === el.dataset.oid);
+    if (!o) return;
+    const open = () => openOrderDetail(o);
+    el.onclick = open;
+    el.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+  });
 }
 
 // ---------- distanza/tempo auto dalla gelateria (OSRM, no key) ----------
@@ -460,7 +469,7 @@ function payBadge(o) {
   return `<span class="paybadge ${cls}">${icon}${label}</span>`;
 }
 
-function orderCard(o) {
+function orderCard(o, bare) {   // bare=true → vista sola lettura (no WhatsApp, no azioni): usata nel dettaglio Storico
   const meta = STATUS_META[o.status] || { label: o.status, slug: "ricevuto" };
   const isPk = o.fulfillment === "pickup";
   const pb = payBadge(o);
@@ -484,11 +493,36 @@ function orderCard(o) {
     `${o.notes ? `<br><span class="k">Note</span> ${esc(o.notes)}` : ""}</div>` +
     `<div class="items">${items}</div>` +
     `<div class="foot"><span class="del">${isPk ? "Ritiro" : "Consegna"} ${euro(o.delivery_cost)}</span><span class="tot">${euro(o.total)}</span></div>` +
-    (o.status !== "ricevuto" ? `<div class="wa-row"><button class="btn wa sm wa-btn">WhatsApp</button></div>` : "") +
-    `<div class="actions"></div>`;
-  renderActions(el.querySelector(".actions"), o);
-  const wb = el.querySelector(".wa-btn"); if (wb) wb.onclick = () => waOpen(o, o.status);
+    (!bare && o.status !== "ricevuto" ? `<div class="wa-row"><button class="btn wa sm wa-btn">WhatsApp</button></div>` : "") +
+    (bare ? "" : `<div class="actions"></div>`);
+  if (!bare) {
+    renderActions(el.querySelector(".actions"), o);
+    const wb = el.querySelector(".wa-btn"); if (wb) wb.onclick = () => waOpen(o, o.status);
+  }
   return el;
+}
+
+// ---------- dettaglio ordine in overlay (Storico → click su una riga) ----------
+function closeOrderDetail() {
+  const ov = $("order-detail-overlay"); if (ov) ov.remove();
+  document.removeEventListener("keydown", escCloseDetail);
+}
+function escCloseDetail(e) { if (e.key === "Escape") closeOrderDetail(); }
+function openOrderDetail(o) {
+  closeOrderDetail();
+  const ov = document.createElement("div");
+  ov.id = "order-detail-overlay";
+  ov.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:1000;padding:24px;overflow:auto";
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "position:relative;max-width:520px;width:100%";
+  const close = mkBtn("✕", "btn ghost sm", closeOrderDetail);
+  close.style.cssText = "position:absolute;top:8px;right:8px;z-index:1";
+  wrap.append(close, orderCard(o, true));
+  ov.appendChild(wrap);
+  ov.onclick = (e) => { if (e.target === ov) closeOrderDetail(); };
+  document.addEventListener("keydown", escCloseDetail);
+  document.body.appendChild(ov);
+  hydrateRoutes();   // riempie distanza/tempo nel dettaglio (consegna con coordinate)
 }
 
 function mkBtn(text, cls, onclick) {
