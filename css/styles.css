@@ -490,7 +490,7 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
   letter-spacing:-3px; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
 }
 .drag-handle:active{ cursor:grabbing; }
-.mrow.dragging, .fmt-card.dragging{ box-shadow:0 12px 30px rgba(60,40,30,.22); opacity:.97; }
+.mrow.dragging, .fmt-card.dragging, .frow.dragging{ box-shadow:0 12px 30px rgba(60,40,30,.22); opacity:.97; }
 .drag-ph{ border:1px dashed var(--line-2); border-radius:var(--r-md); background:var(--paper-2); }
 
 /* ---- stellina gusto speciale (solo back office) ---- */
@@ -510,6 +510,10 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 .daily-btn:hover{ border-color:var(--accent); }
 .daily-btn.on{ color:var(--accent); border-color:var(--accent-line); background:var(--accent-soft); }
 .g-desc{ width:100%; font-size:13.5px; padding:10px 12px; background:var(--paper-2); }
+/* barra filtri gusti (★ speciali / ☀ del giorno) */
+.flavor-filters{ display:flex; align-items:center; gap:9px; margin:0 0 12px; }
+.ff-lbl{ font-size:12px; font-weight:600; color:var(--muted); letter-spacing:.02em; }
+#flavors-list.filtering .drag-handle{ display:none; }   /* riordino disattivato col filtro */
 
 /* ---- prodotti: categorie + maniglia in cima alla card (back office) ---- */
 .fmt-group + .fmt-group{ margin-top:26px; }

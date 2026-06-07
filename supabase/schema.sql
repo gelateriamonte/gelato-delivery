@@ -91,9 +91,14 @@ insert into settings (id, delivery_cost, min_order)
 values (1, 3.50, 15.00)
 on conflict (id) do nothing;
 
-insert into flavors (name, sort_order) values
-  ('Fiordilatte', 1), ('Cioccolato', 2), ('Pistacchio', 3),
-  ('Nocciola', 4), ('Stracciatella', 5), ('Limone', 6), ('Fragola', 7);
+insert into flavors (name, sort_order, daily, description) values
+  ('Fiordilatte', 1, false, null),
+  ('Cioccolato',  2, true,  'fondente'),
+  ('Pistacchio',  3, true,  'tostato'),
+  ('Nocciola',    4, true,  'tonda e gentile'),
+  ('Stracciatella', 5, false, null),
+  ('Limone',      6, false, null),
+  ('Fragola',     7, true,  'frutto intero');
 
 insert into formats (name, max_flavors, price, sort_order) values
   ('Coppetta piccola (1 gusto)', 1, 2.50, 1),

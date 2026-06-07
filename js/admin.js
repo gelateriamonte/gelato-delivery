@@ -946,60 +946,90 @@ async function nextSortOrder(table) {
 }
 
 // ========== GUSTI ==========
+let FLAVORS_ALL = [];
+const FLAVOR_FILTER = { special: false, daily: false };   // filtri in alto (★ speciali, ☀ del giorno)
+function paintFlavorFilters() {
+  const fs = $("filter-special"), fd = $("filter-daily");
+  if (fs) { fs.classList.toggle("on", FLAVOR_FILTER.special); fs.textContent = FLAVOR_FILTER.special ? "★" : "☆"; }
+  if (fd) fd.classList.toggle("on", FLAVOR_FILTER.daily);
+}
 async function loadFlavors() {
   const { data, error } = await sb.from("flavors").select("*").order("sort_order");
   if (error) { console.error(error); return; }
+  FLAVORS_ALL = data || [];
+  renderFlavorsList();
+}
+function renderFlavorsList() {
   const list = $("flavors-list");
   list.innerHTML = "";
-  data.forEach((f) => {
-    const frow = document.createElement("div");
-    frow.className = "frow"; frow.dataset.id = f.id;
-    const el = document.createElement("div");
-    el.className = "mrow";
-    el.innerHTML =
-      `<span class="drag-handle" title="Trascina per ordinare">⠿</span>` +
-      `<input class="g-name grow" value="${esc(f.name)}">` +
-      `<button class="star-btn" type="button" aria-label="Gusto speciale" title="Gusto speciale">☆</button>` +
-      `<button class="daily-btn" type="button" aria-label="Gusto del giorno" title="Gusto del giorno (mostrato in home)">☀</button>` +
-      availRadios("fl-" + f.id, f.available) +
-      `<button class="btn icon">✕</button>`;
-    const name = el.querySelector(".g-name");
-    name.onchange = () => updateRow("flavors", f.id, { name: name.value.trim() });
-    const star = el.querySelector(".star-btn");
-    let special = !!f.special;
-    const paintStar = () => { star.classList.toggle("on", special); star.textContent = special ? "★" : "☆"; };
-    paintStar();
-    star.onclick = () => { special = !special; paintStar(); updateRow("flavors", f.id, { special }); };
-    const dailyBtn = el.querySelector(".daily-btn");
-    let daily = !!f.daily;
-    const paintDaily = () => dailyBtn.classList.toggle("on", daily);
-    paintDaily();
-    wireAvailRadios(el, (val) => updateRow("flavors", f.id, { available: val }));
-    el.querySelector(".btn.icon").onclick = async () => { await delRow("flavors", f.id); loadFlavors(); };
-    frow.appendChild(el);
-    // microdescrizione (per la home) — visibile quando "gusto del giorno" è attivo
-    const desc = document.createElement("input");
-    desc.className = "g-desc";
-    desc.placeholder = "Microdescrizione per la home (es. tostato)";
-    desc.value = f.description || "";
-    desc.style.display = daily ? "" : "none";
-    desc.onchange = () => updateRow("flavors", f.id, { description: desc.value.trim() || null });
-    frow.appendChild(desc);
-    dailyBtn.onclick = () => {
-      daily = !daily; paintDaily();
-      desc.style.display = daily ? "" : "none";
-      if (daily) desc.focus();
-      updateRow("flavors", f.id, { daily });
-    };
-    list.appendChild(frow);
-  });
-  enableDragSort(list, ".drag-handle", ".frow", (orderedIds) => persistOrder("flavors", orderedIds));
+  const filtering = FLAVOR_FILTER.special || FLAVOR_FILTER.daily;
+  list.classList.toggle("filtering", filtering);   // il riordino drag è disattivato col filtro
+  const rows = FLAVORS_ALL.filter((f) => (!FLAVOR_FILTER.special || f.special) && (!FLAVOR_FILTER.daily || f.daily));
+  if (!rows.length) {
+    list.innerHTML = '<p class="muted small" style="margin:0;padding:6px 2px">Nessun gusto con questo filtro.</p>';
+    return;
+  }
+  rows.forEach((f) => list.appendChild(buildFlavorRow(f)));
+  if (!filtering) enableDragSort(list, ".drag-handle", ".frow", (orderedIds) => persistOrder("flavors", orderedIds));
 }
+function buildFlavorRow(f) {
+  const frow = document.createElement("div");
+  frow.className = "frow"; frow.dataset.id = f.id;
+  const el = document.createElement("div");
+  el.className = "mrow";
+  el.innerHTML =
+    `<span class="drag-handle" title="Trascina per ordinare">⠿</span>` +
+    `<input class="g-name grow" value="${esc(f.name)}">` +
+    `<button class="star-btn" type="button" aria-label="Gusto speciale" title="Gusto speciale">☆</button>` +
+    `<button class="daily-btn" type="button" aria-label="Gusto del giorno" title="Gusto del giorno (mostrato in home)">☀</button>` +
+    availRadios("fl-" + f.id, f.available) +
+    `<button class="btn icon">✕</button>`;
+  const name = el.querySelector(".g-name");
+  name.onchange = () => updateRow("flavors", f.id, { name: name.value.trim() });
+  const star = el.querySelector(".star-btn");
+  let special = !!f.special;
+  const paintStar = () => { star.classList.toggle("on", special); star.textContent = special ? "★" : "☆"; };
+  paintStar();
+  const dailyBtn = el.querySelector(".daily-btn");
+  let daily = !!f.daily;
+  const paintDaily = () => dailyBtn.classList.toggle("on", daily);
+  paintDaily();
+  wireAvailRadios(el, (val) => updateRow("flavors", f.id, { available: val }));
+  el.querySelector(".btn.icon").onclick = async () => { await delRow("flavors", f.id); loadFlavors(); };
+  frow.appendChild(el);
+  // microdescrizione (per la home) — visibile quando "gusto del giorno" è attivo
+  const desc = document.createElement("input");
+  desc.className = "g-desc";
+  desc.placeholder = "Microdescrizione per la home (es. tostato)";
+  desc.value = f.description || "";
+  desc.style.display = daily ? "" : "none";
+  desc.onchange = () => updateRow("flavors", f.id, { description: desc.value.trim() || null });
+  frow.appendChild(desc);
+  star.onclick = () => {
+    special = !special; f.special = special; paintStar();
+    updateRow("flavors", f.id, { special });
+    if (FLAVOR_FILTER.special || FLAVOR_FILTER.daily) renderFlavorsList();   // esce dalla vista filtrata se non combacia più
+  };
+  dailyBtn.onclick = () => {
+    daily = !daily; f.daily = daily; paintDaily();
+    desc.style.display = daily ? "" : "none";
+    if (daily) desc.focus();
+    updateRow("flavors", f.id, { daily });
+    if (FLAVOR_FILTER.special || FLAVOR_FILTER.daily) renderFlavorsList();
+  };
+  return frow;
+}
+// filtri in alto
+if ($("filter-special")) $("filter-special").onclick = () => { FLAVOR_FILTER.special = !FLAVOR_FILTER.special; paintFlavorFilters(); renderFlavorsList(); };
+if ($("filter-daily")) $("filter-daily").onclick = () => { FLAVOR_FILTER.daily = !FLAVOR_FILTER.daily; paintFlavorFilters(); renderFlavorsList(); };
+paintFlavorFilters();
 $("nf-add").onclick = async () => {
   const name = $("nf-name").value.trim(); if (!name) return;
   const order = await nextSortOrder("flavors");
   await sb.from("flavors").insert({ name, sort_order: order });
-  $("nf-name").value = ""; loadFlavors();
+  $("nf-name").value = "";
+  FLAVOR_FILTER.special = false; FLAVOR_FILTER.daily = false; paintFlavorFilters();   // mostra il nuovo gusto
+  loadFlavors();
 };
 
 // ========== PRODOTTI (ex Formati) — due categorie: Vaschette / Altri prodotti ==========

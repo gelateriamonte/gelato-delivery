@@ -198,9 +198,11 @@
       };
       function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
       function dabColor(name) {
-        var n = String(name || "").toLowerCase();
-        for (var k in DAB) { if (n.indexOf(k) === 0 || n === k) return DAB[k]; }
-        return "#cbb9a3";
+        // match per parola/frase intera (no prefisso); la chiave più lunga (più specifica) vince
+        var n = " " + String(name || "").toLowerCase().trim() + " ";
+        var best = "", bestLen = -1;
+        for (var k in DAB) { if (n.indexOf(" " + k + " ") >= 0 && k.length > bestLen) { best = DAB[k]; bestLen = k.length; } }
+        return best || "#cbb9a3";
       }
       function render(rows) {
         var sec = document.getElementById("flavors-sec");
