@@ -33,6 +33,7 @@ function orderText(o) {
   if (o.fulfillment !== "pickup" && o.address) lines.push(`📍 ${o.address}`);
   if (righe) lines.push("", righe);
   if (o.notes) lines.push("", `📝 ${o.notes}`);
+  if (o.coupon_code) lines.push(`🏷️ Sconto: ${o.coupon_code} (−${fmtEuro(o.discount)})`);
   if (o.payment_method) lines.push(`💳 ${o.payment_method}`);
   return lines.join("\n");
 }
