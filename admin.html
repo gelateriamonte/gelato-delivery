@@ -119,11 +119,13 @@
           <div class="field" style="margin:0"><label>N. gusti max</label>
             <input id="nfo-max" type="number" min="0" value="1"></div>
         </div>
-        <div class="field" style="margin:0"><label>Nome prodotto</label>
-          <input id="nfo-name" placeholder="Es. Vaschetta 1kg"></div>
+        <div class="field" style="margin:0" id="nfo-weight-field"><label>Peso (kg)</label>
+          <input id="nfo-weight" type="number" min="0" step="0.1" placeholder="es. 1"></div>
+        <div class="field" style="margin:0" id="nfo-name-field"><label>Nome prodotto</label>
+          <input id="nfo-name" placeholder="Es. Cono, Granita, Topping"></div>
         <div class="field" style="margin:0"><label>Prezzo €</label>
           <input id="nfo-price" type="number" min="0" step="0.50" value="0"></div>
-        <p class="muted small" style="margin:0">Gusti max <b>0</b> = il cliente aggiunge il prodotto senza scegliere gusti.</p>
+        <p class="muted small" style="margin:0">Vaschette: nome generato dal peso (es. 1 → "Vaschetta 1Kg"). Gusti max <b>0</b> = aggiunta diretta senza scegliere gusti.</p>
         <button class="btn sm" id="nfo-add">Aggiungi prodotto</button>
       </div>
       <div id="formats-list"></div>

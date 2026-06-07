@@ -345,6 +345,8 @@ function addToCart() {
   CART.push({
     format_id: modalFormat.id,
     format: modalFormat.name,
+    category: modalFormat.category || "vaschetta",
+    peso_kg: modalFormat.weight_kg != null ? Number(modalFormat.weight_kg) : null,
     gusti: [...modalChosen],
     qty,
     prezzo_unit: Number(modalFormat.price),

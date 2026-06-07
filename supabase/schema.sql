@@ -20,8 +20,9 @@ create table if not exists flavors (
 -- FORMATI / QUANTITA' (contenitore con prezzo e n. gusti ammessi)
 create table if not exists formats (
   id          uuid primary key default gen_random_uuid(),
-  name        text not null,                 -- es. "Coppetta media (2 gusti)"
+  name        text not null,                 -- vaschette: auto-derivato dal peso (es. "Vaschetta 1Kg")
   category    text not null default 'vaschetta', -- 'vaschetta' | 'altro' (raggruppamento Prodotti)
+  weight_kg   numeric(5,2),                   -- solo vaschette (vendute a peso); NULL per 'altro'
   max_flavors int  not null default 1,        -- 0 = nessun gusto (aggiunta diretta)
   price       numeric(8,2) not null default 0,
   available   boolean not null default true,

@@ -286,12 +286,25 @@ function renderOrders() {
 
 // ========== LABORATORIO (solo ordini accettati, kg per gusto per giorno) ==========
 // peso in grammi ricavato dal nome formato (es. "500g", "1kg", "1,5 kg"); 0 se assente (coppette)
+// usato SOLO come fallback per ordini vecchi privi del campo peso_kg.
 function formatGrams(name) {
   const m = String(name).toLowerCase().match(/(\d+(?:[.,]\d+)?)\s*(kg|g)\b/);
   if (!m) return 0;
   const v = parseFloat(m[1].replace(",", "."));
   return m[2] === "kg" ? v * 1000 : v;
 }
+// nome cliente della vaschetta derivato dal peso in kg (es. 1 -> "Vaschetta 1Kg", 0.6 -> "Vaschetta 600g")
+function vaschettaName(kg) {
+  kg = Number(kg) || 0;
+  if (kg <= 0) return "Vaschetta";
+  if (kg < 1) return `Vaschetta ${Math.round(kg * 1000)}g`;
+  const s = Number.isInteger(kg) ? String(kg) : String(kg).replace(".", ",");
+  return `Vaschetta ${s}Kg`;
+}
+// peso item in grammi: campo esplicito peso_kg (nuovi ordini) con fallback al parse dal nome (ordini vecchi)
+function itemGrams(it) { return (it.peso_kg != null) ? Number(it.peso_kg) * 1000 : formatGrams(it.format); }
+// e' una vaschetta? category esplicita (nuovi ordini) con fallback al peso-da-nome (ordini vecchi)
+function itemIsVaschetta(it) { return (it.category != null) ? (it.category === "vaschetta") : (formatGrams(it.format) > 0); }
 
 function renderLab() {
   const wrap = $("lab-list");
@@ -302,13 +315,13 @@ function renderLab() {
     const d = byDay[o.delivery_date] || (byDay[o.delivery_date] = { count: 0, flavors: {}, vasche: {} });
     d.count++;
     (o.items || []).forEach((it) => {
-      const g = formatGrams(it.format), gusti = it.gusti || [];
-      if (g > 0) {   // formato pesato = vaschetta: dettaglio per combinazione formato+gusti
+      const gusti = it.gusti || [], g = itemGrams(it);
+      if (itemIsVaschetta(it)) {   // vaschetta: dettaglio per combinazione formato+gusti
         const key = it.format + "|" + gusti.join(",");
         const v = d.vasche[key] || (d.vasche[key] = { format: it.format, gusti, qty: 0 });
         v.qty += (it.qty || 1);
       }
-      if (!g || !gusti.length) return;                 // coppette / senza gusti: niente kg
+      if (!itemIsVaschetta(it) || !g || !gusti.length) return;  // non-vaschetta / senza gusti: niente kg
       const per = (g * (it.qty || 1)) / gusti.length;  // peso diviso per n. gusti
       gusti.forEach((n) => { d.flavors[n] = (d.flavors[n] || 0) + per; });
     });
@@ -366,11 +379,11 @@ function renderHistory() {
       const q = it.qty || 1;
       const f = byFormat[it.format] || (byFormat[it.format] = { qty: 0, rev: 0 });
       f.qty += q; f.rev += Number(it.prezzo_unit || 0) * q;
-      const g = formatGrams(it.format), gusti = it.gusti || [];
+      const g = itemGrams(it), gusti = it.gusti || [], isVasca = itemIsVaschetta(it);
       gusti.forEach((n) => {
         const fl = byFlavor[n] || (byFlavor[n] = { qty: 0, grams: 0 });
         fl.qty += q;
-        if (g && gusti.length) fl.grams += (g * q) / gusti.length;
+        if (isVasca && g && gusti.length) fl.grams += (g * q) / gusti.length;
       });
     });
   });
@@ -945,25 +958,52 @@ const normFmtCat = (f) => ((f.category || "vaschetta") === "vaschetta" ? "vasche
 function buildFormatCard(f) {
   const el = document.createElement("div");
   el.className = "fmt-card"; el.dataset.id = f.id;
-  const cur = f.category || "vaschetta";
+  const cur = normFmtCat(f);
+  const isV = cur === "vaschetta";
   const catOpts = FORMAT_CATS.map((c) => `<option value="${c.key}"${cur === c.key ? " selected" : ""}>${esc(c.label)}</option>`).join("");
+  // vaschetta: titolo auto-derivato dal peso (no input nome); altro: nome libero
+  const topInner = isV
+    ? `<span class="f-title">${esc(f.name || vaschettaName(f.weight_kg))}</span>`
+    : `<input class="f-name grow" value="${esc(f.name)}">`;
+  const body = isV
+    ? `<div class="grid2">` +
+        `<div class="field" style="margin:0"><label>Categoria</label><div class="select-wrap"><select class="f-cat">${catOpts}</select></div></div>` +
+        `<div class="field" style="margin:0"><label>Peso (kg)</label><input class="f-weight" type="number" min="0" step="0.1" value="${f.weight_kg != null ? f.weight_kg : ""}" placeholder="es. 1"></div>` +
+      `</div>` +
+      `<div class="grid2">` +
+        `<div class="field" style="margin:0"><label>Gusti max</label><input class="f-max" type="number" min="0" value="${f.max_flavors}"></div>` +
+        `<div class="field" style="margin:0"><label>Prezzo €</label><input class="f-price" type="number" min="0" step="0.50" value="${f.price}"></div>` +
+      `</div>`
+    : `<div class="grid2">` +
+        `<div class="field" style="margin:0"><label>Categoria</label><div class="select-wrap"><select class="f-cat">${catOpts}</select></div></div>` +
+        `<div class="field" style="margin:0"><label>Gusti max</label><input class="f-max" type="number" min="0" value="${f.max_flavors}"></div>` +
+      `</div>` +
+      `<div class="field" style="margin:0"><label>Prezzo €</label><input class="f-price" type="number" min="0" step="0.50" value="${f.price}"></div>`;
   el.innerHTML =
-    `<div class="fmt-card-top">` +
-      `<span class="drag-handle" title="Trascina per ordinare">⠿</span>` +
-      `<input class="f-name grow" value="${esc(f.name)}">` +
-    `</div>` +
-    `<div class="grid2">` +
-      `<div class="field" style="margin:0"><label>Categoria</label><div class="select-wrap"><select class="f-cat">${catOpts}</select></div></div>` +
-      `<div class="field" style="margin:0"><label>Gusti max</label><input class="f-max" type="number" min="0" value="${f.max_flavors}"></div>` +
-    `</div>` +
-    `<div class="field" style="margin:0"><label>Prezzo €</label><input class="f-price" type="number" min="0" step="0.50" value="${f.price}"></div>` +
+    `<div class="fmt-card-top"><span class="drag-handle" title="Trascina per ordinare">⠿</span>${topInner}</div>` +
+    body +
     `<div class="foot">` + availRadios("fo-" + f.id, f.available) + `<button class="btn icon" style="width:auto;padding:8px 14px">Elimina</button></div>`;
-  const name = el.querySelector(".f-name"), max = el.querySelector(".f-max"), price = el.querySelector(".f-price"), cat = el.querySelector(".f-cat");
+  const max = el.querySelector(".f-max"), price = el.querySelector(".f-price"), cat = el.querySelector(".f-cat");
   const del = el.querySelector(".foot .btn.icon");
-  name.onchange = () => updateRow("formats", f.id, { name: name.value.trim() });
   max.onchange = () => updateRow("formats", f.id, { max_flavors: parseInt(max.value || "0", 10) });
   price.onchange = () => updateRow("formats", f.id, { price: parseFloat(price.value || "0") });
-  cat.onchange = async () => { await updateRow("formats", f.id, { category: cat.value }); loadFormats(); };
+  if (isV) {
+    const w = el.querySelector(".f-weight");
+    w.onchange = async () => {
+      const kg = parseFloat(w.value || "0") || 0;
+      await updateRow("formats", f.id, { weight_kg: kg > 0 ? kg : null, name: vaschettaName(kg) });
+      loadFormats();   // aggiorna il titolo derivato dal peso
+    };
+  } else {
+    const name = el.querySelector(".f-name");
+    name.onchange = () => updateRow("formats", f.id, { name: name.value.trim() });
+  }
+  cat.onchange = async () => {
+    const patch = { category: cat.value };
+    if (cat.value === "vaschetta" && f.weight_kg != null) patch.name = vaschettaName(f.weight_kg);
+    if (cat.value === "altro") patch.weight_kg = null;
+    await updateRow("formats", f.id, patch); loadFormats();
+  };
   wireAvailRadios(el, (val) => updateRow("formats", f.id, { available: val }));
   del.onclick = async () => { await delRow("formats", f.id); loadFormats(); };
   return el;
@@ -993,18 +1033,34 @@ async function loadFormats() {
   });
 }
 $("nfo-add").onclick = async () => {
-  const name = $("nfo-name").value.trim(); if (!name) return;
+  const cat = $("nfo-cat").value;
+  let name, weight_kg = null;
+  if (cat === "vaschetta") {
+    weight_kg = parseFloat($("nfo-weight").value || "0") || 0;
+    if (weight_kg <= 0) { toast("Inserisci il peso della vaschetta (kg)."); return; }
+    name = vaschettaName(weight_kg);              // nome derivato dal peso
+  } else {
+    name = $("nfo-name").value.trim();
+    if (!name) { toast("Inserisci il nome del prodotto."); return; }
+  }
   const order = await nextSortOrder("formats");
   await sb.from("formats").insert({
-    name,
-    category: $("nfo-cat").value,
+    name, category: cat, weight_kg,
     max_flavors: parseInt($("nfo-max").value || "0", 10),
     price: parseFloat($("nfo-price").value || "0"),
     sort_order: order,
   });
-  $("nfo-name").value = ""; $("nfo-max").value = 1; $("nfo-price").value = 0;
+  $("nfo-name").value = ""; $("nfo-weight").value = ""; $("nfo-max").value = 1; $("nfo-price").value = 0;
   loadFormats();
 };
+// create form: vaschetta -> campo Peso; altro -> campo Nome
+function syncNewProductFields() {
+  const isV = $("nfo-cat").value === "vaschetta";
+  $("nfo-weight-field").style.display = isV ? "" : "none";
+  $("nfo-name-field").style.display = isV ? "none" : "";
+}
+$("nfo-cat").onchange = syncNewProductFields;
+syncNewProductFields();
 
 // ========== FASCE (catalogo condiviso + acceso/spento per giorno) ==========
 const slotScope = () => (document.querySelector('input[name="slot-scope"]:checked') || {}).value || "day";

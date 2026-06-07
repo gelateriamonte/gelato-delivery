@@ -501,6 +501,7 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 }
 .fmt-card-top{ display:flex; align-items:center; gap:10px; }
 .fmt-card-top .f-name{ flex:1; min-width:0; }
+.fmt-card-top .f-title{ flex:1; min-width:0; font-family:var(--serif); font-size:18px; font-weight:600; color:var(--ink); padding:6px 0; }
 
 /* ---- cliente: intestazione gruppo nel menù ---- */
 .fmt-group-head{
