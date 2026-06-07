@@ -124,6 +124,15 @@ h3.s-title{
 .adminbar .brand span{ color:rgba(255,255,255,.6); }
 
 .appbar .right{ margin-left:auto; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); text-align:right; line-height:1.35; }
+/* logo+brand cliccabile -> home (mantiene il layout flex della bar) */
+.brand-link{ display:flex; align-items:center; gap:13px; text-decoration:none; color:inherit; -webkit-tap-highlight-color:transparent; }
+.brand-link:hover .brand b{ color:var(--accent-ink); }
+/* skeleton caricamento menù (mostra subito, sostituito da renderFormats) */
+.skel-card{ height:62px; border-radius:var(--r-md); border:1px solid var(--line); background:var(--paper); position:relative; overflow:hidden; }
+.skel-card::after{ content:""; position:absolute; inset:0; transform:translateX(-100%);
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent); animation:skelshimmer 1.15s infinite; }
+@keyframes skelshimmer{ to{ transform:translateX(100%); } }
+@media (prefers-reduced-motion:reduce){ .skel-card::after{ animation:none; } }
 
 .adminbar .conn{ margin-left:auto; display:flex; align-items:center; gap:8px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.7); }
 .led{ width:8px; height:8px; border-radius:50%; background:currentColor;

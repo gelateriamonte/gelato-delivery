@@ -257,8 +257,9 @@ async function loadData() {
     sb.from("time_slots").select("*").order("sort_order"),
   ]);
   if (settings.error || flavors.error || formats.error || slots.error) {
-    toast("Errore nel caricamento. Controlla la configurazione Supabase.");
+    toast("Errore nel caricamento. Riprova tra poco.");
     console.error(settings.error || flavors.error || formats.error || slots.error);
+    const fw = $("formats"); if (fw) fw.innerHTML = '<p class="hint">Impossibile caricare il menù. Ricarica la pagina.</p>';
     return;
   }
   DATA = {

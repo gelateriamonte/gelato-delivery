@@ -95,6 +95,9 @@
     .infocard .ilbl{ font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
     .infocard .ival{ font-family:var(--serif); font-size:17px; font-weight:600; color:var(--ink); line-height:1.25; }
     .infocard .isub{ font-size:12.5px; color:var(--muted); margin-top:4px; line-height:1.4; }
+    a.infocard{ display:block; text-decoration:none; color:inherit; transition:border-color .15s; }
+    a.infocard:hover{ border-color:var(--accent-line); }
+    .infocard .imap{ font-size:11px; font-weight:600; letter-spacing:.04em; color:var(--accent-ink); margin-top:9px; }
     .divider{ height:1px; background:var(--line-2); margin:8px 22px; }
 
     /* CTA sticky in basso */
@@ -185,12 +188,13 @@
           <div class="ival">16:00 – 22:00</div>
           <div class="isub">Tutti i giorni</div>
         </div>
-        <div class="infocard">
+        <a class="infocard" href="https://maps.app.goo.gl/zMh9ozcPzURJgxg6A" target="_blank" rel="noopener">
           <svg class="ico" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" stroke="currentColor" stroke-width="1.6"/></svg>
           <div class="ilbl">Dove siamo</div>
           <div class="ival">Montepetrosu</div>
           <div class="isub">San Teodoro (SS) · consegna in zona</div>
-        </div>
+          <div class="imap">Apri nelle mappe →</div>
+        </a>
       </div>
     </section>
 
