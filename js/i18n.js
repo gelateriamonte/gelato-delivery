@@ -327,7 +327,7 @@
   function detect() {
     try { var s = localStorage.getItem("gelato_lang"); if (s && LANGS.indexOf(s) >= 0) return s; } catch (e) {}
     var n = (navigator.language || "it").slice(0, 2).toLowerCase();
-    return n === "en" ? "en" : "it";
+    return n === "it" ? "it" : "en";   // browser IT -> IT; qualsiasi altra lingua -> EN
   }
   function raw(key, lang) {
     var d = DICT[lang] || DICT[DEFAULT];

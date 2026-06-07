@@ -233,32 +233,46 @@
   <script src="config.js"></script>
   <script>
     (function () {
-      // colore pallino per i gusti noti (fallback neutro per gli altri)
-      var DAB = {
-        "fiordilatte": "#f3ead7", "crema": "#ecd9a3", "stracciatella": "#f0e7d6",
-        "cioccolato": "#5b4636", "bacio": "#4a342a", "nocciola": "#bb9162",
-        "pistacchio": "#9fae66", "limone": "#e6c84f", "fragola": "#d99a96",
-        "ricotta e fichi": "#ece1cc", "aranzada": "#d8923f", "variegato amarena": "#b23b4e"
-      };
       function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-      function dabColor(name) {
-        // match per parola/frase intera (no prefisso); la chiave più lunga (più specifica) vince
+      // colore del pallino "ispirato" al nome del gusto: parole chiave -> famiglia di tonalità (HSL).
+      // pistacchio->verde, cioccolato/nutella->marrone, fragola->rosso, limone->giallo, arancia->arancio, ecc.
+      function baseHue(name) {
         var n = " " + String(name || "").toLowerCase().trim() + " ";
-        var best = "", bestLen = -1;
-        for (var k in DAB) { if (n.indexOf(" " + k + " ") >= 0 && k.length > bestLen) { best = DAB[k]; bestLen = k.length; } }
-        return best || "#cbb9a3";
+        var T = [
+          [["pistacchio","menta","mela verde","basilico","kiwi","lime","matcha"], 115, 33, 50],
+          [["cioccolato bianco"], 42, 26, 84],
+          [["cioccolato fondente","fondente","cioccolato nero"], 22, 40, 26],
+          [["cioccolato","nutella","cacao","gianduia","gianduja","caffe","caffè","tiramisu","brownie"], 24, 38, 32],
+          [["nocciola","arachide","biscotto","speculoos","caramello","dulce","mou","toffee","cookie"], 30, 44, 52],
+          [["fragola","lampone","ciliegia","amarena","anguria","cocomero","melagrana","ribes","frutti rossi","frutti di bosco","granatina"], 348, 56, 62],
+          [["arancia","mandarino","aranzada","albicocca","pesca","mango","papaya","zucca","carota","melone","cantalupo"], 30, 66, 58],
+          [["limone","cedro","banana","ananas","zafferano","miele","crema","zabaione","vaniglia","custard","maracuja","passion"], 48, 64, 62],
+          [["mirtillo","lavanda","viola","violetta","more","gelso","uva","prugna"], 278, 30, 58],
+          [["puffo","blu","blue","oceano","curacao"], 208, 50, 60],
+          [["liquirizia","sesamo nero","carbone"], 0, 0, 22],
+          [["fiordilatte","panna","yogurt","yoghurt","ricotta","cocco","mandorla","latte","mascarpone","stracciatella","cheesecake","zuppa inglese","torrone"], 42, 28, 84],
+          [["rosa","gelsomino","fiore"], 338, 44, 70]
+        ];
+        var bestLen = -1, hit = null;
+        for (var i = 0; i < T.length; i++) for (var j = 0; j < T[i][0].length; j++) {
+          var k = T[i][0][j];
+          if (n.indexOf(k) >= 0 && k.length > bestLen) { bestLen = k.length; hit = T[i]; }
+        }
+        if (hit) return { h: hit[1], s: hit[2], l: hit[3] };
+        var h = 0, str = String(name || "");   // sconosciuto: tonalità deterministica dall'hash del nome
+        for (var c = 0; c < str.length; c++) h = (h * 31 + str.charCodeAt(c)) % 360;
+        return { h: h, s: 40, l: 60 };
       }
-      // colori pallino SEMPRE distinti tra i gusti del giorno: preferito dal nome; se già usato
-      // prendo dalla palette extra; ultimo fallback HSL generato (mai due uguali).
+      // colori SEMPRE distinti: stessa famiglia -> sfumature di chiarezza alternate; guardia anti-collisione esatta.
       function uniqueColors(rows) {
-        var EXTRA = ["#9fae66", "#5b4636", "#bb9162", "#d8923f", "#ece1cc", "#d99a96", "#e6c84f", "#b23b4e", "#7a9a8e", "#c98a5e", "#8d6e97", "#6f8fae", "#a86b4f", "#5e8c61", "#c46a3a"];
-        var used = {}, out = [];
-        rows.forEach(function (f, idx) {
-          var c = dabColor(f.name);
-          if (used[c]) c = null;
-          if (!c) { for (var i = 0; i < EXTRA.length; i++) { if (!used[EXTRA[i]]) { c = EXTRA[i]; break; } } }
-          if (!c) c = "hsl(" + ((idx * 67) % 360) + ",42%,58%)";
-          used[c] = true; out.push(c);
+        var fam = {}, usedExact = {}, out = [];
+        rows.forEach(function (f) {
+          var b = baseHue(f.name), key = b.h + ":" + b.s + ":" + b.l;
+          var nUsed = fam[key] || 0; fam[key] = nUsed + 1;
+          var off = nUsed === 0 ? 0 : (nUsed % 2 ? 1 : -1) * Math.ceil(nUsed / 2) * 9;
+          var L = Math.max(26, Math.min(88, b.l + off)), col, guard = 0;
+          do { col = "hsl(" + b.h + "," + b.s + "%," + L + "%)"; if (usedExact[col]) { L = Math.max(26, Math.min(88, L + 5)); guard++; } } while (usedExact[col] && guard < 30);
+          usedExact[col] = true; out.push(col);
         });
         return out;
       }
