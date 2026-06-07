@@ -134,6 +134,12 @@
     <section id="tab-slots" class="tabpane hidden">
       <div class="admin-head"><h2>Fasce orarie</h2></div>
       <p class="muted small">Scegli un giorno, poi accendi/spegni le fasce. Rinomina, aggiungi ed elimina valgono per tutti i giorni.</p>
+      <div class="panel" style="margin:0 0 14px">
+        <div class="field" style="margin:0"><label>Tempo di anticipo da inizio fascia (ore)</label>
+          <input id="set-lead" type="number" min="1" max="6" step="1" style="width:120px">
+          <p class="muted small" style="margin:8px 0 0">Il cliente vede una fascia solo fino a N ore prima del suo inizio (es. 2h → la fascia 18:00 sparisce alle 16:00).</p>
+        </div>
+      </div>
       <div id="slot-cal" class="cal"></div>
       <div class="panel" style="margin:14px 0">
         <label>Acceso/spento si applica a</label>

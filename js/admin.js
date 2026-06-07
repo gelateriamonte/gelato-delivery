@@ -1170,6 +1170,7 @@ async function loadSettings() {
   SETTINGS = data || {};
   $("set-delivery").value = data.delivery_cost;
   $("set-min").value = data.min_order;
+  $("set-lead").value = data.slot_lead_hours != null ? data.slot_lead_hours : 2;
   const t = waTemplates();
   WA_STATUSES.forEach((s) => { const el = $("wa-" + STATUS_META[s].slug); if (el) el.value = t[s] || ""; });
   renderOpeningHoursEditor();
@@ -1181,6 +1182,16 @@ $("set-save").onclick = async () => {
   }).eq("id", 1);
   if (error) { console.error(error); toast("Errore salvataggio."); return; }
   toast("Parametri salvati.");
+};
+// Tempo di anticipo da inizio fascia (ore, 1..6): auto-save
+$("set-lead").onchange = async () => {
+  let h = parseInt($("set-lead").value || "2", 10);
+  if (!(h >= 1)) h = 1; if (h > 6) h = 6;
+  $("set-lead").value = h;
+  const { error } = await sb.from("settings").update({ slot_lead_hours: h }).eq("id", 1);
+  if (error) { console.error(error); toast("Errore salvataggio."); return; }
+  SETTINGS.slot_lead_hours = h;
+  toast("Tempo di anticipo salvato.");
 };
 
 // ========== CODICI SCONTO ==========

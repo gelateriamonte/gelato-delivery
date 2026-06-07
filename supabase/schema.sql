@@ -54,6 +54,8 @@ create table if not exists settings (
   id            int primary key default 1,
   delivery_cost numeric(8,2) not null default 0,
   min_order     numeric(8,2) not null default 0,
+  slot_lead_hours int not null default 2,         -- anticipo (ore) da inizio fascia: cliente vede la fascia fino a N ore prima
+
   wa_templates  jsonb,                          -- messaggi WhatsApp per stato (override dei default in admin.js)
   delivery_area jsonb,                          -- poligono zona di consegna [[lat,lng],...] (NULL = comune San Teodoro)
   opening_hours jsonb,                          -- orari apertura per giorno {lun..dom:{chiuso,apertura,chiusura}}

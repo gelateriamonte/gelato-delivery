@@ -29,10 +29,21 @@ const slotFull = (s) => {
   if (!max || max <= 0) return false;            // null / 0 = illimitato
   return (DAY_COUNTS[s.label] || 0) >= max;
 };
-// fasce effettivamente offribili nel giorno scelto: accese (override/catalogo) e non piene
+// tempo di anticipo da inizio fascia (ore): globale, default 2
+const slotLeadHours = () => { const h = Number(DATA.settings && DATA.settings.slot_lead_hours); return h > 0 ? h : 2; };
+// fascia ancora ordinabile rispetto al tempo di anticipo. Solo per OGGI: una
+// fascia sparisce quando mancano meno di N ore al suo inizio. Giorni futuri: sempre ok.
+function slotWithinLead(s) {
+  if (SELECTED_DAY !== ymd(DAYS[0])) return true;
+  const startMin = hmToMin(s.label);               // inizio fascia (es. "18:00 - 18:30" -> 1080)
+  const n = new Date();
+  const nowMin = n.getHours() * 60 + n.getMinutes();
+  return nowMin < startMin - slotLeadHours() * 60; // visibile fino a N ore prima dell'inizio
+}
+// fasce effettivamente offribili nel giorno scelto: accese (override/catalogo), non piene, entro l'anticipo
 const effectiveSlots = () => DATA.slots.filter((s) => {
   const on = DAY_OVERRIDES.has(s.id) ? DAY_OVERRIDES.get(s.id) : s.active;
-  return on && !slotFull(s);
+  return on && !slotFull(s) && slotWithinLead(s);
 });
 
 // ---------- modalità: consegna a domicilio / ritiro in negozio ----------
@@ -526,6 +537,10 @@ async function submitOrder() {
     if (!effectiveSlots().length) { toast("Nessuna fascia disponibile per il giorno scelto."); return; }
     // re-check capienza fascia prima dell'invio (best-effort anti-race)
     const chosen = $("slot").value;
+    if (!effectiveSlots().some((s) => s.label === chosen)) {   // cutoff/anticipo superato o fascia spenta nel frattempo
+      toast("Questa fascia non è più disponibile. Scegline un'altra.");
+      await loadDaySlots(); return;
+    }
     const slotObj = DATA.slots.find((s) => s.label === chosen);
     if (slotObj && Number(slotObj.max_deliveries) > 0) {
       const { count, error: capErr } = await sb.from("orders")
