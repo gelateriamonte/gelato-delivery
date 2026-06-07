@@ -129,6 +129,7 @@ document.querySelectorAll(".tab").forEach((t) => {
     t.classList.add("active");
     $("tab-" + t.dataset.tab).classList.remove("hidden");
     if (t.dataset.tab === "settings") setupAreaMap();
+    if (t.dataset.tab === "consegne") { if (CONSEGNE_DIRTY) drawConsegne(); else setTimeout(invalidateConsegneMaps, 80); }
   };
 });
 
@@ -424,20 +425,153 @@ function hydrateRoutes() {
   });
 }
 
-// ========== CONSEGNE (solo "in consegna", per distanza crescente) ==========
-async function renderConsegne() {
+// ========== CONSEGNE — giro di oggi per fascia, percorso ottimale (TSP) su mappa ==========
+// Ordini: consegne attive di OGGI (accettato/in preparazione/in consegna), raggruppate per fascia.
+// Per fascia: percorso ottimale dalla gelateria (andata+ritorno) via OSRM /trip, mappa + lista
+// numerata in ordine di percorso con durate di guida cumulate. Render lazy (solo a tab visibile).
+let CONSEGNE_DIRTY = true;
+const TRIP_CACHE = {};
+const CONSEGNE_MAPS = {};   // mapId -> { map, bounds }
+const ACTIVE_DELIVERY = new Set(["accettato", "in preparazione", "in consegna"]);
+
+const fmtMin = (sec) => Math.round(sec / 60) + " min";
+const fmtKm = (m) => (m / 1000).toFixed(1).replace(".", ",") + " km";
+
+function consegneToday() {
+  const today = ymd(new Date());
+  return ORDERS.filter((o) => o.fulfillment !== "pickup" && o.delivery_date === today && ACTIVE_DELIVERY.has(o.status));
+}
+
+// OSRM Trip (TSP): coords [[lat,lng],...] con la gelateria prima. Cache per set di coordinate.
+function osrmTrip(coords) {
+  const key = coords.map((c) => c[0].toFixed(5) + "," + c[1].toFixed(5)).join(";");
+  if (!TRIP_CACHE[key]) {
+    TRIP_CACHE[key] = (async () => {
+      try {
+        const path = coords.map((c) => c[1] + "," + c[0]).join(";");   // OSRM vuole lng,lat
+        const u = `https://router.project-osrm.org/trip/v1/driving/${path}?source=first&roundtrip=true&geometries=geojson&overview=full`;
+        const d = await (await fetch(u)).json();
+        if (d.code !== "Ok" || !d.trips || !d.trips[0]) return { err: true };
+        return { waypoints: d.waypoints, legs: d.trips[0].legs, geometry: d.trips[0].geometry.coordinates };
+      } catch (e) { return { err: true }; }
+    })();
+  }
+  return TRIP_CACHE[key];
+}
+
+function renderConsegne() {
+  CONSEGNE_DIRTY = true;
+  const sec = $("tab-consegne");
+  if (sec && !sec.classList.contains("hidden")) drawConsegne();   // visibile → disegna subito
+}
+
+async function drawConsegne() {
   const wrap = $("consegne-list");
   if (!wrap) return;
-  const withC = ORDERS.filter((o) => o.status === "in consegna" && o.delivery_lat != null);
-  const noC = ORDERS.filter((o) => o.status === "in consegna" && o.delivery_lat == null);
-  if (!withC.length && !noC.length) { wrap.innerHTML = '<p class="hint">Nessun ordine in consegna al momento.</p>'; return; }
-  const routes = await Promise.all(withC.map((o) => getRoute(o.delivery_lat, o.delivery_lng)));
-  const arr = withC.map((o, i) => ({ o, km: (routes[i] && !routes[i].err) ? routes[i].km : Infinity }));
-  arr.sort((a, b) => a.km - b.km);
+  CONSEGNE_DIRTY = false;
+  Object.keys(CONSEGNE_MAPS).forEach((k) => { try { CONSEGNE_MAPS[k].map.remove(); } catch (e) {} delete CONSEGNE_MAPS[k]; });
+
+  const list = consegneToday();
+  if (!list.length) { wrap.innerHTML = '<p class="hint">Nessuna consegna in programma per oggi.</p>'; return; }
+
+  const bySlot = {};
+  list.forEach((o) => { const s = o.slot_label || "Senza fascia"; (bySlot[s] || (bySlot[s] = [])).push(o); });
+  const slots = Object.keys(bySlot).sort((a, b) => slotMin(a) - slotMin(b));
+
   wrap.innerHTML = "";
-  arr.forEach(({ o }) => wrap.appendChild(orderCard(o)));
-  noC.forEach((o) => wrap.appendChild(orderCard(o)));
-  hydrateRoutes();
+  slots.forEach((slot, si) => {
+    const orders = bySlot[slot];
+    const withGeo = orders.filter((o) => o.delivery_lat != null && o.delivery_lng != null);
+    const noGeo = orders.filter((o) => o.delivery_lat == null || o.delivery_lng == null);
+    const mapId = "consegne-map-" + si;
+
+    const box = document.createElement("div");
+    box.className = "panel"; box.style.cssText = "margin-bottom:18px";
+    box.innerHTML =
+      `<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">` +
+        `<b style="font-size:1.05rem">${esc(slot)}</b>` +
+        `<span class="count">${orders.length} consegn${orders.length === 1 ? "a" : "e"}</span>` +
+        `<span class="muted small" id="${mapId}-tot" style="margin-left:auto"></span></div>` +
+      (withGeo.length ? `<div id="${mapId}" style="height:260px;border-radius:12px;overflow:hidden;margin-bottom:10px"></div>` : "") +
+      `<div class="panel" id="${mapId}-list"></div>` +
+      (noGeo.length ? `<p class="hint" style="margin-top:8px">⚠ Senza posizione sulla mappa: ${esc(noGeo.map((o) => o.customer_name).join(", "))}</p>` : "");
+    wrap.appendChild(box);
+
+    if (withGeo.length) buildSlotRoute(withGeo, mapId);
+    else $(mapId + "-list").innerHTML = numberedRows(orders.map((o, i) => ({ o, n: i + 1 })), null);
+  });
+}
+
+async function buildSlotRoute(orders, mapId) {
+  const coords = [[GELATERIA.lat, GELATERIA.lng]].concat(orders.map((o) => [o.delivery_lat, o.delivery_lng]));
+  const trip = await osrmTrip(coords);
+  const listEl = $(mapId + "-list"), totEl = $(mapId + "-tot");
+  if (!listEl) return;
+
+  if (trip.err) {   // fallback: ordina per distanza stradale crescente, mappa con soli marker
+    const routes = await Promise.all(orders.map((o) => getRoute(o.delivery_lat, o.delivery_lng)));
+    const arr = orders.map((o, i) => ({ o, km: (routes[i] && !routes[i].err) ? routes[i].km : Infinity }))
+      .sort((a, b) => a.km - b.km).map((x, i) => ({ o: x.o, n: i + 1 }));
+    listEl.innerHTML = numberedRows(arr, '<p class="hint" style="margin:0 0 8px">Percorso ottimale non disponibile (riprova tra poco). Ordine per distanza stradale.</p>');
+    if (totEl) totEl.textContent = "percorso n/d";
+    drawConsegneMap(mapId, arr.map((x) => x.o), null);
+    return;
+  }
+
+  const wp = trip.waypoints;
+  const seq = orders.map((o, i) => ({ o, pos: wp[i + 1].waypoint_index })).sort((a, b) => a.pos - b.pos);
+  const legDur = trip.legs.map((l) => l.duration);
+  const cumAt = (p) => legDur.slice(0, p).reduce((s, d) => s + d, 0);
+  const rows = seq.map((x, idx) => ({ o: x.o, n: idx + 1, cum: cumAt(x.pos), leg: legDur[x.pos - 1] }));
+  listEl.innerHTML = numberedRows(rows, null);
+
+  const totSec = legDur.reduce((s, d) => s + d, 0);
+  const totDist = trip.legs.reduce((s, l) => s + (l.distance || 0), 0);
+  if (totEl) totEl.textContent = `${fmtKm(totDist)} · ${fmtMin(totSec)} (incl. rientro)`;
+  drawConsegneMap(mapId, seq.map((x) => x.o), trip.geometry);
+}
+
+function numberedRows(rows, noteHtml) {
+  const body = rows.map(({ o, n, cum, leg }) => {
+    const time = (cum != null) ? `<small>🕒 ${fmtMin(cum)} dalla gelateria${leg != null ? " · +" + fmtMin(leg) : ""}</small>` : "";
+    const num = `<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#a8552f;color:#fff;font-size:.72rem;font-weight:700;margin-right:7px;flex:none">${n}</span>`;
+    return `<div class="brk"><div class="bn">${num}${esc(o.customer_name)}` +
+      `<small>${esc(o.address || "")}${o.customer_phone ? " · " + esc(o.customer_phone) : ""}</small>${time}</div>` +
+      `<div class="bv">${euro(o.total)}</div></div>`;
+  }).join("");
+  return (noteHtml || "") + body;
+}
+
+function consDivIcon(html, size) {
+  return L.divIcon({ className: "", html, iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+}
+function drawConsegneMap(mapId, orders, geometry) {
+  const el = $(mapId);
+  if (!el || typeof L === "undefined") return;
+  if (CONSEGNE_MAPS[mapId]) { try { CONSEGNE_MAPS[mapId].map.remove(); } catch (e) {} delete CONSEGNE_MAPS[mapId]; }
+  const map = L.map(mapId, { zoomControl: true, attributionControl: false });
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+  let bounds = L.latLngBounds([[GELATERIA.lat, GELATERIA.lng]]);
+  if (geometry && geometry.length) {
+    const line = geometry.map((c) => [c[1], c[0]]);   // [lng,lat] → [lat,lng]
+    const pl = L.polyline(line, { color: "#a8552f", weight: 4, opacity: .85 }).addTo(map);
+    bounds = pl.getBounds().extend([GELATERIA.lat, GELATERIA.lng]);
+  }
+  L.marker([GELATERIA.lat, GELATERIA.lng], { icon: consDivIcon('<div style="width:28px;height:28px;border-radius:50%;background:#1f6f3f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.95rem;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)">🍦</div>', 28) })
+    .addTo(map).bindPopup("Gelateria");
+  orders.forEach((o, i) => {
+    L.marker([o.delivery_lat, o.delivery_lng], { icon: consDivIcon(`<div style="width:26px;height:26px;border-radius:50%;background:#a8552f;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)">${i + 1}</div>`, 26) })
+      .addTo(map).bindPopup(`<b>${i + 1}. ${esc(o.customer_name)}</b><br>${esc(o.address || "")}`);
+    bounds.extend([o.delivery_lat, o.delivery_lng]);
+  });
+  map.fitBounds(bounds, { padding: [24, 24] });
+  CONSEGNE_MAPS[mapId] = { map, bounds };
+  setTimeout(() => map.invalidateSize(), 60);
+}
+function invalidateConsegneMaps() {
+  Object.values(CONSEGNE_MAPS).forEach(({ map, bounds }) => {
+    try { map.invalidateSize(); if (bounds) map.fitBounds(bounds, { padding: [24, 24] }); } catch (e) {}
+  });
 }
 
 // ========== TAKE AWAY (solo ritiri in negozio, attivi) ==========
