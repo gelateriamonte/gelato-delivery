@@ -643,6 +643,7 @@ async function buildSlotRoute(orders, mapId) {
     const arr = orders.map((o, i) => ({ o, km: (routes[i] && !routes[i].err) ? routes[i].km : Infinity }))
       .sort((a, b) => a.km - b.km).map((x, i) => ({ o: x.o, n: i + 1 }));
     listEl.innerHTML = numberedRows(arr, '<p class="hint" style="margin:0 0 8px">Percorso ottimale non disponibile (riprova tra poco). Ordine per distanza stradale.</p>');
+    addMapsBtn(listEl, arr.map((x) => x.o));
     if (totEl) totEl.textContent = "percorso n/d";
     drawConsegneMap(mapId, arr.map((x) => x.o), null);
     return;
@@ -657,6 +658,7 @@ async function buildSlotRoute(orders, mapId) {
   let acc = 0;
   const rows = ordered.map((o, idx) => { acc += legSec[idx]; return { o, n: idx + 1, cum: acc, leg: legSec[idx] }; });
   listEl.innerHTML = numberedRows(rows, null);
+  addMapsBtn(listEl, ordered);
   const totSec = acc + tab.dur[seqI[seqI.length - 1]][0];   // + rientro in gelateria
 
   // geometria reale del percorso ordinato (polyline) + km totali
@@ -679,6 +681,30 @@ function numberedRows(rows, noteHtml) {
   return (noteHtml || "") + body;
 }
 
+// URL Google Maps Directions col giro già ordinato: origine = gelateria,
+// tappe intermedie = waypoints in ordine, destinazione = ultima consegna.
+function googleMapsRoute(ordered) {
+  if (!ordered || !ordered.length) return null;
+  const enc = (s) => encodeURIComponent(s);
+  const pt = (o) => o.delivery_lat + "," + o.delivery_lng;
+  const origin = GELATERIA.lat + "," + GELATERIA.lng;
+  const stops = ordered.map(pt);
+  const destination = stops[stops.length - 1];
+  const waypoints = stops.slice(0, -1);
+  let u = "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=" + enc(origin) + "&destination=" + enc(destination);
+  if (waypoints.length) u += "&waypoints=" + waypoints.map(enc).join("|");
+  return u;
+}
+// bottone "Apri il giro su Google Maps" subito dopo la lista tappe della fascia
+function addMapsBtn(listEl, ordered) {
+  if (!listEl || !ordered || !ordered.length) return;
+  const url = googleMapsRoute(ordered); if (!url) return;
+  const btn = document.createElement("a");
+  btn.className = "btn sm"; btn.href = url; btn.target = "_blank"; btn.rel = "noopener";
+  btn.style.cssText = "display:inline-flex;align-items:center;gap:7px;margin-top:10px";
+  btn.textContent = "🧭 Apri il giro su Google Maps";
+  listEl.insertAdjacentElement("afterend", btn);
+}
 function consDivIcon(html, size) {
   return L.divIcon({ className: "", html, iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
 }

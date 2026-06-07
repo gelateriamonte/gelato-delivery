@@ -248,13 +248,28 @@
         for (var k in DAB) { if (n.indexOf(" " + k + " ") >= 0 && k.length > bestLen) { best = DAB[k]; bestLen = k.length; } }
         return best || "#cbb9a3";
       }
+      // colori pallino SEMPRE distinti tra i gusti del giorno: preferito dal nome; se già usato
+      // prendo dalla palette extra; ultimo fallback HSL generato (mai due uguali).
+      function uniqueColors(rows) {
+        var EXTRA = ["#9fae66", "#5b4636", "#bb9162", "#d8923f", "#ece1cc", "#d99a96", "#e6c84f", "#b23b4e", "#7a9a8e", "#c98a5e", "#8d6e97", "#6f8fae", "#a86b4f", "#5e8c61", "#c46a3a"];
+        var used = {}, out = [];
+        rows.forEach(function (f, idx) {
+          var c = dabColor(f.name);
+          if (used[c]) c = null;
+          if (!c) { for (var i = 0; i < EXTRA.length; i++) { if (!used[EXTRA[i]]) { c = EXTRA[i]; break; } } }
+          if (!c) c = "hsl(" + ((idx * 67) % 360) + ",42%,58%)";
+          used[c] = true; out.push(c);
+        });
+        return out;
+      }
       function render(rows) {
         var sec = document.getElementById("flavors-sec");
         var wrap = document.getElementById("home-flavors");
         if (!sec || !wrap || !Array.isArray(rows) || !rows.length) return;   // niente gusti del giorno -> sezione nascosta
-        wrap.innerHTML = rows.map(function (f) {
+        var colors = uniqueColors(rows);
+        wrap.innerHTML = rows.map(function (f, i) {
           var d = f.description ? '<div class="fdesc">' + esc(f.description) + "</div>" : "";
-          return '<div class="flavor"><span class="dab" style="background:' + dabColor(f.name) + '"></span>' +
+          return '<div class="flavor"><span class="dab" style="background:' + colors[i] + '"></span>' +
             '<div class="fmeta"><div class="fname">' + esc(f.name) + "</div>" + d + "</div></div>";
         }).join("");
         sec.hidden = false;

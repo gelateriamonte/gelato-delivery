@@ -160,7 +160,9 @@
   "home.brand.artisanal": "gelato<br>artigianale",
   "grazie.heading": "Pagamento ricevuto",
   "grazie.body": "Ordine confermato e pagato. Ti contatteremo a breve per la consegna o il ritiro.",
-  "home.weather.noWind": "Vento assente"
+  "home.weather.noWind": "Vento assente",
+  "common.day.today": "Oggi",
+  "common.day.tomorrow": "Domani"
 },
   "en": {
   "home.meta.title": "BM&V Gelateria Monte Petrosu — San Teodoro",
@@ -315,7 +317,9 @@
   "home.brand.artisanal": "artisanal<br>gelato",
   "grazie.heading": "Payment received",
   "grazie.body": "Order confirmed and paid. We'll be in touch shortly about your delivery or pickup.",
-  "home.weather.noWind": "No wind"
+  "home.weather.noWind": "No wind",
+  "common.day.today": "Today",
+  "common.day.tomorrow": "Tomorrow"
 }
 };
   var LANGS = ["it", "en"], DEFAULT = "it";

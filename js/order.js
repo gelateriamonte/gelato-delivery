@@ -9,14 +9,18 @@ let modalFormat = null;        // formato attualmente in selezione nel modale
 let modalChosen = [];          // gusti scelti nel modale
 
 // ---------- giorni di consegna (prossimi 7, oggi incluso) ----------
-const WD = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 const ymd = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 function next7() {
   const out = [], t = new Date(); t.setHours(0, 0, 0, 0);
   for (let i = 0; i < 7; i++) { const d = new Date(t); d.setDate(t.getDate() + i); out.push(d); }
   return out;
 }
-const dayName = (d, i) => (i === 0 ? "Oggi" : i === 1 ? "Domani" : WD[d.getDay()]);
+const dayName = (d, i) => {
+  if (i === 0) return t("common.day.today");
+  if (i === 1) return t("common.day.tomorrow");
+  const w = d.toLocaleDateString((window.I18N && I18N.lang() === "en") ? "en-GB" : "it-IT", { weekday: "short" });
+  return w.charAt(0).toUpperCase() + w.slice(1).replace(".", "");
+};
 const dateLabel = (s) => (s ? new Date(s + "T00:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "2-digit", month: "long" }) : "-");
 let DAYS = next7();
 let SELECTED_DAY = ymd(DAYS[0]);
@@ -688,6 +692,7 @@ if (window.I18N) I18N.onLangChange(function () {
   try {
     renderFormats();
     renderCart();
+    renderDayPick();   // aggiorna i nomi dei giorni (Oggi/Domani/Lun…)
     if (isPickup()) { renderPickupTimes(); renderOpeningHours(); } else { renderSlotSelect(); }
     const dl = $("day-label"); if (dl) dl.textContent = isPickup() ? t("order.form.pickupDay") : t("order.form.deliveryDay");
     updateTotal();
