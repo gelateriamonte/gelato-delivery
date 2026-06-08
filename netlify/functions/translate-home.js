@@ -17,9 +17,9 @@ const SYS = [
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return json(405, { error: "Metodo non consentito." });
-  if (!process.env.ANTHROPIC_API_KEY) return json(500, { error: "Traduzione non configurata (manca ANTHROPIC_API_KEY)." });
   const token = event.headers["x-admin-token"] || event.headers["X-Admin-Token"];
   if (!process.env.ADMIN_UPLOAD_TOKEN || token !== process.env.ADMIN_UPLOAD_TOKEN) return json(401, { error: "Non autorizzato." });
+  if (!process.env.ANTHROPIC_API_KEY) return json(500, { error: "Traduzione non configurata (manca ANTHROPIC_API_KEY)." });
 
   let body;
   try { body = JSON.parse(event.body || "{}"); } catch (e) { return json(400, { error: "Richiesta non valida." }); }
