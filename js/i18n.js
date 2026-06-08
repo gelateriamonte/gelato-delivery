@@ -362,6 +362,13 @@
     listeners.forEach(function (fn) { try { fn(l); } catch (e) {} });
   }
   function onLangChange(fn) { listeners.push(fn); }
+  // override da DB (home_content): sovrascrive le chiavi presenti, ignora valori vuoti (fallback ai default).
+  function merge(lang, obj, reapply) {
+    if (!obj || typeof obj !== "object") return;
+    if (!DICT[lang]) DICT[lang] = {};
+    for (var k in obj) if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k] != null && obj[k] !== "") DICT[lang][k] = obj[k];
+    if (reapply !== false) applyLang();
+  }
   document.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("[data-lang-btn]");
     if (b) { e.preventDefault(); setLang(b.getAttribute("data-lang-btn")); }
@@ -369,5 +376,5 @@
   current = detect();
   function boot() { applyLang(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
-  window.I18N = { t: t, setLang: setLang, applyLang: applyLang, onLangChange: onLangChange, lang: function () { return current; } };
+  window.I18N = { t: t, setLang: setLang, applyLang: applyLang, onLangChange: onLangChange, merge: merge, lang: function () { return current; } };
 })();

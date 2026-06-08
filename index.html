@@ -76,6 +76,7 @@
     .ph-card{ width:208px; height:264px; border-radius:16px; box-shadow:var(--shadow-card);
       background:linear-gradient(150deg, var(--accent-soft), var(--paper-2)); position:relative; overflow:hidden; }
     .ph-card::after{ content:attr(data-emoji); position:absolute; inset:0; display:grid; place-items:center; font-size:46px; opacity:.5; }
+    .ph-card.has-img::after{ content:none; }   /* immagine reale caricata: niente emoji placeholder */
     .scap{ font-size:12.5px; color:var(--muted); margin-top:10px; letter-spacing:.02em; }
     .scap b{ display:block; font-family:var(--serif); font-size:17px; font-weight:600; color:var(--ink); letter-spacing:0; }
 
@@ -149,7 +150,7 @@
     </div>
 
     <section class="hero">
-      <div class="ph-hero" role="img" data-i18n-attr="aria-label:home.hero.imgAlt" aria-label="Il gelato in vetrina"></div>
+      <div class="ph-hero" id="hp-hero" role="img" data-i18n-attr="aria-label:home.hero.imgAlt" aria-label="Il gelato in vetrina"></div>
       <div class="scrim"></div>
       <div class="hero-logo"><img src="img/logo-full.png" data-i18n-attr="alt:home.hero.logoAlt" alt="Gelateria BM&amp;V Monte Petrosu"></div>
       <div class="cap">
@@ -168,13 +169,13 @@
       <div class="sec-head"><h2 data-i18n="home.carousel.title">Dal laboratorio</h2><span class="more" data-i18n="home.carousel.scroll">Scorri →</span></div>
     </section>
     <div class="carousel">
-      <div class="slide"><div class="ph-card" data-emoji="🍨"></div>
+      <div class="slide"><div class="ph-card" id="hp-card1" data-emoji="🍨"></div>
         <div class="scap"><b data-i18n="home.carousel.slide1.title">Le vaschette</b><span data-i18n="home.carousel.slide1.caption">da 600g a 1,7&nbsp;Kg</span></div></div>
-      <div class="slide"><div class="ph-card" data-emoji="🍦"></div>
+      <div class="slide"><div class="ph-card" id="hp-card2" data-emoji="🍦"></div>
         <div class="scap"><b data-i18n="home.carousel.slide2.title">I gusti del giorno</b><span data-i18n="home.carousel.slide2.caption">fino a 6 in una vaschetta</span></div></div>
-      <div class="slide"><div class="ph-card" data-emoji="🥄"></div>
+      <div class="slide"><div class="ph-card" id="hp-card3" data-emoji="🥄"></div>
         <div class="scap"><b data-i18n="home.carousel.slide3.title">Il laboratorio</b><span data-i18n="home.carousel.slide3.caption">mantecato ogni mattina</span></div></div>
-      <div class="slide"><div class="ph-card" data-emoji="🛵"></div>
+      <div class="slide"><div class="ph-card" id="hp-card4" data-emoji="🛵"></div>
         <div class="scap"><b data-i18n="home.carousel.slide4.title">Consegna o take away</b><span data-i18n="home.carousel.slide4.caption">a San Teodoro</span></div></div>
     </div>
 
@@ -201,19 +202,19 @@
         <div class="infocard">
           <svg class="ico" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <div class="ilbl" data-i18n="home.info.hoursLabel">Orari</div>
-          <div class="ival">16:00 – 22:00</div>
-          <div class="isub" data-i18n="home.info.hoursSub">Tutti i giorni</div>
+          <div class="ival" id="hp-hours-val">16:00 – 22:00</div>
+          <div class="isub" id="hp-hours-sub" data-i18n="home.info.hoursSub">Tutti i giorni</div>
         </div>
-        <a class="infocard" href="https://maps.app.goo.gl/zMh9ozcPzURJgxg6A" target="_blank" rel="noopener">
+        <a class="infocard" id="hp-maps" href="https://maps.app.goo.gl/zMh9ozcPzURJgxg6A" target="_blank" rel="noopener">
           <svg class="ico" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" stroke="currentColor" stroke-width="1.6"/></svg>
           <div class="ilbl" data-i18n="home.info.locationLabel">Dove siamo</div>
-          <div class="ival">Monte Petrosu</div>
+          <div class="ival" id="hp-loc-val">Monte Petrosu</div>
           <div class="isub" data-i18n="home.info.locationSub">San Teodoro (SS) · consegna in zona</div>
           <div class="imap" data-i18n="home.info.openMaps">Apri nelle mappe →</div>
         </a>
       </div>
       <!-- numero DUMMY: sostituire col WhatsApp reale (formato internazionale, senza +) -->
-      <a class="wa-link" href="https://wa.me/393331234567" target="_blank" rel="noopener">
+      <a class="wa-link" id="hp-wa" href="https://wa.me/393331234567" target="_blank" rel="noopener">
       <span class="wa-ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.157 5.335 5.495 0 12.05 0a11.82 11.82 0 0 1 8.413 3.488 11.82 11.82 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.728-.957zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg></span>
       <span class="wa-txt"><b data-i18n="home.wa.title">Scrivici</b><small data-i18n="home.wa.subtitle">su WhatsApp</small></span>
       </a>
@@ -325,6 +326,63 @@
         .then(function (r) { return r.ok ? r.json() : []; })
         .then(render)
         .catch(function () { /* lascia la sezione nascosta */ });
+    })();
+  </script>
+
+  <!-- Contenuti homepage da DB (settings.home_content): testi override IT/EN + ops + immagini + orari derivati -->
+  <script>
+    (function () {
+      var cfg = window.SUPABASE_CONFIG;
+      if (!cfg || !cfg.url) return;
+      var LAST_OH = null;
+      // anti-XSS: i due campi resi via innerHTML (data-i18n-html) ammettono solo <br> e <em>.
+      var HTML_KEYS = { "home.hero.title": 1, "home.story.lede": 1 };
+      function sanitizeHtml(v) {
+        var e = String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return e.replace(/&lt;(\/?)(br|em)\s*\/?&gt;/gi, "<$1$2>");
+      }
+      function sanitizeOverrides(obj) {
+        if (!obj) return obj;
+        for (var hk in HTML_KEYS) if (Object.prototype.hasOwnProperty.call(obj, hk) && obj[hk] != null) obj[hk] = sanitizeHtml(obj[hk]);
+        return obj;
+      }
+      function bg(id, url) {
+        var e = document.getElementById(id);
+        if (e && url) { e.style.backgroundImage = "url('" + url + "')"; e.style.backgroundSize = "cover"; e.style.backgroundPosition = "center"; e.classList.add("has-img"); }
+      }
+      function applyHours(oh) {
+        var val = document.getElementById("hp-hours-val"), sub = document.getElementById("hp-hours-sub");
+        if (!oh || !val) return;
+        var order = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"];
+        var openKeys = order.filter(function (k) { return oh[k] && !oh[k].closed && oh[k].open && oh[k].close; });
+        if (!openKeys.length) { val.textContent = window.I18N ? I18N.t("common.closed") : "chiuso"; if (sub) sub.textContent = ""; return; }
+        var first = oh[openKeys[0]];
+        var uniform = openKeys.every(function (k) { return oh[k].open === first.open && oh[k].close === first.close; });
+        var g = new Date().getDay(), todayKey = order[(g + 6) % 7];
+        var ref = uniform ? first : (oh[todayKey] && !oh[todayKey].closed ? oh[todayKey] : first);
+        val.textContent = ref.open + " – " + ref.close;
+        if (sub) { var closed = order.filter(function (k) { return oh[k] && oh[k].closed; }); sub.textContent = (uniform && !closed.length) ? (window.I18N ? I18N.t("home.info.hoursSub") : "Tutti i giorni") : ""; }
+      }
+      fetch(cfg.url + "/rest/v1/settings?id=eq.1&select=home_content,opening_hours", {
+        headers: { apikey: cfg.anonKey, Authorization: "Bearer " + cfg.anonKey }
+      })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (rows) {
+          var s = rows && rows[0]; if (!s) return;
+          var hc = s.home_content || {};
+          if (window.I18N) { if (hc.it) I18N.merge("it", sanitizeOverrides(hc.it), false); if (hc.en) I18N.merge("en", sanitizeOverrides(hc.en), false); I18N.applyLang(); }
+          var ops = hc.ops || {};
+          if (ops.location) { var lv = document.getElementById("hp-loc-val"); if (lv) lv.textContent = ops.location; }
+          if (ops.maps_url) { var mp = document.getElementById("hp-maps"); if (mp) mp.setAttribute("href", ops.maps_url); }
+          var waEl = document.getElementById("hp-wa");
+          if (waEl) { var num = String(ops.whatsapp || "").replace(/\D/g, ""); if (num) waEl.setAttribute("href", "https://wa.me/" + num); }
+          var media = hc.media || {};
+          bg("hp-hero", media.hero);
+          bg("hp-card1", media.slide1); bg("hp-card2", media.slide2); bg("hp-card3", media.slide3); bg("hp-card4", media.slide4);
+          LAST_OH = s.opening_hours; applyHours(LAST_OH);
+        })
+        .catch(function () {});
+      if (window.I18N) I18N.onLangChange(function () { applyHours(LAST_OH); });
     })();
   </script>
 </body>

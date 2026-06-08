@@ -755,6 +755,18 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 #coupon:disabled{ background:var(--paper-2); color:var(--faint); cursor:not-allowed; }
 #coupon-gate{ margin:7px 1px 0; }
 
+/* editor Homepage (Parametri) */
+#home-editor .he-grp{ margin-bottom:20px; }
+#home-editor .he-grp:last-child{ margin-bottom:0; }
+.he-h{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+.he-img{ display:flex; gap:12px; align-items:center; padding:9px 0; border-bottom:1px solid var(--line); }
+.he-img:last-child{ border-bottom:0; }
+.he-thumb{ width:64px; height:64px; flex:none; border-radius:9px; border:1px solid var(--line-2); background:var(--paper-2) center/cover no-repeat; }
+.he-imeta{ flex:1; min-width:0; }
+.he-imeta label{ margin:0 0 5px 1px; }
+.he-file{ font-size:12px; width:100%; }
+.he-state{ font-size:12px; color:var(--muted); margin-top:4px; }
+
 /* ---- codici sconto (admin) ---- */
 .dc-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
 .dc-form .field { margin: 0; }

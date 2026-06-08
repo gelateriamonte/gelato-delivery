@@ -1,5 +1,7 @@
 // ============ Back office — gestione parametri + ordini live ============
 const $ = (id) => document.getElementById(id);
+if (window.I18N) { try { I18N.setLang("it", false); } catch (e) {} }   // admin sempre IT (default testi dal dizionario italiano)
+const ADMIN_UPLOAD_TOKEN = "gx_up_9f3kQ7tB2mZ";                        // speed-bump endpoint upload immagini (auth vera = go-live)
 const euro = (n) => "€ " + Number(n || 0).toFixed(2).replace(".", ",");
 const kg = (v) => Number(v || 0).toFixed(3).replace(/0+$/, "").replace(/\.$/, "").replace(".", ",") + " kg";
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -1310,6 +1312,7 @@ async function loadSettings() {
   SLOT_DAYS = next7();
   if (!SLOT_DAYS.some((d) => ymd(d) === SELECTED_DAY)) SELECTED_DAY = ymd(SLOT_DAYS[0]);
   renderCal(); renderOrders();
+  loadHomeContent();
 }
 $("set-save").onclick = async () => {
   const { error } = await sb.from("settings").update({
@@ -1341,6 +1344,118 @@ $("set-maxdays").onchange = async () => {
   if (!SLOT_DAYS.some((d) => ymd(d) === SELECTED_DAY)) SELECTED_DAY = ymd(SLOT_DAYS[0]);
   renderCal(); renderOrders();
   toast("Giorni max prenotabili salvati.");
+};
+
+// ========== HOMEPAGE (editor contenuti) ==========
+// chiavi = stesse di i18n.js (home.*); il default IT viene dal dizionario (I18N.t).
+const HOME_FIELDS = [
+  { key: "home.hero.eyebrow", label: "Hero — sopratitolo", type: "text" },
+  { key: "home.hero.title", label: "Hero — titolo (HTML: <br> <em>)", type: "area" },
+  { key: "home.story.eyebrow", label: "Storia — sopratitolo", type: "text" },
+  { key: "home.story.lede", label: "Storia — frase principale (HTML: <em>)", type: "area" },
+  { key: "home.story.body", label: "Storia — testo", type: "area" },
+  { key: "home.carousel.title", label: "Carosello — titolo", type: "text" },
+  { key: "home.carousel.slide1.title", label: "Slide 1 — titolo", type: "text" },
+  { key: "home.carousel.slide1.caption", label: "Slide 1 — didascalia", type: "text" },
+  { key: "home.carousel.slide2.title", label: "Slide 2 — titolo", type: "text" },
+  { key: "home.carousel.slide2.caption", label: "Slide 2 — didascalia", type: "text" },
+  { key: "home.carousel.slide3.title", label: "Slide 3 — titolo", type: "text" },
+  { key: "home.carousel.slide3.caption", label: "Slide 3 — didascalia", type: "text" },
+  { key: "home.carousel.slide4.title", label: "Slide 4 — titolo", type: "text" },
+  { key: "home.carousel.slide4.caption", label: "Slide 4 — didascalia", type: "text" },
+  { key: "home.daily.intro", label: "Gusti del giorno — intro", type: "text" },
+  { key: "home.cta.button", label: "CTA — bottone", type: "text" },
+  { key: "home.cta.note", label: "CTA — nota", type: "text" },
+];
+const HOME_OPS = [
+  { key: "location", label: "Luogo (card \"Dove siamo\")", ph: "Monte Petrosu" },
+  { key: "maps_url", label: "Link Google Maps", ph: "https://maps.app.goo.gl/…" },
+  { key: "whatsapp", label: "Numero WhatsApp (internazionale, senza +)", ph: "39333…" },
+];
+const HOME_MEDIA = [
+  { key: "hero", label: "Immagine hero" },
+  { key: "slide1", label: "Carosello — slide 1" }, { key: "slide2", label: "Carosello — slide 2" },
+  { key: "slide3", label: "Carosello — slide 3" }, { key: "slide4", label: "Carosello — slide 4" },
+];
+let HOME_CONTENT = { it: {}, en: {}, ops: {}, media: {} };
+const homeDefault = (key) => (window.I18N ? I18N.t(key) : "") || "";
+
+function renderHomeEditor() {
+  const wrap = $("home-editor"); if (!wrap) return;
+  const hc = HOME_CONTENT;
+  let html = '<div class="he-grp"><div class="he-h">Testi (italiano)</div>';
+  HOME_FIELDS.forEach((f) => {
+    const v = (hc.it && hc.it[f.key] != null) ? hc.it[f.key] : homeDefault(f.key);
+    const input = f.type === "area"
+      ? `<textarea class="he-f" data-k="${f.key}" rows="2">${esc(v)}</textarea>`
+      : `<input class="he-f" data-k="${f.key}" type="text" value="${esc(v)}">`;
+    html += `<div class="field" style="margin:0 0 10px"><label>${esc(f.label)}</label>${input}</div>`;
+  });
+  html += '</div><div class="he-grp"><div class="he-h">Contatti / link</div>';
+  HOME_OPS.forEach((o) => {
+    const v = (hc.ops && hc.ops[o.key] != null) ? hc.ops[o.key] : "";
+    html += `<div class="field" style="margin:0 0 10px"><label>${esc(o.label)}</label><input class="he-op" data-k="${o.key}" type="text" placeholder="${esc(o.ph)}" value="${esc(v)}"></div>`;
+  });
+  html += '</div><div class="he-grp"><div class="he-h">Immagini (max 5MB · jpg/png/webp)</div>';
+  HOME_MEDIA.forEach((m) => {
+    const url = (hc.media && hc.media[m.key]) || "";
+    html += `<div class="he-img" data-k="${m.key}">
+      <div class="he-thumb"${url ? ` style="background-image:url('${esc(url)}')"` : ""}></div>
+      <div class="he-imeta"><label>${esc(m.label)}</label>
+        <input class="he-file" type="file" accept="image/*" data-k="${m.key}">
+        <div class="he-state" data-k="${m.key}">${url ? "immagine caricata" : "nessuna immagine"}</div></div>
+    </div>`;
+  });
+  html += "</div>";
+  wrap.innerHTML = html;
+  wrap.querySelectorAll(".he-file").forEach((inp) => { inp.onchange = () => uploadHomeImage(inp); });
+}
+
+function loadHomeContent() {
+  const hc = (SETTINGS && SETTINGS.home_content) || {};
+  HOME_CONTENT = { it: hc.it || {}, en: hc.en || {}, ops: hc.ops || {}, media: hc.media || {} };
+  renderHomeEditor();
+}
+
+async function uploadHomeImage(inp) {
+  const file = inp.files && inp.files[0]; if (!file) return;
+  if (file.size > 4 * 1024 * 1024) { toast("Immagine troppo grande: max 4MB."); inp.value = ""; return; }
+  const slot = inp.dataset.k;
+  const state = $("home-editor").querySelector('.he-state[data-k="' + slot + '"]');
+  if (state) state.textContent = "carico…";
+  try {
+    const dataBase64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(String(r.result).split(",")[1]);
+      r.onerror = rej; r.readAsDataURL(file);
+    });
+    const resp = await fetch("/.netlify/functions/upload-home-image", {
+      method: "POST", headers: { "content-type": "application/json", "x-admin-token": ADMIN_UPLOAD_TOKEN },
+      body: JSON.stringify({ slot: slot, contentType: file.type, dataBase64: dataBase64 }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || !data.url) { if (state) state.textContent = "errore"; toast(data.error || "Upload fallito."); return; }
+    HOME_CONTENT.media[slot] = data.url;
+    const thumb = $("home-editor").querySelector('.he-img[data-k="' + slot + '"] .he-thumb');
+    if (thumb) thumb.style.backgroundImage = "url('" + data.url + "')";
+    if (state) state.textContent = "immagine caricata";
+    toast("Immagine caricata. Ricordati di salvare.");
+  } catch (e) { console.error(e); if (state) state.textContent = "errore"; toast("Upload fallito."); }
+}
+
+$("home-save").onclick = async () => {
+  const it = {};
+  $("home-editor").querySelectorAll(".he-f").forEach((el) => {
+    const k = el.dataset.k, v = el.value.trim();
+    if (v && v !== homeDefault(k)) it[k] = v;   // salva solo gli override ≠ default
+  });
+  const ops = {};
+  $("home-editor").querySelectorAll(".he-op").forEach((el) => { const v = el.value.trim(); if (v) ops[el.dataset.k] = v; });
+  const payload = { it: it, en: HOME_CONTENT.en || {}, ops: ops, media: HOME_CONTENT.media || {} };
+  const { error } = await sb.from("settings").update({ home_content: payload }).eq("id", 1);
+  if (error) { console.error(error); toast("Errore salvataggio homepage."); return; }
+  SETTINGS.home_content = payload; HOME_CONTENT = payload;
+  toast("Homepage salvata. (EN: chiedimi di aggiornarlo)");
 };
 
 // ========== CODICI SCONTO ==========
