@@ -76,9 +76,11 @@ function changeStatus(o, status) { waOpen(o, status); updateStatus(o.id, status)
 // ---------- date / calendario (prossimi 7 giorni, oggi incluso) ----------
 const WD = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 const ymd = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-function next7() {
+function maxAdvanceDays() { const n = Number(SETTINGS && SETTINGS.max_advance_days); return n >= 1 && n <= 15 ? n : 6; }
+function next7() {   // oggi + max_advance_days (default 6)
   const out = [], t = new Date(); t.setHours(0, 0, 0, 0);
-  for (let i = 0; i < 7; i++) { const d = new Date(t); d.setDate(t.getDate() + i); out.push(d); }
+  const days = 1 + maxAdvanceDays();
+  for (let i = 0; i < days; i++) { const d = new Date(t); d.setDate(t.getDate() + i); out.push(d); }
   return out;
 }
 const dayName = (d, i) => (i === 0 ? "Oggi" : i === 1 ? "Domani" : WD[d.getDay()]);
@@ -136,6 +138,16 @@ document.querySelectorAll(".tab").forEach((t) => {
 // refresh manuale ordini
 $("orders-refresh").onclick = async () => { await loadOrders(); toast("Ordini aggiornati."); };
 $("orders-togglex").onclick = () => { HIDE_CANCELLED = !HIDE_CANCELLED; renderOrders(); };
+// TEST: annulla tutti gli ordini con consegna/ritiro prima di oggi (pulizia ordini test)
+$("orders-purge-past").onclick = async () => {
+  const today = ymd(new Date());
+  if (!confirm("Annullare TUTTI gli ordini con consegna/ritiro prima di oggi (" + today + ")? Operazione di pulizia test.")) return;
+  const { data, error } = await sb.from("orders").update({ status: "annullato" })
+    .lt("delivery_date", today).neq("status", "annullato").select("id");
+  if (error) { console.error(error); toast("Errore."); return; }
+  toast((data ? data.length : 0) + " ordini passati annullati.");
+  loadOrders();
+};
 // toggle provvisorio WhatsApp web (test)
 $("wa-toggle").onclick = () => setWaWeb(!waWebEnabled());
 updateWaToggleBtn();
@@ -1290,9 +1302,14 @@ async function loadSettings() {
   $("set-delivery").value = data.delivery_cost;
   $("set-min").value = data.min_order;
   $("set-lead").value = data.slot_lead_hours != null ? data.slot_lead_hours : 2;
+  $("set-maxdays").value = data.max_advance_days != null ? data.max_advance_days : 6;
   const t = waTemplates();
   WA_STATUSES.forEach((s) => { const el = $("wa-" + STATUS_META[s].slug); if (el) el.value = t[s] || ""; });
   renderOpeningHoursEditor();
+  // applica i giorni max prenotabili ai calendari (Fasce + barra giorni Ordini)
+  SLOT_DAYS = next7();
+  if (!SLOT_DAYS.some((d) => ymd(d) === SELECTED_DAY)) SELECTED_DAY = ymd(SLOT_DAYS[0]);
+  renderCal(); renderOrders();
 }
 $("set-save").onclick = async () => {
   const { error } = await sb.from("settings").update({
@@ -1311,6 +1328,19 @@ $("set-lead").onchange = async () => {
   if (error) { console.error(error); toast("Errore salvataggio."); return; }
   SETTINGS.slot_lead_hours = h;
   toast("Tempo di anticipo salvato.");
+};
+// Giorni max prenotabili in futuro (1..15): auto-save + rigenera i calendari
+$("set-maxdays").onchange = async () => {
+  let n = parseInt($("set-maxdays").value || "6", 10);
+  if (!(n >= 1)) n = 1; if (n > 15) n = 15;
+  $("set-maxdays").value = n;
+  const { error } = await sb.from("settings").update({ max_advance_days: n }).eq("id", 1);
+  if (error) { console.error(error); toast("Errore salvataggio."); return; }
+  SETTINGS.max_advance_days = n;
+  SLOT_DAYS = next7();
+  if (!SLOT_DAYS.some((d) => ymd(d) === SELECTED_DAY)) SELECTED_DAY = ymd(SLOT_DAYS[0]);
+  renderCal(); renderOrders();
+  toast("Giorni max prenotabili salvati.");
 };
 
 // ========== CODICI SCONTO ==========

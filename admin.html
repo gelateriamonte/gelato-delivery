@@ -58,6 +58,7 @@
         <h2>Ordini in arrivo</h2>
         <span class="count" id="orders-count">0</span>
         <button class="btn ghost sm" id="orders-togglex" style="margin-left:auto" title="Nascondi/mostra ordini rifiutati e annullati">Nascondi rifiutati/annullati</button>
+        <button class="btn ghost sm" id="orders-purge-past" title="Test: annulla tutti gli ordini con consegna/ritiro prima di oggi">⌫ Annulla passati</button>
         <button class="btn sm" id="wa-toggle" title="Apertura WhatsApp web sui cambi stato — provvisorio (fase test)">WhatsApp web: ON</button>
         <button class="btn ghost sm" id="orders-refresh">↻ Aggiorna</button>
       </div>
@@ -138,6 +139,10 @@
         <div class="field" style="margin:0"><label>Tempo di anticipo da inizio fascia (ore)</label>
           <input id="set-lead" type="number" min="1" max="6" step="1" style="width:120px">
           <p class="muted small" style="margin:8px 0 0">Il cliente vede una fascia solo fino a N ore prima del suo inizio (es. 2h → la fascia 18:00 sparisce alle 16:00).</p>
+        </div>
+        <div class="field" style="margin:14px 0 0"><label>Giorni max prenotabili in futuro (1–15)</label>
+          <input id="set-maxdays" type="number" min="1" max="15" step="1" style="width:120px">
+          <p class="muted small" style="margin:8px 0 0">Quanti giorni futuri il cliente può prenotare, <b>oggi escluso</b> (default 6 → oggi + 6 = 7 giorni). Si riflette nei box dei giorni qui sotto e nelle disponibilità future della app cliente.</p>
         </div>
       </div>
       <div id="slot-cal" class="cal"></div>

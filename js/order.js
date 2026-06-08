@@ -10,9 +10,11 @@ let modalChosen = [];          // gusti scelti nel modale
 
 // ---------- giorni di consegna (prossimi 7, oggi incluso) ----------
 const ymd = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-function next7() {
+function maxAdvanceDays() { const n = Number(DATA && DATA.settings && DATA.settings.max_advance_days); return n >= 1 && n <= 15 ? n : 6; }
+function next7() {   // oggi + max_advance_days (default 6 → 7 giorni con oggi)
   const out = [], t = new Date(); t.setHours(0, 0, 0, 0);
-  for (let i = 0; i < 7; i++) { const d = new Date(t); d.setDate(t.getDate() + i); out.push(d); }
+  const days = 1 + maxAdvanceDays();
+  for (let i = 0; i < days; i++) { const d = new Date(t); d.setDate(t.getDate() + i); out.push(d); }
   return out;
 }
 const dayName = (d, i) => {
@@ -273,6 +275,7 @@ async function loadData() {
   };
   const slotMin = (l) => { const m = String(l).match(/(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : 9999; };
   DATA.slots = (DATA.slots || []).slice().sort((a, b) => slotMin(a.label) - slotMin(b.label));   // fasce sempre in ordine orario
+  DAYS = next7(); SELECTED_DAY = ymd(DAYS[0]);   // applica max_advance_days dalle impostazioni
   drawDeliveryZone();
   renderFormats();
   renderDayPick();
