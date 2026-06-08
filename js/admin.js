@@ -1350,10 +1350,10 @@ $("set-maxdays").onchange = async () => {
 // chiavi = stesse di i18n.js (home.*); il default IT viene dal dizionario (I18N.t).
 const HOME_FIELDS = [
   { key: "home.hero.eyebrow", label: "Hero — sopratitolo", type: "text" },
-  { key: "home.hero.title", label: "Hero — titolo (HTML: <br> <em>)", type: "area" },
+  { key: "home.hero.title", label: "Hero — titolo (HTML: <br> <em>)", type: "area", manualEn: true },
   { key: "home.story.eyebrow", label: "Storia — sopratitolo", type: "text" },
-  { key: "home.story.lede", label: "Storia — frase principale (HTML: <em>)", type: "area" },
-  { key: "home.story.body", label: "Storia — testo", type: "area" },
+  { key: "home.story.lede", label: "Storia — frase principale (HTML: <em>)", type: "area", manualEn: true },
+  { key: "home.story.body", label: "Storia — testo", type: "area", manualEn: true },
   { key: "home.carousel.title", label: "Carosello — titolo", type: "text" },
   { key: "home.carousel.slide1.title", label: "Slide 1 — titolo", type: "text" },
   { key: "home.carousel.slide1.caption", label: "Slide 1 — didascalia", type: "text" },
@@ -1379,6 +1379,14 @@ const HOME_MEDIA = [
 ];
 let HOME_CONTENT = { it: {}, en: {}, ops: {}, media: {} };
 const homeDefault = (key) => (window.I18N ? I18N.t(key) : "") || "";
+// default EN dal dizionario (admin è pinnato IT: leggo EN temporaneamente)
+const homeDefaultEn = (key) => {
+  if (!window.I18N) return "";
+  const cur = I18N.lang(); I18N.setLang("en", false);
+  const v = I18N.t(key); I18N.setLang(cur, false);
+  return v || "";
+};
+const HOME_MANUAL_EN = new Set(HOME_FIELDS.filter((f) => f.manualEn).map((f) => f.key));
 
 function renderHomeEditor() {
   const wrap = $("home-editor"); if (!wrap) return;
@@ -1386,10 +1394,17 @@ function renderHomeEditor() {
   let html = '<div class="he-grp"><div class="he-h">Testi (italiano)</div>';
   HOME_FIELDS.forEach((f) => {
     const v = (hc.it && hc.it[f.key] != null) ? hc.it[f.key] : homeDefault(f.key);
-    const input = f.type === "area"
+    const itInput = f.type === "area"
       ? `<textarea class="he-f" data-k="${f.key}" rows="2">${esc(v)}</textarea>`
       : `<input class="he-f" data-k="${f.key}" type="text" value="${esc(v)}">`;
-    html += `<div class="field" style="margin:0 0 10px"><label>${esc(f.label)}</label>${input}</div>`;
+    html += `<div class="field" style="margin:0 0 10px"><label>${esc(f.label)}${f.manualEn ? " · IT" : ""}</label>${itInput}</div>`;
+    if (f.manualEn) {
+      const ve = (hc.en && hc.en[f.key] != null) ? hc.en[f.key] : homeDefaultEn(f.key);
+      const enInput = f.type === "area"
+        ? `<textarea class="he-en" data-k="${f.key}" rows="2">${esc(ve)}</textarea>`
+        : `<input class="he-en" data-k="${f.key}" type="text" value="${esc(ve)}">`;
+      html += `<div class="field" style="margin:0 0 14px"><label>${esc(f.label)} · EN</label>${enInput}</div>`;
+    }
   });
   html += '</div><div class="he-grp"><div class="he-h">Contatti / link</div>';
   HOME_OPS.forEach((o) => {
@@ -1450,23 +1465,32 @@ $("home-save").onclick = async () => {
     const k = el.dataset.k, v = el.value.trim();
     if (v && v !== homeDefault(k)) it[k] = v;   // salva solo gli override ≠ default
   });
+  // EN manuale (campi doppi): salvo solo override ≠ default EN
+  const manualEn = {};
+  $("home-editor").querySelectorAll(".he-en").forEach((el) => {
+    const k = el.dataset.k, v = el.value.trim();
+    if (v && v !== homeDefaultEn(k)) manualEn[k] = v;
+  });
   const ops = {};
   $("home-editor").querySelectorAll(".he-op").forEach((el) => { const v = el.value.trim(); if (v) ops[el.dataset.k] = v; });
-  // EN allineato alle chiavi IT correnti; parto dalle traduzioni precedenti per le chiavi ancora presenti
+  // auto-traduco SOLO le chiavi non manuali; per i manuali l'EN viene dai campi doppi
+  const autoIt = {};
+  Object.keys(it).forEach((k) => { if (!HOME_MANUAL_EN.has(k)) autoIt[k] = it[k]; });
   let en = {};
-  Object.keys(it).forEach((k) => { if (HOME_CONTENT.en && HOME_CONTENT.en[k]) en[k] = HOME_CONTENT.en[k]; });
+  Object.keys(autoIt).forEach((k) => { if (HOME_CONTENT.en && HOME_CONTENT.en[k]) en[k] = HOME_CONTENT.en[k]; });
   let enMsg = "";
-  if (Object.keys(it).length) {
+  if (Object.keys(autoIt).length) {
     try {
       const r = await fetch("/.netlify/functions/translate-home", {
         method: "POST", headers: { "content-type": "application/json", "x-admin-token": ADMIN_UPLOAD_TOKEN },
-        body: JSON.stringify({ it: it }),
+        body: JSON.stringify({ it: autoIt }),
       });
       const d = await r.json().catch(() => ({}));
-      if (r.ok && d.en) { en = d.en; enMsg = " Inglese tradotto."; }
-      else enMsg = " ⚠ inglese NON aggiornato (" + (d.error || "errore") + ")";
-    } catch (e) { enMsg = " ⚠ inglese NON aggiornato (rete)."; }
+      if (r.ok && d.en) { en = d.en; enMsg = " Inglese auto-tradotto."; }
+      else enMsg = " ⚠ inglese auto NON aggiornato (" + (d.error || "errore") + ")";
+    } catch (e) { enMsg = " ⚠ inglese auto NON aggiornato (rete)."; }
   }
+  Object.assign(en, manualEn);   // i campi manuali sovrascrivono l'auto
   const payload = { it: it, en: en, ops: ops, media: HOME_CONTENT.media || {} };
   const { error } = await sb.from("settings").update({ home_content: payload }).eq("id", 1);
   btn.disabled = false; btn.textContent = lbl;
