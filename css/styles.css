@@ -241,6 +241,10 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
 }
 .chip.sel{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent-ink); font-weight:600; }
 .chip.off,.chip:disabled{ opacity:.4; cursor:not-allowed; }
+/* gusti del giorno nel modale: tinta dorata distinta (☀) + nota esplicativa */
+.chip.daily{ border-color:#e3c98a; background:#fdf6e6; color:#8a6d2e; }
+.chip.daily.sel{ border-color:#cf9f33; background:#e9c75a; color:#5e4a18; font-weight:600; }
+.daily-note{ font-size:12px; line-height:1.45; color:#8a6d2e; background:#fdf6e6; border:1px solid #efe0bd; border-radius:10px; padding:9px 11px; margin:12px 0 0; }
 
 /* ---------- calendario giorno (app + fasce) ---------- */
 .cal{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; }

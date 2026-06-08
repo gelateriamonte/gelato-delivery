@@ -343,12 +343,13 @@ function renderModalFlavors() {
   const wrap = $("m-flavors");
   wrap.innerHTML = "";
   if (!DATA.flavors.length) { wrap.innerHTML = `<p class="hint">${t("order.modal.noFlavors")}</p>`; return; }
+  let anyDaily = false;
   DATA.flavors.forEach((g) => {
     const sel = modalChosen.includes(g.name);
     const full = modalChosen.length >= modalFormat.max_flavors;
     const b = document.createElement("button");
-    b.className = "chip" + (sel ? " sel" : (full ? " off" : ""));
-    b.textContent = g.name;
+    b.className = "chip" + (g.daily ? " daily" : "") + (sel ? " sel" : (full ? " off" : ""));
+    b.textContent = (g.daily ? "☀ " : "") + g.name;
     b.disabled = !sel && full;
     b.onclick = () => {
       if (sel) modalChosen = modalChosen.filter((n) => n !== g.name);
@@ -356,7 +357,14 @@ function renderModalFlavors() {
       renderModalFlavors();
     };
     wrap.appendChild(b);
+    if (g.daily) anyDaily = true;
   });
+  if (anyDaily) {   // nota: i gusti del giorno valgono solo per oggi
+    const note = document.createElement("p");
+    note.className = "daily-note"; note.style.flexBasis = "100%";
+    note.textContent = t("order.modal.dailyNote");
+    wrap.appendChild(note);
+  }
 }
 
 function addToCart() {
@@ -455,6 +463,11 @@ function syncCouponGate() {
   if (!ready && COUPON) { COUPON = null; const m = $("coupon-msg"); if (m) m.style.display = "none"; updateTotal(); }
 }
 
+// gusti del giorno: ordinabili SOLO per oggi (consegna o ritiro in giornata)
+const isToday = () => SELECTED_DAY === ymd(DAYS[0]);
+function dailyNameSet() { const s = new Set(); (DATA.flavors || []).forEach((f) => { if (f.daily) s.add(f.name); }); return s; }
+function cartHasDaily() { const dn = dailyNameSet(); return CART.some((it) => (it.gusti || []).some((n) => dn.has(n))); }
+
 function updateTotal() {
   const sub = subtotal();
   const delivery = CART.length ? deliveryCost() : 0;
@@ -466,8 +479,12 @@ function updateTotal() {
   const pickup = isPickup();
   const hasSlot = effectiveSlots().length > 0;
   const pickupOk = !!($("pickup-time") && $("pickup-time").value);
+  const dayConflict = cartHasDaily() && !isToday();   // gusto del giorno + giorno futuro = blocco
   const banner = $("min-banner");
-  if (CART.length && !okMin) {
+  if (CART.length && dayConflict) {
+    banner.style.display = "block";
+    banner.textContent = t("order.minBanner.dailyTodayOnly");
+  } else if (CART.length && !okMin) {
     banner.style.display = "block";
     banner.textContent = t("order.minBanner.belowMinimum", { min: euro(min), diff: euro(min - sub) });
   } else if (CART.length && pickup && !pickupOk) {
@@ -480,7 +497,7 @@ function updateTotal() {
     banner.style.display = "block";
     banner.textContent = t("order.minBanner.pinInZone");
   } else { banner.style.display = "none"; }
-  const ready = pickup ? pickupOk : (hasSlot && IN_ZONE);
+  const ready = (pickup ? pickupOk : (hasSlot && IN_ZONE)) && !dayConflict;
   $("submit").disabled = !(CART.length && okMin && ready);
 }
 
@@ -530,6 +547,7 @@ function renderSlotSelect() {
 
 // ---------- invio ----------
 async function submitOrder() {
+  if (cartHasDaily() && !isToday()) { toast(t("order.toast.dailyTodayOnly")); updateTotal(); return; }   // gusto del giorno solo per oggi
   const name = $("name").value.trim();
   const phone = $("phone").value.trim();
   if (!name || !phone) { toast(t("order.toast.fillNamePhone")); return; }

@@ -162,7 +162,10 @@
   "grazie.body": "Ordine confermato e pagato. Ti contatteremo a breve per la consegna o il ritiro.",
   "home.weather.noWind": "Vento assente",
   "common.day.today": "Oggi",
-  "common.day.tomorrow": "Domani"
+  "common.day.tomorrow": "Domani",
+  "order.modal.dailyNote": "☀ I gusti del giorno si possono scegliere solo per oggi (consegna o ritiro in giornata).",
+  "order.minBanner.dailyTodayOnly": "Hai scelto un gusto del giorno: vale solo per oggi. Cambia gusto oppure scegli consegna/ritiro per oggi.",
+  "order.toast.dailyTodayOnly": "I gusti del giorno valgono solo per oggi. Cambia gusto o scegli consegna/ritiro per oggi."
 },
   "en": {
   "home.meta.title": "BM&V Gelateria Monte Petrosu — San Teodoro",
@@ -319,7 +322,10 @@
   "grazie.body": "Order confirmed and paid. We'll be in touch shortly about your delivery or pickup.",
   "home.weather.noWind": "No wind",
   "common.day.today": "Today",
-  "common.day.tomorrow": "Tomorrow"
+  "common.day.tomorrow": "Tomorrow",
+  "order.modal.dailyNote": "☀ Today’s flavours can only be chosen for today (same-day delivery or pickup).",
+  "order.minBanner.dailyTodayOnly": "You picked a today’s flavour: it’s valid only for today. Change the flavour or choose same-day delivery/pickup.",
+  "order.toast.dailyTodayOnly": "Today’s flavours are valid only for today. Change the flavour or choose same-day delivery/pickup."
 }
 };
   var LANGS = ["it", "en"], DEFAULT = "it";
