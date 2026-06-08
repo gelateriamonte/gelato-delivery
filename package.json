@@ -5,6 +5,7 @@
   "description": "Netlify Functions per i pagamenti Stripe (create-checkout + stripe-webhook). Il sito resta statico; queste deps servono solo alle funzioni serverless.",
   "dependencies": {
     "stripe": "^22.2.0",
-    "@supabase/supabase-js": "^2.107.0"
+    "@supabase/supabase-js": "^2.107.0",
+    "@anthropic-ai/sdk": "^0.102.0"
   }
 }

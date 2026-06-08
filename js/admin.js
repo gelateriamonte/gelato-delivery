@@ -1444,6 +1444,7 @@ async function uploadHomeImage(inp) {
 }
 
 $("home-save").onclick = async () => {
+  const btn = $("home-save"); btn.disabled = true; const lbl = btn.textContent; btn.textContent = "Salvo e traduco…";
   const it = {};
   $("home-editor").querySelectorAll(".he-f").forEach((el) => {
     const k = el.dataset.k, v = el.value.trim();
@@ -1451,11 +1452,27 @@ $("home-save").onclick = async () => {
   });
   const ops = {};
   $("home-editor").querySelectorAll(".he-op").forEach((el) => { const v = el.value.trim(); if (v) ops[el.dataset.k] = v; });
-  const payload = { it: it, en: HOME_CONTENT.en || {}, ops: ops, media: HOME_CONTENT.media || {} };
+  // EN allineato alle chiavi IT correnti; parto dalle traduzioni precedenti per le chiavi ancora presenti
+  let en = {};
+  Object.keys(it).forEach((k) => { if (HOME_CONTENT.en && HOME_CONTENT.en[k]) en[k] = HOME_CONTENT.en[k]; });
+  let enMsg = "";
+  if (Object.keys(it).length) {
+    try {
+      const r = await fetch("/.netlify/functions/translate-home", {
+        method: "POST", headers: { "content-type": "application/json", "x-admin-token": ADMIN_UPLOAD_TOKEN },
+        body: JSON.stringify({ it: it }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.en) { en = d.en; enMsg = " Inglese tradotto."; }
+      else enMsg = " ⚠ inglese NON aggiornato (" + (d.error || "errore") + ")";
+    } catch (e) { enMsg = " ⚠ inglese NON aggiornato (rete)."; }
+  }
+  const payload = { it: it, en: en, ops: ops, media: HOME_CONTENT.media || {} };
   const { error } = await sb.from("settings").update({ home_content: payload }).eq("id", 1);
+  btn.disabled = false; btn.textContent = lbl;
   if (error) { console.error(error); toast("Errore salvataggio homepage."); return; }
   SETTINGS.home_content = payload; HOME_CONTENT = payload;
-  toast("Homepage salvata. (EN: chiedimi di aggiornarlo)");
+  toast("Homepage salvata." + enMsg);
 };
 
 // ========== CODICI SCONTO ==========
