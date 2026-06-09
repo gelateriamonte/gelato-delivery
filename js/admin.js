@@ -695,17 +695,19 @@ function numberedRows(rows, noteHtml) {
   return (noteHtml || "") + body;
 }
 
-// URL Google Maps Directions col giro già ordinato: origine = gelateria,
-// tappe intermedie = waypoints in ordine, destinazione = ultima consegna.
+// URL Google Maps Directions col giro già ordinato e a ROUND-TRIP (coerente con
+// la polyline e con "incl. rientro"): origine = destinazione = gelateria, tutte
+// le consegne sono waypoint in ordine. Tappe consecutive con coordinate identiche
+// (es. due clienti allo stesso indirizzo) collassate in una: il waypoint duplicato
+// rompe il routing di Google.
 function googleMapsRoute(ordered) {
   if (!ordered || !ordered.length) return null;
   const enc = (s) => encodeURIComponent(s);
   const pt = (o) => o.delivery_lat + "," + o.delivery_lng;
-  const origin = GELATERIA.lat + "," + GELATERIA.lng;
-  const stops = ordered.map(pt);
-  const destination = stops[stops.length - 1];
-  const waypoints = stops.slice(0, -1);
-  let u = "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=" + enc(origin) + "&destination=" + enc(destination);
+  const base = GELATERIA.lat + "," + GELATERIA.lng;
+  let waypoints = ordered.map(pt).filter((p, i, a) => i === 0 || p !== a[i - 1]);
+  waypoints = waypoints.filter((p) => p !== base);   // rimuovi tappa che coincide con la gelateria
+  let u = "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=" + enc(base) + "&destination=" + enc(base);
   if (waypoints.length) u += "&waypoints=" + waypoints.map(enc).join("|");
   return u;
 }
