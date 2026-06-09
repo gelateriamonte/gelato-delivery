@@ -7,6 +7,7 @@ let DATA = { settings: { delivery_cost: 0, min_order: 0 }, flavors: [], formats:
 let CART = [];
 let modalFormat = null;        // formato attualmente in selezione nel modale
 let modalChosen = [];          // gusti scelti nel modale
+let modalEditIndex = null;     // indice CART in modifica (null = aggiunta di una nuova vaschetta)
 
 // ---------- giorni di consegna (prossimi 7, oggi incluso) ----------
 const ymd = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -318,7 +319,8 @@ function renderFormats() {
 
 // ---------- modale gusti ----------
 function openModal(format) {
-  modalFormat = format; modalChosen = [];
+  modalFormat = format; modalChosen = []; modalEditIndex = null;   // default: aggiunta nuova
+  $("m-add").textContent = t("order.modal.addToCart");
   const n = format.max_flavors;
   const flavWrap = $("m-flavors"), hint = $("m-hint");
   $("m-eyebrow").textContent =
@@ -337,7 +339,30 @@ function openModal(format) {
   $("m-qty").value = 1;
   $("modal").classList.add("show");
 }
-function closeModal() { $("modal").classList.remove("show"); }
+function closeModal() {
+  $("modal").classList.remove("show");
+  modalEditIndex = null;   // chiudere senza salvare annulla la modalità modifica
+  $("m-add").textContent = t("order.modal.addToCart");
+}
+
+// Apre il modale precompilato per modificare una vaschetta già nel carrello:
+// stessi gusti, stessa quantità. Salvando si sovrascrive lo stesso slot del carrello.
+function openCartEdit(i) {
+  const item = CART[i];
+  if (!item) return;
+  // formato "vivo" (prezzo/max gusti aggiornati dal catalogo) o ricostruito dall'item se non più disponibile
+  const fmt = DATA.formats.find((f) => f.id === item.format_id) || {
+    id: item.format_id, name: item.format, price: item.prezzo_unit,
+    max_flavors: (item.max_flavors != null ? item.max_flavors : (item.gusti ? item.gusti.length : 0)),
+    weight_kg: item.peso_kg, category: item.category,
+  };
+  openModal(fmt);                                            // imposta add-mode + UI, poi passo in edit
+  modalEditIndex = i;
+  modalChosen = (item.gusti || []).slice(0, fmt.max_flavors);   // gusti correnti (tagliati se max ridotto)
+  if (Number(fmt.max_flavors) > 0) renderModalFlavors();
+  $("m-qty").value = Math.max(1, parseInt(item.qty, 10) || 1);
+  $("m-add").textContent = t("order.modal.saveEdit");
+}
 
 function renderModalFlavors() {
   const wrap = $("m-flavors");
@@ -370,18 +395,21 @@ function renderModalFlavors() {
 function addToCart() {
   if (modalFormat.max_flavors > 0 && modalChosen.length === 0) { toast(t("order.toast.chooseFlavor")); return; }
   const qty = Math.max(1, parseInt($("m-qty").value || "1", 10));
-  CART.push({
+  const entry = {
     format_id: modalFormat.id,
     format: modalFormat.name,
     category: modalFormat.category || "vaschetta",
     peso_kg: modalFormat.weight_kg != null ? Number(modalFormat.weight_kg) : null,
+    max_flavors: Number(modalFormat.max_flavors) || 0,   // serve a riaprire l'editor anche se il formato sparisce
     gusti: [...modalChosen],
     qty,
     prezzo_unit: Number(modalFormat.price),
-  });
+  };
+  const editing = modalEditIndex != null && CART[modalEditIndex];
+  if (editing) CART[modalEditIndex] = entry; else CART.push(entry);
   closeModal();
   renderCart();
-  toast(t("order.toast.addedToCart"));
+  toast(editing ? t("order.toast.cartUpdated") : t("order.toast.addedToCart"));
 }
 
 // ---------- carrello ----------
@@ -390,8 +418,8 @@ function renderCart() {
   $("cart-empty").style.display = CART.length ? "none" : "block";
   if (!CART.length) { lines.innerHTML = ""; updateTotal(); return; }
   const rows = CART.map((item, i) =>
-    `<div class="cart-line"><div class="q">${item.qty}×</div>` +
-    `<div class="body"><div class="t">${esc(item.format)}</div>${item.gusti.length ? `<div class="g">${esc(item.gusti.join(", "))}</div>` : ""}</div>` +
+    `<div class="cart-line editable" data-i="${i}" role="button" tabindex="0" aria-label="${t("order.cart.editItem")}"><div class="q">${item.qty}×</div>` +
+    `<div class="body"><div class="t">${esc(item.format)} <span class="ed" aria-hidden="true">✏</span></div>${item.gusti.length ? `<div class="g">${esc(item.gusti.join(", "))}</div>` : ""}</div>` +
     `<div class="lp">${euro(item.prezzo_unit * item.qty)}</div>` +
     `<button class="btn icon rm" data-i="${i}" aria-label="${t("order.cart.removeItem")}">✕</button></div>`
   ).join("");
@@ -405,7 +433,12 @@ function renderCart() {
     `<div class="r tot"><b>${t("common.total")}</b><span class="v">${euro(sub + delivery)}</span></div>` +
     `</div></div>`;
   lines.querySelectorAll(".rm").forEach((btn) => {
-    btn.onclick = () => { CART.splice(parseInt(btn.dataset.i, 10), 1); renderCart(); };
+    btn.onclick = (e) => { e.stopPropagation(); CART.splice(parseInt(btn.dataset.i, 10), 1); renderCart(); };
+  });
+  lines.querySelectorAll(".cart-line.editable").forEach((line) => {
+    const open = () => openCartEdit(parseInt(line.dataset.i, 10));
+    line.onclick = open;
+    line.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
   });
   updateTotal();
 }
