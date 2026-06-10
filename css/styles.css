@@ -635,15 +635,17 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
    MODALE gusti (bottom sheet)
    ============================================================ */
 .modal-bg{
-  position:fixed; inset:0; z-index:60; display:none;
+  position:fixed; top:0; left:0; right:0; z-index:60; display:none;
+  height:100vh; height:100dvh;   /* iOS: viewport DINAMICO -> il fondo non resta dietro la toolbar */
   align-items:flex-start; justify-content:center; background:rgba(40,30,24,.42);   /* ancorata in ALTO, posizione uniforme a prescindere dall'altezza del contenuto */
 }
 .modal-bg.show{ display:flex; }
 .modal{
   position:relative; background:var(--paper); width:100%; max-width:560px;
   border-bottom:1px solid var(--line); border-radius:0 0 24px 24px;
-  /* padding-top include la safe-area iOS: titolo/Chiudi non finiscono sotto status bar/notch */
-  padding:calc(22px + env(safe-area-inset-top)) 22px 24px; max-height:92vh; overflow:auto;
+  /* padding: safe-area in alto (status bar/notch) e in basso (home indicator) -> il bottone in fondo resta tappabile */
+  padding:calc(22px + env(safe-area-inset-top)) 22px calc(24px + env(safe-area-inset-bottom));
+  max-height:92vh; max-height:92dvh; overflow:auto;
   box-shadow:0 18px 40px -18px rgba(40,30,24,.45);
 }
 @media (min-width:600px){
