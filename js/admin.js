@@ -260,9 +260,10 @@ function renderSlotStats() {
   });
 }
 
-// badge conteggio sui tab Ordini / Take away: solo ordini ATTIVI (COUNTED: ricevuto/accettato/in prep/in consegna), per tipo
+// badge conteggio sui tab Ordini / Take away: solo ordini ATTIVI (COUNTED: ricevuto/accettato/in prep/in consegna) con consegna/ritiro oggi o futuri, per tipo
 function updateTabBadges() {
-  const act = (pk) => ORDERS.filter((o) => (pk ? o.fulfillment === "pickup" : o.fulfillment !== "pickup") && COUNTED.has(o.status)).length;
+  const today = ymd(new Date());
+  const act = (pk) => ORDERS.filter((o) => (pk ? o.fulfillment === "pickup" : o.fulfillment !== "pickup") && COUNTED.has(o.status) && o.delivery_date >= today).length;
   const set = (id, n) => { const b = $(id); if (b) { b.textContent = n; b.classList.toggle("show", n > 0); } };
   set("badge-orders", act(false));
   set("badge-takeaway", act(true));
@@ -270,7 +271,8 @@ function updateTabBadges() {
 
 function renderOrders() {
   const DEL = ORDERS.filter((o) => o.fulfillment !== "pickup" && o.status !== "consegnato");   // Ordini = consegne non ancora evase (consegnati → Storico; ritiri → Take away)
-  $("orders-count").textContent = ORDERS.filter((o) => o.fulfillment !== "pickup" && COUNTED.has(o.status)).length;   // solo attivi: ricevuto/accettato/in prep/in consegna
+  const today = ymd(new Date());
+  $("orders-count").textContent = ORDERS.filter((o) => o.fulfillment !== "pickup" && COUNTED.has(o.status) && o.delivery_date >= today).length;   // solo attivi (ricevuto/accettato/in prep/in consegna) con consegna oggi o futura
   updateTabBadges();
   renderFilters();
   renderDays();
