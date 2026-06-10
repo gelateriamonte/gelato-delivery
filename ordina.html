@@ -160,27 +160,6 @@
     </div>
   </div>
 
-  <!-- MODALE QUANTITÀ (rapida, dal carrello: solo numero con + / −, min 1) -->
-  <div class="modal-bg" id="qty-modal">
-    <div class="modal">
-      <div class="sheet-head">
-        <div>
-          <p class="eyebrow" data-i18n="order.modal.qtyLabel">Quantità</p>
-          <h2 id="qm-title"></h2>
-        </div>
-        <button class="btn ghost sm" id="qm-close" data-i18n="order.modal.close">Chiudi</button>
-      </div>
-      <div class="qty" style="justify-content:center; margin:8px 0 18px">
-        <div class="qty-stepper">
-          <button type="button" id="qm-dec" data-i18n-attr="aria-label:order.modal.qtyDecrease" aria-label="Diminuisci">–</button>
-          <input id="qm-qty" type="number" min="1" value="1" inputmode="numeric" readonly>
-          <button type="button" id="qm-inc" data-i18n-attr="aria-label:order.modal.qtyIncrease" aria-label="Aumenta">+</button>
-        </div>
-      </div>
-      <button class="btn block" id="qm-save" data-i18n="order.modal.saveEdit">Salva modifiche</button>
-    </div>
-  </div>
-
   <!-- MODALE PAGAMENTO (Stripe Embedded Checkout) -->
   <div class="modal-bg" id="pay-modal">
     <div class="modal">
