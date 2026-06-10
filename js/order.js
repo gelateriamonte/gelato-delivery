@@ -436,8 +436,8 @@ function renderCart() {
   $("cart-empty").style.display = CART.length ? "none" : "block";
   if (!CART.length) { lines.innerHTML = ""; updateTotal(); return; }
   const rows = CART.map((item, i) =>
-    `<div class="cart-line editable" data-i="${i}" role="button" tabindex="0" aria-label="${t("order.cart.editItem")}"><div class="q">${item.qty}×</div>` +
-    `<div class="body"><div class="t">${esc(item.format)} <span class="ed" aria-hidden="true">✏</span></div>${item.gusti.length ? `<div class="g">${esc(item.gusti.join(", "))}</div>` : ""}</div>` +
+    `<div class="cart-line"><div class="q qedit" data-i="${i}" role="button" tabindex="0" aria-label="${t("order.modal.qtyLabel")}">${item.qty}×</div>` +
+    `<div class="body editable" data-i="${i}" role="button" tabindex="0" aria-label="${t("order.cart.editItem")}"><div class="t">${esc(item.format)} <span class="ed" aria-hidden="true">✏</span></div>${item.gusti.length ? `<div class="g">${esc(item.gusti.join(", "))}</div>` : ""}</div>` +
     `<div class="lp">${euro(item.prezzo_unit * item.qty)}</div>` +
     `<button class="btn icon rm" data-i="${i}" aria-label="${t("order.cart.removeItem")}">✕</button></div>`
   ).join("");
@@ -453,13 +453,32 @@ function renderCart() {
   lines.querySelectorAll(".rm").forEach((btn) => {
     btn.onclick = (e) => { e.stopPropagation(); CART.splice(parseInt(btn.dataset.i, 10), 1); renderCart(); };
   });
-  lines.querySelectorAll(".cart-line.editable").forEach((line) => {
-    const open = () => openCartEdit(parseInt(line.dataset.i, 10));
-    line.onclick = open;
-    line.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+  lines.querySelectorAll(".cart-line .body.editable").forEach((body) => {
+    const open = () => openCartEdit(parseInt(body.dataset.i, 10));
+    body.onclick = open;
+    body.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+  });
+  // badge "qty×": apre la mini-modale quantità (stopPropagation: non deve aprire l'editor gusti)
+  lines.querySelectorAll(".cart-line .qedit").forEach((q) => {
+    const openQ = (e) => { e.stopPropagation(); openQtyModal(parseInt(q.dataset.i, 10)); };
+    q.onclick = openQ;
+    q.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); openQtyModal(parseInt(q.dataset.i, 10)); } };
   });
   updateTotal();
 }
+
+// ---------- mini-modale quantità (dal carrello) ----------
+let qtyEditIndex = null;
+function qtyRefreshDec() { const v = parseInt($("qm-qty").value || "1", 10) || 1; $("qm-dec").disabled = v <= 1; }
+function openQtyModal(i) {
+  const item = CART[i]; if (!item) return;
+  qtyEditIndex = i;
+  $("qm-title").textContent = item.format;
+  $("qm-qty").value = Math.max(1, parseInt(item.qty, 10) || 1);
+  qtyRefreshDec();
+  $("qty-modal").classList.add("show");
+}
+function closeQtyModal() { $("qty-modal").classList.remove("show"); qtyEditIndex = null; }
 
 function subtotal() { return CART.reduce((s, i) => s + i.prezzo_unit * i.qty, 0); }
 
@@ -732,6 +751,16 @@ $("modal").onclick = (e) => { if (e.target.id === "modal") closeModal(); };
 $("m-add").onclick = addToCart;
 $("m-qty-dec").onclick = () => { $("m-qty").value = Math.max(1, (parseInt($("m-qty").value || "1", 10) || 1) - 1); };
 $("m-qty-inc").onclick = () => { $("m-qty").value = (parseInt($("m-qty").value || "1", 10) || 1) + 1; };
+// mini-modale quantità (carrello)
+$("qm-close").onclick = closeQtyModal;
+$("qty-modal").onclick = (e) => { if (e.target.id === "qty-modal") closeQtyModal(); };
+$("qm-dec").onclick = () => { $("qm-qty").value = Math.max(1, (parseInt($("qm-qty").value || "1", 10) || 1) - 1); qtyRefreshDec(); };
+$("qm-inc").onclick = () => { $("qm-qty").value = (parseInt($("qm-qty").value || "1", 10) || 1) + 1; qtyRefreshDec(); };
+$("qm-save").onclick = () => {
+  if (qtyEditIndex == null || !CART[qtyEditIndex]) { closeQtyModal(); return; }
+  CART[qtyEditIndex].qty = Math.max(1, parseInt($("qm-qty").value || "1", 10) || 1);
+  closeQtyModal(); renderCart(); toast(t("order.toast.cartUpdated"));
+};
 $("submit").onclick = submitOrder;
 $("pay-close").onclick = closePayment;
 $("coupon-apply").onclick = applyCoupon;
