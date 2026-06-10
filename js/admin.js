@@ -1000,6 +1000,42 @@ async function loadFlavors() {
   if (error) { console.error(error); return; }
   FLAVORS_ALL = data || [];
   renderFlavorsList();
+  backfillFlavorEn();   // traduci in autonomia l'EN mancante dei gusti del giorno (best-effort, async)
+}
+
+// Traduce IT→EN una microdescrizione gusto (Haiku, riusa translate-home). Ritorna stringa EN o null.
+async function translateFlavorDesc(itText) {
+  const txt = (itText || "").trim();
+  if (!txt) return null;
+  try {
+    const r = await fetch("/.netlify/functions/translate-home", {
+      method: "POST", headers: { "content-type": "application/json", "x-admin-token": ADMIN_UPLOAD_TOKEN },
+      body: JSON.stringify({ it: { d: txt } }),
+    });
+    const d = await r.json().catch(() => ({}));
+    const en = d && d.en && d.en.d;
+    return (r.ok && typeof en === "string" && en.trim()) ? en.trim() : null;
+  } catch (e) { return null; }
+}
+
+// Backfill una-tantum: traduce l'EN mancante dei gusti del giorno che hanno la descrizione IT.
+const _flavorEnTried = new Set();   // evita ritentativi a raffica nella stessa sessione
+async function backfillFlavorEn() {
+  const todo = FLAVORS_ALL.filter((f) =>
+    f.daily && f.description && f.description.trim() &&
+    !(f.description_en && f.description_en.trim()) && !_flavorEnTried.has(f.id)
+  );
+  if (!todo.length) return;
+  let changed = false;
+  for (const f of todo) {
+    _flavorEnTried.add(f.id);
+    const en = await translateFlavorDesc(f.description);
+    if (!en) continue;
+    const { error } = await sb.from("flavors").update({ description_en: en }).eq("id", f.id);
+    if (error) { console.error("backfill EN gusto:", error.message); continue; }
+    f.description_en = en; changed = true;   // aggiorna in memoria
+  }
+  if (changed) renderFlavorsList();
 }
 function renderFlavorsList() {
   const list = $("flavors-list");
@@ -1045,7 +1081,6 @@ function buildFlavorRow(f) {
   desc.placeholder = "Microdescrizione IT (es. tostato)";
   desc.value = f.description || "";
   desc.style.display = daily ? "" : "none";
-  desc.onchange = () => updateRow("flavors", f.id, { description: desc.value.trim() || null });
   frow.appendChild(desc);
   const descEn = document.createElement("input");
   descEn.className = "g-desc g-desc-en";
@@ -1054,6 +1089,24 @@ function buildFlavorRow(f) {
   descEn.style.display = daily ? "" : "none";
   descEn.onchange = () => updateRow("flavors", f.id, { description_en: descEn.value.trim() || null });
   frow.appendChild(descEn);
+  // traduce IT→EN nel campo EN (se vuoto) in autonomia
+  async function fillEnFrom(itText) {
+    const ph = descEn.placeholder;
+    descEn.placeholder = "Traduco…"; descEn.disabled = true;
+    const en = await translateFlavorDesc(itText);
+    descEn.disabled = false; descEn.placeholder = ph;
+    if (!en) return;
+    await updateRow("flavors", f.id, { description_en: en });
+    f.description_en = en;
+    if (descEn.isConnected) descEn.value = en; else renderFlavorsList();
+    toast("Descrizione EN tradotta in automatico.");
+  }
+  desc.onchange = async () => {
+    const it = desc.value.trim() || null;
+    await updateRow("flavors", f.id, { description: it });
+    f.description = it;
+    if (it && daily && !descEn.value.trim()) await fillEnFrom(it);   // EN mancante → auto-traduci
+  };
   star.onclick = () => {
     special = !special; f.special = special; paintStar();
     updateRow("flavors", f.id, { special });
@@ -1065,6 +1118,7 @@ function buildFlavorRow(f) {
     descEn.style.display = daily ? "" : "none";
     if (daily) desc.focus();
     updateRow("flavors", f.id, { daily });
+    if (daily && desc.value.trim() && !descEn.value.trim()) fillEnFrom(desc.value.trim());   // EN mancante → auto-traduci
     if (FLAVOR_FILTER.special || FLAVOR_FILTER.daily) renderFlavorsList();
   };
   return frow;
