@@ -177,13 +177,13 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
-  <script src="js/supabase-client.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://js.stripe.com/v3/"></script>
-  <script src="js/santeodoro-boundary.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/order.js"></script>
+  <!-- defer: download in parallelo, niente blocco del parsing; eseguono in ordine dopo l'HTML.
+       Leaflet (mappa) e Stripe (pagamento) NON sono qui: caricati on-demand da order.js (ensureLeaflet/ensureStripe). -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="config.js"></script>
+  <script defer src="js/supabase-client.js"></script>
+  <script defer src="js/santeodoro-boundary.js"></script>
+  <script defer src="js/i18n.js"></script>
+  <script defer src="js/order.js"></script>
 </body>
 </html>

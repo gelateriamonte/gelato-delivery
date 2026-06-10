@@ -4,6 +4,20 @@ const $ = (id) => document.getElementById(id);
 const euro = (n) => "€ " + Number(n || 0).toFixed(2).replace(".", ",");
 
 let DATA = { settings: { delivery_cost: 0, min_order: 0 }, flavors: [], formats: [], slots: [] };
+
+// Lazy-load di script pesanti che NON servono per mostrare il menù (Leaflet=mappa, Stripe=pagamento):
+// caricarli on-demand toglie ~2 download bloccanti dal percorso critico iniziale.
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = src; s.async = true;
+    s.onload = res; s.onerror = () => rej(new Error("script load: " + src));
+    document.head.appendChild(s);
+  });
+}
+let _leafletP = null, _stripeP = null;
+function ensureLeaflet() { if (window.L) return Promise.resolve(); if (!_leafletP) _leafletP = loadScript("https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"); return _leafletP; }
+function ensureStripe()  { if (window.Stripe) return Promise.resolve(); if (!_stripeP) _stripeP = loadScript("https://js.stripe.com/v3/"); return _stripeP; }
 let CART = [];
 let modalFormat = null;        // formato attualmente in selezione nel modale
 let modalChosen = [];          // gusti scelti nel modale
@@ -132,8 +146,10 @@ function pinIcon(color) {
   return L.divIcon({ className: "", iconSize: [28, 38], iconAnchor: [14, 37], popupAnchor: [0, -32],
     html: `<svg width="28" height="38" viewBox="0 0 24 34"><path d="M12 0C5.4 0 0 5.4 0 12c0 8.5 12 22 12 22s12-13.5 12-22C24 5.4 18.6 0 12 0z" fill="${color}"/><circle cx="12" cy="12" r="4.6" fill="#fff"/></svg>` });
 }
-function initMap() {
-  if (typeof L === "undefined" || !$("map")) return;
+async function initMap() {
+  if (!$("map")) return;
+  try { await ensureLeaflet(); } catch (e) { console.error("Leaflet load:", e); return; }
+  if (typeof L === "undefined") return;
   map = L.map("map", { center: [GELATERIA.lat, GELATERIA.lng], zoom: 12, scrollWheelZoom: false });
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
   delIcon = pinIcon("#a8552f");   // terracotta = punto consegna
@@ -160,6 +176,7 @@ function initMap() {
   } });
   map.addControl(new Reset());
   setTimeout(() => map.invalidateSize(), 250);
+  drawDeliveryZone();   // mappa+Leaflet pronti: disegna la zona (initMap ora è async)
 }
 function resetView() { if (map) map.fitBounds(ST_BBOX, { padding: [12, 12] }); }
 function locateMe() {
@@ -258,12 +275,13 @@ function renderAddrSuggest(feats) {
 
 // ---------- caricamento dati ----------
 async function loadData() {
-  const [settings, flavors, formats, slots] = await Promise.all([
-    sb.from("settings").select("*").eq("id", 1).single(),
-    sb.from("flavors").select("*").eq("available", true).order("sort_order"),
-    sb.from("formats").select("*").eq("available", true).order("sort_order"),
-    sb.from("time_slots").select("*").order("sort_order"),
-  ]);
+  const pSettings = sb.from("settings").select("*").eq("id", 1).single();
+  const pFlavors  = sb.from("flavors").select("*").eq("available", true).order("sort_order");
+  const pFormats  = sb.from("formats").select("*").eq("available", true).order("sort_order");
+  const pSlots    = sb.from("time_slots").select("*").order("sort_order");
+  // prodotti ordinabili: render appena risolve la query formati, senza aspettare le altre tre
+  pFormats.then((r) => { if (!r.error && r.data) { DATA.formats = r.data; renderFormats(); } });
+  const [settings, flavors, formats, slots] = await Promise.all([pSettings, pFlavors, pFormats, pSlots]);
   if (settings.error || flavors.error || formats.error || slots.error) {
     toast(t("order.toast.loadError"));
     console.error(settings.error || flavors.error || formats.error || slots.error);
@@ -659,7 +677,9 @@ function resetSubmit() { $("submit").disabled = false; $("submit").textContent =
 // ---------- pagamento (Stripe Embedded Checkout) ----------
 let stripeObj = null, embeddedCheckout = null;
 async function openPayment(clientSecret) {
-  if (!window.Stripe || !window.STRIPE_PUBLISHABLE_KEY) { toast(t("order.toast.paymentsNotConfigured")); return; }
+  if (!window.STRIPE_PUBLISHABLE_KEY) { toast(t("order.toast.paymentsNotConfigured")); return; }
+  try { await ensureStripe(); } catch (e) { console.error("Stripe load:", e); toast(t("order.toast.paymentsNotConfigured")); return; }
+  if (!window.Stripe) { toast(t("order.toast.paymentsNotConfigured")); return; }
   if (!stripeObj) stripeObj = window.Stripe(window.STRIPE_PUBLISHABLE_KEY);
   if (embeddedCheckout) { try { embeddedCheckout.destroy(); } catch (e) {} embeddedCheckout = null; }
   $("pay-modal").classList.add("show");
