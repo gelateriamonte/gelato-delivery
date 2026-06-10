@@ -636,20 +636,19 @@ select{ -webkit-appearance:none; appearance:none; padding-right:38px; cursor:poi
    ============================================================ */
 .modal-bg{
   position:fixed; inset:0; z-index:60; display:none;
-  align-items:flex-end; justify-content:center; background:rgba(40,30,24,.42);
+  align-items:flex-start; justify-content:center; background:rgba(40,30,24,.42);   /* ancorata in ALTO, posizione uniforme a prescindere dall'altezza del contenuto */
 }
 .modal-bg.show{ display:flex; }
 .modal{
   position:relative; background:var(--paper); width:100%; max-width:560px;
-  border-top:1px solid var(--line); border-radius:24px 24px 0 0;
-  padding:26px 22px 24px; max-height:88vh; overflow:auto;
-  box-shadow:0 -16px 40px -20px rgba(40,30,24,.45);
+  border-bottom:1px solid var(--line); border-radius:0 0 24px 24px;
+  /* padding-top include la safe-area iOS: titolo/Chiudi non finiscono sotto status bar/notch */
+  padding:calc(22px + env(safe-area-inset-top)) 22px 24px; max-height:92vh; overflow:auto;
+  box-shadow:0 18px 40px -18px rgba(40,30,24,.45);
 }
-.modal::before{ content:""; position:absolute; top:10px; left:50%; transform:translateX(-50%);
-  width:42px; height:4px; border-radius:99px; background:var(--line-2); }
 @media (min-width:600px){
-  .modal-bg{ align-items:center; }
-  .modal{ border-radius:24px; }
+  .modal-bg{ padding-top:6vh; }   /* su desktop: card staccata dal bordo alto */
+  .modal{ border-radius:18px; }
 }
 #checkout{ min-height:320px; }
 .sheet-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
