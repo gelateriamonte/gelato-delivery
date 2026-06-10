@@ -308,7 +308,7 @@
         function renderWx() { var c = lastWx; if (!c) return;
           var te = document.getElementById("dm-temp"); if (te && c.temperature_2m != null) te.textContent = Math.round(c.temperature_2m) + "°";
           var ic = document.getElementById("dm-ico"); if (ic && c.weather_code != null) ic.innerHTML = WX[wxCat(c.weather_code)] || WX.cloud;
-          var wi = document.getElementById("dm-wind"); if (wi) { var nm = windName(c.wind_direction_10m), sp = c.wind_speed_10m; wi.textContent = (sp != null && sp < 4) ? (window.I18N ? I18N.t("home.weather.noWind") : "Vento assente") : (nm || ""); } }
+          var wi = document.getElementById("dm-wind"); if (wi) { var nm = windName(c.wind_direction_10m), sp = c.wind_speed_10m; wi.textContent = (sp != null && sp < 6) ? (window.I18N ? I18N.t("home.weather.noWind") : "Vento assente") : (nm || ""); } }
         setDate();
         var nowd = new Date(), sa = document.getElementById("dm-saint");
         if (sa) { var k = (nowd.getMonth() + 1) + "-" + nowd.getDate(); if (SAINTS[k]) sa.textContent = SAINTS[k]; }
