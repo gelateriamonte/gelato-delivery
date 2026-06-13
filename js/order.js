@@ -739,6 +739,9 @@ $("coupon").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.prev
 $("coupon").addEventListener("input", () => { if (!$("coupon").value.trim()) { COUPON = null; updateTotal(); } });
 ["name", "phone", "email"].forEach((id) => $(id).addEventListener("input", syncCouponGate));
 $("addr-find").onclick = () => { closeAddrSuggest(); geocodeAddress(); };
+function toggleAddrClear() { $("addr-clear").hidden = !$("address").value; }
+$("addr-clear").onclick = () => { $("address").value = ""; closeAddrSuggest(); toggleAddrClear(); $("address").focus(); };
+$("address").addEventListener("input", toggleAddrClear);
 $("address").addEventListener("input", onAddrInput);
 $("address").addEventListener("blur", () => setTimeout(closeAddrSuggest, 150));   // ritardo: lascia scattare il click sul suggerimento
 $("address").addEventListener("keydown", (e) => {
@@ -756,6 +759,7 @@ $("phone").value = "333 1234567";
 $("email").value = "mario.rossi@email.it";
 syncCouponGate();   // stato iniziale del campo sconto
 $("address").value = "Via Lu Pitrali, San Teodoro";   // default di prova (fase test)
+toggleAddrClear();   // stato iniziale della X di reset
 
 initMap();
 loadData();

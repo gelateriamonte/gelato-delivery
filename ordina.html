@@ -85,7 +85,10 @@
         <div class="field" id="address-field"><label for="address" data-i18n="order.form.addressLabel">Indirizzo di consegna</label>
           <div class="addr-wrap">
             <div class="addr-row">
-              <input id="address" type="text" data-i18n-ph="order.form.addressPlaceholder" placeholder="Via Cala d'Ambra 1, San Teodoro" class="grow" autocomplete="off">
+              <div class="addr-input-wrap grow">
+                <input id="address" type="text" data-i18n-ph="order.form.addressPlaceholder" placeholder="Via Cala d'Ambra 1, San Teodoro" autocomplete="off">
+                <button type="button" class="addr-clear" id="addr-clear" data-i18n-attr="aria-label:order.form.addressClear" aria-label="Cancella indirizzo" hidden>✕</button>
+              </div>
               <button type="button" class="btn sm" id="addr-find" data-i18n="order.form.findBtn">Trova</button>
             </div>
             <div id="addr-suggest" class="addr-suggest" role="listbox"></div>
