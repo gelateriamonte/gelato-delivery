@@ -62,17 +62,42 @@ build di produzione in automatico. Verificato: codice live su prod **~15s** dopo
   `node_modules`, `.env`, `.DS_Store`). I file **untracked** (jpg sciolti in root, `docs/AUDIT-*.md`) **non**
   vengono deployati dal push. → La vecchia nota "spostare `Gelato26.zip` fuori dal publish dir" è **obsoleta**
   (gli zip sono gitignored; era necessaria solo per `netlify deploy --dir=.` che caricava anche gli untracked).
-- ⚠️ **Mai committare doc sensibili** (es. l'audit di sicurezza): con `publish="."` finirebbero serviti
-  pubblicamente su `/docs/...`. Tenerli locali finché non si applica il fix **F-DEPLOY** (`publish="public"`).
+- ⚠️ **`publish="."` servirebbe OGNI file tracked** (anche SQL/doc). Mitigazione attiva: `netlify.toml` ha redirect
+  `force=true`→404 per `/supabase/*`, `/docs/*`, `/CLAUDE.md`, `/SPEC.md`, `package.json`, `package-lock.json`,
+  `jsconfig.json`, `eslint.config.mjs`, `netlify.toml`. **Aggiungere lì ogni nuovo path sorgente non-asset.** Fix
+  "vero" futuro = **F-DEPLOY** (`publish="public"` con soli asset). Audit/junk locali in `_archive/` (gitignored).
 - **Verifica deploy:** `curl -s https://gelato26.netlify.app/js/<file> | grep <simbolo-nuovo>` (~15-60s).
 - Env prod (già configurate, usate da function): `STRIPE_SECRET_KEY/WEBHOOK_SECRET`, `SUPABASE_URL/SERVICE_ROLE_KEY`,
-  `ANTHROPIC_API_KEY`, `ADMIN_UPLOAD_TOKEN`, `TELEGRAM_BOT_TOKEN/CHAT_ID`. Le function girano solo su prod/`netlify dev`,
+  `ANTHROPIC_API_KEY`, `ADMIN_UPLOAD_TOKEN`, `TELEGRAM_BOT_TOKEN/CHAT_ID`, `EPSON_SDP_ID` (segreto condiviso stampa
+  ordini: deve combaciare col campo *ID* nel Web Config della stampante). Le function girano solo su prod/`netlify dev`,
   non su file statico aperto in locale.
+  ⚠️ Settare un'env via Netlify MCP col flag *secret* NON persiste (bug noto): usare non-secret + rileggere con
+  `getAllEnvVars`; una env nuova entra nel runtime delle function solo dopo un **redeploy** (commit vuoto).
 - Commit: conventional commits, chiudi con `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
 
 ## Sicurezza (debito noto, scelta consapevole)
 RLS Supabase permissiva (`using(true)`) → la anon key pubblica legge/scrive tutto, PII clienti incluse; login admin
 client-side (`ADMIN_PASSWORD`) = cosmetico. Hardening (RLS ristretta + Supabase Auth) rimandato dall'owner.
+
+## Stampa ordini — Epson TM-m30III (Server Direct Print)
+La stampante (in gelateria, su rete) polla `/.netlify/functions/epson-sdp` ogni ~15s e stampa lo scontrino di
+ogni ordine pagato. Niente browser nel percorso: funziona anche a back office chiuso.
+
+- **Coda**: tabella `print_jobs` (pending→printing→done|error) + RPC `claim_print_job` — claim atomico
+  `FOR UPDATE SKIP LOCKED`, invariante **1 solo job `printing`** (→ correlazione SetResponse deterministica anche
+  senza `printjobid`), reclaim 5min con cap, alert Telegram dopo 3 retry falliti. Migration
+  `supabase/migration-2026-06-21-print-jobs.sql`.
+- **Trigger auto**: `stripe-webhook.js` accoda un `print_jobs` dopo l'insert ordine (best-effort, come Telegram).
+- **Ristampa manuale**: bottone 🖨️ in `admin.js` (`renderActions`) → `sb.from('print_jobs').insert({order_id})`
+  (RLS: anon solo INSERT).
+- **Endpoint** `netlify/functions/epson-sdp.js`: `GetRequest`→ePOS-Print XML (builder `lib/receipt.js`, 80mm/48col,
+  escape-at-emit); `SetResponse`→esito. Auth **fail-closed** via `EPSON_SDP_ID`. **Risponde sempre 200** alla
+  stampante (un non-200 la fa ri-POSTare all'infinito).
+- **Web Config stampante**: Server Direct Print *Enable* · URL `…/.netlify/functions/epson-sdp` · ID = `EPSON_SDP_ID`
+  · Interval 15 · Server Authentication *Disable* · URL Encode *Enable*. (ePOS-Print **non** serve per SDP.)
+- **Da verificare sul firmware**: accettazione `PrintRequestInfo Version="2.00"` (per `printjobid`); se no → fallback
+  v1.00 (l'invariante 1-printing rende sicura la correlazione comunque).
+- Spec completo (locale, untracked, 404 sul sito): `docs/superpowers/specs/2026-06-21-epson-tm30iii-server-direct-print-design.md`.
 
 ## Loop protocol
 
