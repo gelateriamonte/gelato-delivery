@@ -94,9 +94,14 @@ ogni ordine pagato. Niente browser nel percorso: funziona anche a back office ch
   escape-at-emit); `SetResponse`→esito. Auth **fail-closed** via `EPSON_SDP_ID`. **Risponde sempre 200** alla
   stampante (un non-200 la fa ri-POSTare all'infinito).
 - **Web Config stampante**: Server Direct Print *Enable* · URL `…/.netlify/functions/epson-sdp` · ID = `EPSON_SDP_ID`
-  · Interval 15 · Server Authentication *Disable* · URL Encode *Enable*. (ePOS-Print **non** serve per SDP.)
-- **Da verificare sul firmware**: accettazione `PrintRequestInfo Version="2.00"` (per `printjobid`); se no → fallback
-  v1.00 (l'invariante 1-printing rende sicura la correlazione comunque).
+  (campo ID **max 30 char**, charset `A-Za-z0-9 _ . -` → tenere il segreto ≤30) · Interval 15 ·
+  Server Authentication *Disable* · URL Encode *Enable*. (ePOS-Print **non** serve per SDP.)
+- **Firmware (verificato 2026-06-21)**: la stampante monta **TM-i fw 1.39**. `printjobid` / `PrintRequestInfo
+  Version="2.00"` sarebbero "ufficiali" solo da TM-i fw ≥4.1, ma **fw 1.39 accetta comunque** il wrapper v2.00
+  (ignora il `printjobid`) e stampa: loop completo provato su hardware reale (GetRequest→stampa→SetResponse→`done`).
+  La correlazione non dipende dal printjobid (invariante 1-printing) → nessun fallback v1.00 necessario.
+  **Aggiornamento firmware RIMANDATO** (scelta owner): non serve, flash POS = rischio/downtime per zero guadagno.
+  Se in futuro si aggiorna: annotare i campi SDP, re-inserirli, test-print di verifica subito dopo.
 - Spec completo (locale, untracked, 404 sul sito): `docs/superpowers/specs/2026-06-21-epson-tm30iii-server-direct-print-design.md`.
 
 ## Loop protocol
