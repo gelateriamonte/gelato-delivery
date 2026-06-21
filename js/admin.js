@@ -75,6 +75,12 @@ function waOpen(o, status) {
 // cambia stato + apre WhatsApp col messaggio di quello stato (window.open sincrono nel gesto)
 function changeStatus(o, status) { waOpen(o, status); updateStatus(o.id, status); }
 
+// Ristampa: accoda un nuovo job di stampa per l'ordine (la stampante lo prende al polling).
+async function reprint(o) {
+  const { error } = await sb.from("print_jobs").insert({ order_id: o.id });
+  toast(error ? "Errore ristampa." : "In stampa…");
+}
+
 // ---------- date / calendario (prossimi 7 giorni, oggi incluso) ----------
 const WD = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 const ymd = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -849,8 +855,11 @@ function mkBtn(text, cls, onclick) {
 
 function renderActions(box, o) {
   box.innerHTML = "";
+  const printRow = document.createElement("div"); printRow.className = "actrow";
+  printRow.append(mkBtn("🖨️ Ristampa", "btn ghost sm", () => reprint(o)));
+  box.append(printRow);
   const st = o.status;
-  if (TERMINAL.has(st)) return;   // consegnato / rifiutato / annullato: nessuna azione
+  if (TERMINAL.has(st)) return;   // consegnato / rifiutato / annullato: solo ristampa
 
   if (st === "ricevuto") {
     const row = document.createElement("div"); row.className = "actrow";

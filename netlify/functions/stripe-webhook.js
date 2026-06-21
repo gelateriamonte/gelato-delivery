@@ -67,7 +67,7 @@ exports.handler = async (event) => {
       payment_method,                                    // card / paypal / satispay
       paid_at: new Date().toISOString(),
     });
-    const { error: insErr } = await supa.from("orders").insert(order);
+    const { data: ins, error: insErr } = await supa.from("orders").insert(order).select("id").single();
     if (insErr) return { statusCode: 500, body: "insert ordine: " + insErr.message };
 
     // traccia/brucia il codice sconto usato (best-effort)
@@ -84,6 +84,10 @@ exports.handler = async (event) => {
 
     // notifica Telegram al titolare (best-effort: non deve mai far fallire la risposta a Stripe)
     try { await notifyOrder(order); } catch (e) { console.error("telegram notify:", e.message); }
+
+    // accoda la stampa automatica dello scontrino (best-effort, come Telegram)
+    try { if (ins && ins.id) await supa.from("print_jobs").insert({ order_id: ins.id }); }
+    catch (e) { console.error("print enqueue:", e.message); }
 
     if (pendingId) await supa.from("pending_orders").delete().eq("id", pendingId);
     else await supa.from("pending_orders").delete().eq("session_id", session.id);
