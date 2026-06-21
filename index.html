@@ -34,9 +34,9 @@
 
     /* logo grande centrato sopra la foto (placca crema per leggibilità sul gradiente scuro) */
     .hero-logo{ position:absolute; top:calc(18px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:5;
-      background:rgba(255,255,255,.2); backdrop-filter:blur(6px); border:1px solid rgba(168,85,47,.28);
+      background:rgba(255,255,255,.5); backdrop-filter:blur(6px); border:1px solid rgba(168,85,47,.28);
       border-radius:18px; padding:12px 18px; box-shadow:0 10px 30px -12px rgba(40,28,20,.55); }
-    .hero-logo img{ display:block; width:128px; height:auto; }
+    .hero-logo img{ display:block; width:112px; height:auto; }
 
     /* switcher lingua IT/EN (sopra la hero, in alto a destra) */
     .lang-switch{ position:absolute; top:calc(14px + env(safe-area-inset-top)); right:16px; z-index:6;
@@ -49,7 +49,7 @@
     /* hero */
     .hero{ position:relative; }
     .ph-hero{ width:100%; height:clamp(380px, 58vh, 452px);
-      background:linear-gradient(162deg, #c2774a 0%, #9a5733 46%, #4a2f1f 100%); }
+      background:#63819f; }
     .scrim{ position:absolute; inset:0; pointer-events:none;
       background:linear-gradient(180deg, rgba(40,28,20,.42) 0%, rgba(40,28,20,0) 30%, rgba(40,28,20,0) 50%, rgba(40,28,20,.7) 100%); }
     .cap{ position:absolute; left:22px; right:22px; bottom:24px; z-index:2; }
@@ -84,7 +84,7 @@
     .flavors{ display:flex; flex-direction:column; }
     .flavor{ display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid var(--line); }
     .flavor:last-child{ border-bottom:0; }
-    .dab{ width:30px; height:30px; border-radius:50%; flex:none; box-shadow:inset 0 0 0 1px rgba(0,0,0,.07); }
+    .dab{ width:24px; height:24px; border-radius:50%; flex:none; box-shadow:inset 0 0 0 1px rgba(0,0,0,.07); }
     .fmeta{ flex:1; min-width:0; }
     .fname{ font-family:var(--serif); font-size:20px; font-weight:600; color:var(--ink); line-height:1.05; }
     .fdesc{ font-size:12.5px; color:var(--muted); margin-top:3px; }
@@ -185,7 +185,11 @@
         <div class="scap"><b data-i18n="home.carousel.slide4.title">Consegna o take away</b><span data-i18n="home.carousel.slide4.caption">a San Teodoro</span></div></div>
     </div>
 
-    <div class="divider"></div>
+    <section class="sec" id="flavors-sec" hidden style="padding-top:16px">
+      <div class="sec-head"><h2 data-i18n="home.daily.title">Gusti del giorno</h2></div>
+      <p class="daily-intro" data-i18n="home.daily.intro">Oltre ai classici oggi proponiamo anche:</p>
+      <div class="flavors" id="home-flavors"></div>
+    </section>
 
     <div class="daily-meta">
       <div class="dm-left">
@@ -197,12 +201,6 @@
         <span class="dm-wind" id="dm-wind"></span>
       </div>
     </div>
-
-    <section class="sec" id="flavors-sec" hidden style="padding-top:16px">
-      <div class="sec-head"><h2 data-i18n="home.daily.title">Gusti del giorno</h2></div>
-      <p class="daily-intro" data-i18n="home.daily.intro">Oltre ai classici oggi proponiamo anche:</p>
-      <div class="flavors" id="home-flavors"></div>
-    </section>
 
     <section class="sec" style="padding-top:6px">
       <div class="infogrid">
