@@ -9,3 +9,9 @@ node_modules/
 # Materiale di design (non pubblicato): loghi sorgente + zip handoff
 Loghi/
 *.zip
+
+# Archivio locale (audit, sorgenti design sciolti, backup) — mai pubblicato
+_archive/
+
+# Tooling locale di sessione (settings.local.json può contenere permessi/segreti)
+.claude/
