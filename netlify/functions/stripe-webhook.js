@@ -45,10 +45,16 @@ exports.handler = async (event) => {
 
     // metodo effettivamente usato (card/paypal/satispay) dal PaymentIntent
     let payment_method = null;
-    if (session.payment_intent) {
+    // payment_intent può essere stringa (ID) o oggetto espanso: normalizza a ID stringa
+    const paymentIntentId = typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : (session.payment_intent && session.payment_intent.id) || null;
+    if (paymentIntentId) {
       try {
-        const pi = await stripe.paymentIntents.retrieve(session.payment_intent, { expand: ["latest_charge"] });
-        payment_method = (pi.latest_charge && pi.latest_charge.payment_method_details && pi.latest_charge.payment_method_details.type)
+        const pi = await stripe.paymentIntents.retrieve(paymentIntentId, { expand: ["latest_charge"] });
+        // latest_charge è string|Charge: ristretto a Charge (espanso) prima di leggerne i dettagli
+        const charge = pi.latest_charge && typeof pi.latest_charge !== "string" ? pi.latest_charge : null;
+        payment_method = (charge && charge.payment_method_details && charge.payment_method_details.type)
           || (Array.isArray(pi.payment_method_types) ? pi.payment_method_types[0] : null);
       } catch (e) { /* opzionale: se fallisce, l'ordine si crea comunque */ }
     }
@@ -57,7 +63,7 @@ exports.handler = async (event) => {
       status: "ricevuto",
       payment_provider: "stripe",
       payment_id: session.id,
-      payment_intent: session.payment_intent || null,   // per eventuale rimborso
+      payment_intent: paymentIntentId,                   // ID stringa, per eventuale rimborso
       payment_method,                                    // card / paypal / satispay
       paid_at: new Date().toISOString(),
     });

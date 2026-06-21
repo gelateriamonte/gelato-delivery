@@ -3,7 +3,7 @@
 // Chiamata dall'editor admin al "Salva homepage". Gate: header x-admin-token == ADMIN_UPLOAD_TOKEN.
 // Modello: Haiku 4.5 (traduzione = task semplice, economico).
 
-const Anthropic = require("@anthropic-ai/sdk");
+const { Anthropic } = require("@anthropic-ai/sdk");
 const json = (s, o) => ({ statusCode: s, headers: { "content-type": "application/json" }, body: JSON.stringify(o) });
 
 const SYS = [
