@@ -762,6 +762,15 @@ $("address").value = "Via Lu Pitrali, San Teodoro";   // default di prova (fase 
 toggleAddrClear();   // stato iniziale della X di reset
 
 initMap();
+
+// barra logo: bordino grigio solo quando si è scrollati (in cima niente bordo)
+(function () {
+  const bar = document.querySelector(".appbar");
+  if (!bar) return;
+  const onScroll = () => bar.classList.toggle("scrolled", window.scrollY > 4);
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
 loadData();
 if ($("address").value.trim()) setTimeout(geocodeAddress, 700);   // prototipo: pin iniziale
 

@@ -108,6 +108,9 @@ body.order #shop .group:first-child{ padding-bottom:12px; }
   position:sticky; top:0; z-index:30;
 }
 .appbar{ background:var(--cream); border-bottom:1px solid var(--line); }
+/* ordina: la barra logo mostra il bordino solo quando si è scrollati (in cima niente bordo) */
+body.order .appbar{ border-bottom-color:transparent; transition:border-color .2s; }
+body.order .appbar.scrolled{ border-bottom-color:var(--line); }
 .adminbar{ background:var(--ink); color:var(--cream); border-bottom:1px solid rgba(255,255,255,.08); }
 .bar-in{
   max-width:560px; margin:0 auto; padding:16px;
