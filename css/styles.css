@@ -323,6 +323,18 @@ body.order .cal .day.sel .dwd{ color:var(--muted); } body.order .cal .day.sel .d
 .confirm h2,.confirm h3{ font-family:var(--serif); font-weight:500; font-size:30px; margin:0 0 8px; color:var(--ink); }
 .confirm p{ font-size:14px; color:var(--muted); margin:0 auto 26px; max-width:320px; }
 .confirm .summary{ text-align:left; }
+.grazie-quote{ margin:30px auto 2px; max-width:340px; padding-top:24px; border-top:1px solid var(--line); }
+.grazie-quote[hidden]{ display:none; }
+.grazie-quote .quote-text{
+  margin:0; font-family:var(--serif); font-style:italic; font-weight:500;
+  font-size:19px; line-height:1.36; color:var(--ink-2);
+}
+.grazie-quote .quote-text::before{ content:"\201C"; }
+.grazie-quote .quote-text::after{ content:"\201D"; }
+.grazie-quote .quote-by{
+  margin-top:11px; font-family:var(--sans); font-size:11px; font-weight:600;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--faint);
+}
 
 /* ---------- mappa consegna + geofence (app cliente) ---------- */
 .addr-row{ display:flex; gap:8px; align-items:center; }
