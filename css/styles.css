@@ -127,6 +127,9 @@ body.order .appbar.scrolled{ border-bottom-color:var(--line); }
 .mark img{ width:30px; height:30px; object-fit:contain; display:block; }
 /* logo marrone leggibile anche sulla barra admin scura: placca crema */
 .adminbar .mark{ background:var(--cream); border-color:var(--accent-line); }
+/* ordina: logo barra un po' più grande e a quadrato arrotondato (stessa forma del logo in home) */
+body.order .mark{ width:44px; height:44px; border-radius:12px; }
+body.order .mark img{ width:36px; height:36px; }
 
 .brand{ display:flex; flex-direction:column; line-height:1; }
 .brand b{ font-family:var(--serif); font-weight:600; font-size:23px; letter-spacing:.01em; color:var(--ink); white-space:nowrap; }
