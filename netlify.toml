@@ -3,9 +3,12 @@
   publish = "."
   command = ""
 
-# Sottodominio admin: admin.gelateriamontepetrosu.it/* → /admin.html (host-based rewrite).
+# Sottodominio admin: admin.gelateriamontepetrosu.it/ → /admin.html (rewrite SOLO della root).
+# NON usare "/*": con force=true riscriverebbe anche /js/*, /css/*, /config.js → servirebbe
+# HTML al posto degli asset, rompendo la pagina. Solo la root va forzata su admin.html;
+# gli asset reali (file esistenti) passano normalmente.
 [[redirects]]
-  from = "https://admin.gelateriamontepetrosu.it/*"
+  from = "https://admin.gelateriamontepetrosu.it/"
   to = "/admin.html"
   status = 200
   force = true
