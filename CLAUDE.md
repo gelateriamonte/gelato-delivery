@@ -53,8 +53,10 @@ Larghezze da testare: **360 / 375 / 393 / 430**. Il binario WebKit resta in `~/L
 ## Deploy — procedura verificata (2026-06-10)
 
 **Deploy = `git push origin main`. Basta quello.** Il sito Netlify (`siteId 7b526eaa-821f-4d12-b4aa-b8149a1d68ef`,
-repo **privato** `github.com/vla-sys/gelato-delivery`) è **git-connected**: ogni push su `main` fa partire il
+repo **privato** `github.com/gelateriamonte/gelato-delivery`) è **git-connected**: ogni push su `main` fa partire il
 build di produzione in automatico. Verificato: codice live su prod **~15s** dopo il push.
+
+> **Migrazione stack (2026-06-25):** repo spostato `vla-sys` → **`gelateriamonte/gelato-delivery`** (Netlify ricollegato, resta di Vla); Supabase migrato a **nuovo progetto `rlrsyqmwtjfyuqkgzqso`** (region eu-west-1; url/anon in `config.js`, service_role in env Netlify). Vecchi `vla-sys` + Supabase `hsnikgbwsggusqlanwmt` (eu-central-1) tenuti come backup, da dismettere. Se il `git remote origin` locale punta ancora a `vla-sys`, ripuntalo al nuovo repo per i deploy.
 
 - **NON serve** `netlify deploy --prod` (e in questo ambiente la CLI Netlify **non è installata/autenticata** →
   non tentarla, `netlify login` richiede browser). Lo step CLI nel vecchio runbook era ridondante.
