@@ -478,29 +478,24 @@ function renderCouponMsg(disc) {
     m.style.display = "none";   // campo vuoto: nascondi (gli errori restano finché c'è testo)
   }
 }
-// codici 'always': una sola volta per cliente. Cerca un ordine pagato con stesso codice + telefono/email.
-async function couponUsedByCustomer(code) {
-  const phoneDigits = ($("phone").value || "").replace(/\D/g, "");
-  const emailNorm = ($("email").value || "").trim().toLowerCase();
-  if (!phoneDigits && !emailNorm) return false;   // contatti non ancora inseriti → controlla il server al checkout
-  const { data } = await sb.from("orders").select("customer_phone,email").ilike("coupon_code", code);
-  return (data || []).some((o) =>
-    (phoneDigits && o.customer_phone && String(o.customer_phone).replace(/\D/g, "") === phoneDigits) ||
-    (emailNorm && o.email && String(o.email).trim().toLowerCase() === emailNorm)
-  );
-}
 async function applyCoupon() {
   const code = $("coupon").value.trim().toUpperCase();
   const m = $("coupon-msg");
   const fail = (txt) => { COUPON = null; if (m) { m.style.display = "block"; m.className = "coupon-msg ko"; m.textContent = "✕ " + txt; } updateTotal(); };
   if (!code) { COUPON = null; if (m) m.style.display = "none"; updateTotal(); return; }
-  const { data, error } = await sb.from("discount_codes").select("*").ilike("code", code).maybeSingle();
+  const phone = $("phone").value.trim();
+  const email = $("email").value.trim();
+  const contact = phone || email;
+  const { data: cp, error } = await sb.rpc("rpc_coupon_precheck", { p_code: code, p_contact: contact });
   if (error) return fail(t("order.coupon.checkFailed"));
-  if (!data) return fail(t("order.coupon.invalid"));
-  if (!data.active) return fail(t("order.coupon.inactive"));
-  if (data.kind === "oneoff" && (data.burned || data.used_count > 0)) return fail(t("order.coupon.alreadyUsed"));
-  if (data.kind !== "oneoff" && await couponUsedByCustomer(data.code)) return fail(t("order.coupon.onePerCustomer"));
-  COUPON = data;
+  if (!cp || !cp.valid) {
+    if (cp && cp.reason === "already_used") return fail(t("order.coupon.alreadyUsed"));
+    if (cp && cp.reason === "exhausted") return fail(t("order.coupon.alreadyUsed"));
+    if (cp && cp.reason === "not_found") return fail(t("order.coupon.invalid"));
+    return fail(t("order.coupon.invalid"));
+  }
+  // Store just what we need to compute the discount client-side (authoritative calc is server-side)
+  COUPON = { code, discount_type: cp.type, value: cp.value };
   updateTotal();   // mostra il successo + aggiorna il totale
 }
 
@@ -568,15 +563,14 @@ function renderDayPick() {
 }
 
 async function loadDaySlots() {
-  const [ov, occ] = await Promise.all([
+  const [ov, avail] = await Promise.all([
     sb.from("slot_day_state").select("slot_id, active").eq("day", SELECTED_DAY),
-    sb.from("orders").select("slot_label").eq("delivery_date", SELECTED_DAY).in("status", LAVORAZIONE),
+    sb.rpc("rpc_slot_availability", { p_date: SELECTED_DAY }),
   ]);
   if (ov.error) console.error(ov.error);
-  if (occ.error) console.error(occ.error);
+  if (avail.error) console.error(avail.error);
   DAY_OVERRIDES = new Map((ov.data || []).map((r) => [r.slot_id, r.active]));
-  DAY_COUNTS = {};
-  (occ.data || []).forEach((r) => { if (r.slot_label) DAY_COUNTS[r.slot_label] = (DAY_COUNTS[r.slot_label] || 0) + 1; });
+  DAY_COUNTS = Object.fromEntries((avail.data || []).map((r) => [r.slot_label, r.taken]));
   renderSlotSelect();
 }
 
@@ -621,13 +615,14 @@ async function submitOrder() {
     }
     const slotObj = DATA.slots.find((s) => s.label === chosen);
     if (slotObj && Number(slotObj.max_deliveries) > 0) {
-      const { count, error: capErr } = await sb.from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("delivery_date", SELECTED_DAY).eq("slot_label", chosen).in("status", LAVORAZIONE);
-      if (!capErr && count != null && count >= Number(slotObj.max_deliveries)) {
-        toast(t("order.toast.slotJustFilled"));
-        await loadDaySlots();
-        return;
+      const { data: capAvail, error: capErr } = await sb.rpc("rpc_slot_availability", { p_date: SELECTED_DAY });
+      if (!capErr && capAvail) {
+        const takenRow = capAvail.find((r) => r.slot_label === chosen);
+        if (takenRow && takenRow.taken >= Number(slotObj.max_deliveries)) {
+          toast(t("order.toast.slotJustFilled"));
+          await loadDaySlots();
+          return;
+        }
       }
     }
     slotLabel = chosen; lat = DELIV_LAT; lng = DELIV_LNG;
