@@ -1,0 +1,16 @@
+import { webkit } from 'playwright'
+const URL = process.env.ADMIN_URL
+const browser = await webkit.launch()
+const ctx = await browser.newContext()
+const page = await ctx.newPage()
+await page.goto(URL + '/admin.html', { waitUntil: 'networkidle' })
+await page.fill('#email', 'admin@gelateriamontepetrosu.it')
+await page.fill('#pw', 'WRONG'); await page.click('#pw-go')
+await page.waitForTimeout(1500)
+console.log('after wrong pw, still login:', await page.isVisible('#pw'))
+await page.fill('#pw', process.env.ADMIN_PW); await page.click('#pw-go')
+await page.waitForSelector('.tab', { timeout: 8000 })
+console.log('entered app:', await page.isVisible('.tab'))
+await page.reload({ waitUntil: 'networkidle' })
+console.log('session persists:', await page.isVisible('.tab'))
+await browser.close()

@@ -115,10 +115,11 @@ function wireAvailRadios(el, cb) {
 }
 
 // ---------- LOGIN GATE ----------
-function tryLogin() {
-  const ok = $("pw").value === window.ADMIN_PASSWORD;
-  if (!ok) { toast("Password errata."); return; }
-  sessionStorage.setItem("gelato_admin", "1");
+async function tryLogin() {
+  const email = $("email").value.trim();
+  const password = $("pw").value;
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) { toast("Accesso negato."); return; }
   unlockAudio(); ensureNotifyPermission();   // gesto utente: sblocca audio + chiede permesso notifiche
   enterApp();
 }
@@ -127,9 +128,17 @@ function enterApp() {
   $("app").classList.remove("hidden");
   initApp();
 }
+async function logout() { await sb.auth.signOut(); location.reload(); }
 $("pw-go").onclick = tryLogin;
 $("pw").addEventListener("keydown", (e) => { if (e.key === "Enter") tryLogin(); });
-if (sessionStorage.getItem("gelato_admin") === "1") enterApp();
+$("email").addEventListener("keydown", (e) => { if (e.key === "Enter") tryLogin(); });
+document.getElementById("logout").addEventListener("click", logout);
+async function checkSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) enterApp();
+}
+checkSession();
+sb.auth.onAuthStateChange((_e, session) => { if (!session) location.reload(); });
 
 // ---------- TABS ----------
 document.querySelectorAll(".tab").forEach((t) => {
