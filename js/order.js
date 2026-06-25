@@ -483,8 +483,7 @@ async function applyCoupon() {
   if (!code) { COUPON = null; if (m) m.style.display = "none"; updateTotal(); return; }
   const phone = $("phone").value.trim();
   const email = $("email").value.trim();
-  const contact = phone || email;
-  const { data: cp, error } = await sb.rpc("rpc_coupon_precheck", { p_code: code, p_contact: contact });
+  const { data: cp, error } = await sb.rpc("rpc_coupon_precheck", { p_code: code, p_phone: phone, p_email: email });
   if (error) return fail(t("order.coupon.checkFailed"));
   if (!cp || !cp.valid) {
     if (cp && cp.reason === "already_used") return fail(t("order.coupon.alreadyUsed"));

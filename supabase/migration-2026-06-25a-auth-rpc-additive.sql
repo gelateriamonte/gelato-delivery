@@ -46,7 +46,7 @@ revoke all on function public.rpc_slot_availability(date) from public;
 grant execute on function public.rpc_slot_availability(date) to anon, authenticated;
 
 -- ---------------------------------------------------------------------------
--- rpc_coupon_precheck(p_code, p_contact)
+-- rpc_coupon_precheck(p_code, p_phone, p_email)
 -- Valida un codice sconto lato server. Specchio di create-checkout.js righe 82-101:
 --
 --   a) Lookup: ilike(code, p_code) AND active = true
@@ -60,7 +60,7 @@ grant execute on function public.rpc_slot_availability(date) to anon, authentica
 --
 -- Restituisce { valid, reason?, type?, value? } — niente PII clienti.
 -- ---------------------------------------------------------------------------
-create or replace function public.rpc_coupon_precheck(p_code text, p_contact text)
+create or replace function public.rpc_coupon_precheck(p_code text, p_phone text, p_email text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   d        record;
@@ -90,8 +90,9 @@ begin
 
   -- Always (riutilizzabile): una sola volta per cliente.
   -- Normalizza il contatto in ingresso: prova sia come telefono (digits) che come email.
-  phone_d := regexp_replace(p_contact, '[^0-9]', '', 'g');
-  email_n := lower(trim(p_contact));
+  -- phone ed email valutati INDIPENDENTI (come create-checkout.js): nessuna cross-contaminazione
+  phone_d := regexp_replace(coalesce(p_phone, ''), '[^0-9]', '', 'g');
+  email_n := lower(trim(coalesce(p_email, '')));
 
   select exists (
     select 1
@@ -113,5 +114,5 @@ begin
   return jsonb_build_object('valid', true, 'type', d.discount_type, 'value', d.value);
 end;
 $$;
-revoke all on function public.rpc_coupon_precheck(text, text) from public;
-grant execute on function public.rpc_coupon_precheck(text, text) to anon, authenticated;
+revoke all on function public.rpc_coupon_precheck(text, text, text) from public;
+grant execute on function public.rpc_coupon_precheck(text, text, text) to anon, authenticated;
