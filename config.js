@@ -6,8 +6,8 @@
 //   NON mettere mai qui la service_role key.
 // ============================================================
 window.SUPABASE_CONFIG = {
-  url:     "https://hsnikgbwsggusqlanwmt.supabase.co",
-  anonKey: "sb_publishable_efCBXPaGPk4JsmUWkvASkg_9GHaHuB3"
+  url:     "https://rlrsyqmwtjfyuqkgzqso.supabase.co",
+  anonKey: "sb_publishable_FeopkZa7V-fLzx5fQerykQ_NVN_qVC3"
 };
 
 // Stripe — chiave PUBBLICABILE (pk_test_… in test, pk_live_… in produzione).
