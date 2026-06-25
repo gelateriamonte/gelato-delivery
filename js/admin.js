@@ -1022,6 +1022,7 @@ async function loadFlavors() {
   if (error) { console.error(error); return; }
   FLAVORS_ALL = data || [];
   renderFlavorsList();
+  renderProduzione();
   backfillFlavorEn();   // traduci in autonomia l'EN mancante dei gusti del giorno (best-effort, async)
 }
 
@@ -1157,6 +1158,37 @@ $("nf-add").onclick = async () => {
   FLAVOR_FILTER.special = false; FLAVOR_FILTER.daily = false; paintFlavorFilters();   // mostra il nuovo gusto
   loadFlavors();
 };
+
+// ========== PRODUZIONE ==========
+function updateProdStats() {
+  const on = FLAVORS_ALL.filter((f) => f.prod_on);
+  const tot = on.reduce((s, f) => s + (Number(f.prod_kg) || 0), 0);
+  const el = $("prod-stats"); if (el) el.textContent = on.length + " accesi · " + tot + " kg";
+  const btn = $("prod-print"); if (btn) btn.disabled = on.length === 0;
+}
+function buildProdRow(f) {
+  const el = document.createElement("div");
+  el.className = "prow"; el.dataset.id = f.id;
+  el.innerHTML =
+    `<span class="drag-handle" title="Trascina per ordinare">⠿</span>` +
+    `<span class="pname">${esc(f.name)}</span>` +
+    availRadios("prod", !!f.prod_on, "Produci", "Spento") +
+    `<div class="kgstep">` +
+      `<button type="button" class="kg-dec" aria-label="meno">−</button>` +
+      `<span class="kg-val">${Number(f.prod_kg) || 3}</span>` +
+      `<button type="button" class="kg-inc" aria-label="più">+</button>` +
+      `<span class="kg-unit">kg</span>` +
+    `</div>`;
+  return el;
+}
+function renderProduzione() {
+  const list = $("prod-list");
+  if (!list) return;
+  list.innerHTML = "";
+  const rows = [...FLAVORS_ALL].sort((a, b) => (a.prod_order || 0) - (b.prod_order || 0) || a.name.localeCompare(b.name));
+  rows.forEach((f) => list.appendChild(buildProdRow(f)));
+  updateProdStats();
+}
 
 // ========== PRODOTTI (ex Formati) — due categorie: Vaschette / Altri prodotti ==========
 const FORMAT_CATS = [

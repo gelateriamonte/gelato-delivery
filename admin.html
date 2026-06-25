@@ -46,6 +46,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="orders">Ordini<span class="tabbadge" id="badge-orders"></span></button>
       <button class="tab" data-tab="lab">Laboratorio</button>
+      <button class="tab" data-tab="produzione">Produzione</button>
       <button class="tab" data-tab="consegne">Consegne</button>
       <button class="tab" data-tab="takeaway">Take away<span class="tabbadge" id="badge-takeaway"></span></button>
       <button class="tab" data-tab="history">Storico</button>
@@ -75,6 +76,16 @@
       <div class="admin-head"><h2>Laboratorio — da preparare</h2></div>
       <p class="muted small">Solo ordini <b>accettati</b>. A sinistra: chili per gusto (peso vaschetta ÷ n. gusti) e totale. A destra: vaschette per cliente. Sotto: vaschette da preparare.</p>
       <div id="lab-list" class="labgrid"></div>
+    </section>
+
+    <section id="tab-produzione" class="tabpane hidden">
+      <div class="admin-head">
+        <h2>Produzione</h2>
+        <span class="count" id="prod-stats">0 accesi · 0 kg</span>
+        <button class="btn sm" id="prod-print" style="margin-left:auto" disabled>🖨️ Stampa</button>
+      </div>
+      <p class="muted small">Accendi i gusti da produrre, imposta i kg, trascina ⠿ per l'ordine di stampa. <b>Stampa</b> manda la checklist alla termica in gelateria.</p>
+      <div id="prod-list" class="stack prodlist"></div>
     </section>
 
     <section id="tab-consegne" class="tabpane hidden">
