@@ -14,6 +14,7 @@
   // supabase-js espone il global `supabase` con createClient
   window.sb = supabase.createClient(
     window.SUPABASE_CONFIG.url,
-    window.SUPABASE_CONFIG.anonKey
+    window.SUPABASE_CONFIG.anonKey,
+    { auth: { persistSession: true, autoRefreshToken: true } }
   );
 })();
