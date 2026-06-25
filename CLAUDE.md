@@ -1,6 +1,7 @@
 # CLAUDE.md — Gelato Delivery
 
 Web app statica (HTML/CSS/JS vanilla) + Supabase, deploy Netlify (sito `gelato26`, publish = root).
+Domini prod (dal 2026-06-25): `www.gelateriamontepetrosu.it` (primary) + apex `gelateriamontepetrosu.it` (→ redirect www) + `admin.gelateriamontepetrosu.it` (serve `admin.html` alla root via rewrite host-based in `netlify.toml`). `gelato26.netlify.app` resta attivo (URL canonico di verifica).
 Due interfacce: `index.html` + `js/order.js` (cliente, mobile-first) · `admin.html` + `js/admin.js` (back office, desktop-first).
 Stile in `css/styles.css` — design system "artigianale" (avorio + terracotta, Cormorant Garamond + Hanken Grotesk).
 
@@ -75,9 +76,14 @@ build di produzione in automatico. Verificato: codice live su prod **~15s** dopo
   `getAllEnvVars`; una env nuova entra nel runtime delle function solo dopo un **redeploy** (commit vuoto).
 - Commit: conventional commits, chiudi con `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
 
-## Sicurezza (debito noto, scelta consapevole)
-RLS Supabase permissiva (`using(true)`) → la anon key pubblica legge/scrive tutto, PII clienti incluse; login admin
-client-side (`ADMIN_PASSWORD`) = cosmetico. Hardening (RLS ristretta + Supabase Auth) rimandato dall'owner.
+## Sicurezza — RLS lockdown + Supabase Auth (hardening 2026-06-25, debito chiuso)
+RLS Supabase ora **ristretta** (prima era `using(true)` permissiva = anon leggeva/scriveva tutto, PII incluse):
+- **Catalogo** (`flavors`,`formats`,`time_slots`,`slot_day_state`,`settings`): anon **solo SELECT**; scrittura solo `authenticated`.
+- `orders`,`discount_codes`,`print_jobs`,`pending_orders`: **nessun accesso anon**. L'admin opera come ruolo `authenticated` (policy `auth all *`); il checkout pubblico passa solo dalle function service-role.
+- Pre-check pubblici via 2 RPC `SECURITY DEFINER` (no PII, girano come owner → bypassano RLS): `rpc_slot_availability(date)`, `rpc_coupon_precheck(code,phone,email)` (specchio di `create-checkout.js`). Migration: `supabase/migration-2026-06-25a-auth-rpc-additive.sql` (policy+RPC) + `-25b-rls-lockdown.sql` (+ `-25b-rollback.sql`).
+- **Back office = Supabase Auth reale**: `ADMIN_PASSWORD` client-side **rimosso**, `admin.js` usa `signInWithPassword`. Utente unico `admin@gelateriamontepetrosu.it`.
+- ⚠️ **`authenticated` ≡ admin regge SOLO con signup pubblico DISABILITATO** (Supabase → Auth). Non riattivare la registrazione pubblica, o chiunque si registra ottiene accesso admin.
+- Verifica: `node test/security-assert.mjs` (o curl con anon key) → `orders`/`discount_codes` devono dare **401**; catalogo + RPC restano ok; login admin ok.
 
 ## Stampa ordini — Epson TM-m30III (Server Direct Print)
 La stampante (in gelateria, su rete) polla `/.netlify/functions/epson-sdp` ogni ~15s e stampa lo scontrino di
