@@ -43,9 +43,7 @@ let DAYS = next7();
 let SELECTED_DAY = ymd(DAYS[0]);
 let DAY_OVERRIDES = new Map();   // slot_id -> active per il giorno scelto
 let DAY_COUNTS = {};             // slot_label -> n. ordini in lavorazione nel giorno scelto
-// ordini "in lavorazione" che occupano capienza (esclusi consegnato/rifiutato/annullato)
-const LAVORAZIONE = ["ricevuto", "accettato", "in preparazione", "in consegna"];
-// fascia piena: ha un tetto e gli ordini in lavorazione del giorno lo raggiungono
+// fascia piena: ha un tetto e gli ordini in lavorazione del giorno lo raggiungono (filtro stato ora lato RPC)
 const slotFull = (s) => {
   const max = Number(s.max_deliveries);
   if (!max || max <= 0) return false;            // null / 0 = illimitato
