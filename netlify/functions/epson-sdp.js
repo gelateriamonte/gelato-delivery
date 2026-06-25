@@ -5,7 +5,7 @@
 // Risponde SEMPRE 200 alla stampante (un non-200 la fa ri-POSTare all'infinito).
 
 const { createClient } = require("@supabase/supabase-js");
-const { buildReceiptXml } = require("./lib/receipt");
+const { buildReceiptXml, buildProductionXml } = require("./lib/receipt");
 const { sendTelegram } = require("./lib/telegram");
 
 const supa = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -40,6 +40,16 @@ exports.handler = async (event) => {
     if (error) { console.error("epson-sdp claim:", error.message); return xml(""); }
     const job = Array.isArray(data) ? data[0] : data;
     if (!job) return xml("");   // niente in coda
+
+    if (job.kind === "production") {
+      try {
+        return xml(wrapPrintRequest(job.printjobid, buildProductionXml(job.payload, job.created_at)));
+      } catch (e) {
+        console.error("epson-sdp build prod:", e && e.message);
+        await failJob(job, "build_error");
+        return xml("");
+      }
+    }
 
     const { data: order, error: oErr } = await supa.from("orders").select("*").eq("id", job.order_id).single();
     if (oErr || !order) { await failJob(job, "order_not_found"); return xml(""); }
@@ -99,8 +109,10 @@ async function markErrorAndAlert(id, orderId, attempts, code) {
     .update({ status: "error", attempts, last_error: code })
     .eq("id", id).neq("status", "error").select("id");
   if (data && data.length) {
-    const shortId = String(orderId || "").replace(/-/g, "").slice(0, 8).toUpperCase();
-    try { await sendTelegram("⚠️ Stampa fallita ordine #" + shortId + " — " + code); }
+    const ref = orderId
+      ? "ordine #" + String(orderId).replace(/-/g, "").slice(0, 8).toUpperCase()
+      : "PRODUZIONE";
+    try { await sendTelegram("⚠️ Stampa fallita " + ref + " — " + code); }
     catch (e) { console.error("epson-sdp alert:", e && e.message); }
   }
 }
