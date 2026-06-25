@@ -1004,9 +1004,9 @@ async function persistOrder(table, orderedIds, col = "sort_order") {
 }
 // sort_order del nuovo item = max corrente + 1 (sempre in fondo, monotono;
 // coerente col renumber 1..N del drag — niente wrap come Date.now()%100000)
-async function nextSortOrder(table) {
-  const { data } = await sb.from(table).select("sort_order").order("sort_order", { ascending: false }).limit(1);
-  return ((data && data[0] && data[0].sort_order) || 0) + 1;
+async function nextSortOrder(table, col = "sort_order") {
+  const { data } = await sb.from(table).select(col).order(col, { ascending: false }).limit(1);
+  return ((data && data[0] && data[0][col]) || 0) + 1;
 }
 
 // ========== GUSTI ==========
@@ -1153,7 +1153,8 @@ paintFlavorFilters();
 $("nf-add").onclick = async () => {
   const name = $("nf-name").value.trim(); if (!name) return;
   const order = await nextSortOrder("flavors");
-  await sb.from("flavors").insert({ name, sort_order: order });
+  const prodOrder = await nextSortOrder("flavors", "prod_order");   // nuovo gusto → in fondo anche in Produzione
+  await sb.from("flavors").insert({ name, sort_order: order, prod_order: prodOrder });
   $("nf-name").value = "";
   FLAVOR_FILTER.special = false; FLAVOR_FILTER.daily = false; paintFlavorFilters();   // mostra il nuovo gusto
   loadFlavors();
@@ -1211,7 +1212,8 @@ $("prod-print").onclick = async () => {
     .sort((a, b) => (a.prod_order || 0) - (b.prod_order || 0))
     .map((f) => ({ name: f.name, kg: Number(f.prod_kg) || 3 }));
   if (!list.length) { toast("Nessun gusto acceso."); return; }
-  const { error } = await sb.from("print_jobs").insert({ kind: "production", payload: list });
+  const { error } = await withAuthRetry(() => sb.from("print_jobs").insert({ kind: "production", payload: list }));
+  if (error) console.error("stampa print_jobs", error);
   toast(error ? "Errore stampa." : "Inviato in stampa…");
 };
 
@@ -1788,9 +1790,20 @@ $("oh-save").onclick = async () => {
 };
 
 // ---------- helper DB ----------
+// Esegue una scrittura Supabase; se fallisce, prova un refresh della sessione e ritenta
+// una volta. Copre i write intermittenti quando il JWT di sessione scade prima
+// dell'auto-refresh (o un blip di rete) → senza, l'admin vede "Errore salvataggio/stampa".
+async function withAuthRetry(fn) {
+  let res = await fn();
+  if (res && res.error) {
+    const { error: rerr } = await sb.auth.refreshSession();
+    if (!rerr) res = await fn();
+  }
+  return res;
+}
 async function updateRow(table, id, patch) {
-  const { error } = await sb.from(table).update(patch).eq("id", id);
-  if (error) { console.error(error); toast("Errore salvataggio."); }
+  const { error } = await withAuthRetry(() => sb.from(table).update(patch).eq("id", id));
+  if (error) { console.error("updateRow", table, id, error); toast("Errore salvataggio."); }
 }
 async function delRow(table, id) {
   const { error } = await sb.from(table).delete().eq("id", id);
