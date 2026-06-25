@@ -138,7 +138,9 @@ async function checkSession() {
   if (session) enterApp();
 }
 checkSession();
-sb.auth.onAuthStateChange((_e, session) => { if (!session) location.reload(); });
+// Ricarica SOLO su logout/scadenza reale. NON su sessione nulla: l'evento INITIAL_SESSION
+// per un utente non loggato ha session=null → reload su quello = loop infinito sul login.
+sb.auth.onAuthStateChange((event) => { if (event === "SIGNED_OUT") location.reload(); });
 
 // ---------- TABS ----------
 document.querySelectorAll(".tab").forEach((t) => {
