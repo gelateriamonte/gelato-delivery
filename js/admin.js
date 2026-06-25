@@ -999,8 +999,8 @@ function enableDragSort(container, handleSel, rowSel, onCommit) {
     h.addEventListener("pointercancel", onUp);
   }
 }
-async function persistOrder(table, orderedIds) {
-  await Promise.all(orderedIds.map((id, i) => sb.from(table).update({ sort_order: i + 1 }).eq("id", id)));
+async function persistOrder(table, orderedIds, col = "sort_order") {
+  await Promise.all(orderedIds.map((id, i) => sb.from(table).update({ [col]: i + 1 }).eq("id", id)));
 }
 // sort_order del nuovo item = max corrente + 1 (sempre in fondo, monotono;
 // coerente col renumber 1..N del drag — niente wrap come Date.now()%100000)
@@ -1179,6 +1179,18 @@ function buildProdRow(f) {
       `<button type="button" class="kg-inc" aria-label="più">+</button>` +
       `<span class="kg-unit">kg</span>` +
     `</div>`;
+  // toggle prod_on
+  wireAvailRadios(el, (on) => { f.prod_on = on; updateRow("flavors", f.id, { prod_on: on }); updateProdStats(); });
+  // stepper kg (clamp 1..8)
+  const valEl = el.querySelector(".kg-val");
+  const setKg = (n) => {
+    const v = Math.min(8, Math.max(1, n));
+    f.prod_kg = v; valEl.textContent = String(v);
+    updateRow("flavors", f.id, { prod_kg: v });
+    updateProdStats();
+  };
+  el.querySelector(".kg-dec").onclick = () => setKg((Number(f.prod_kg) || 3) - 1);
+  el.querySelector(".kg-inc").onclick = () => setKg((Number(f.prod_kg) || 3) + 1);
   return el;
 }
 function renderProduzione() {
@@ -1187,6 +1199,10 @@ function renderProduzione() {
   list.innerHTML = "";
   const rows = [...FLAVORS_ALL].sort((a, b) => (a.prod_order || 0) - (b.prod_order || 0) || a.name.localeCompare(b.name));
   rows.forEach((f) => list.appendChild(buildProdRow(f)));
+  enableDragSort(list, ".drag-handle", ".prow", (ids) => {
+    ids.forEach((id, i) => { const f = FLAVORS_ALL.find((x) => x.id === id); if (f) f.prod_order = i + 1; });
+    persistOrder("flavors", ids, "prod_order");
+  });
   updateProdStats();
 }
 

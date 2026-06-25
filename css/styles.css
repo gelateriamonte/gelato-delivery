@@ -869,3 +869,24 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
 .dc-tag.always { background: #e7f0e7; color: #2f6f3f; }
 .dc-tag.oneoff { background: #f3e7da; color: #a8552f; }
 .dc-actions { display: flex; gap: 6px; flex: none; }
+
+/* ---------- Produzione ---------- */
+.prodlist .prow{
+  display:flex; align-items:center; gap:14px;
+  padding:10px 12px; border:1px solid var(--line-2); border-radius:12px; background:#fff;
+}
+.prodlist .prow + .prow{ margin-top:8px; }
+.prow .pname{ flex:1 1 auto; min-width:0; font-weight:600; color:var(--ink); }
+.prow .kgstep{ display:inline-flex; align-items:center; gap:8px; flex:none; }
+.prow .kgstep button{
+  width:30px; height:30px; border-radius:8px; border:1px solid var(--line-2);
+  background:transparent; cursor:pointer; font-size:18px; line-height:1; color:var(--ink);
+}
+.prow .kgstep button:hover{ border-color:var(--ink-2); }
+.prow .kg-val{ min-width:18px; text-align:center; font-weight:600; font-variant-numeric:tabular-nums; }
+.prow .kg-unit{ color:var(--muted); font-size:13px; }
+.prow.dragging{ box-shadow:0 8px 24px rgba(0,0,0,.14); }
+@media (max-width:560px){
+  .prodlist .prow{ gap:10px; padding:9px 10px; }
+  .prow .kgstep button{ width:34px; height:34px; }   /* tap target */
+}
