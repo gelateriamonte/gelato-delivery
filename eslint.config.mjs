@@ -3,7 +3,7 @@ import globals from 'globals';
 
 export default [
   js.configs.recommended,
-  { ignores: ['node_modules/**', '.netlify/**', 'docs/**', '**/*.min.js'] },
+  { ignores: ['node_modules/**', '.netlify/**', 'docs/**', '**/*.min.js', 'test/**'] },
   {
     // Frontend: script globali via <script defer>, non moduli
     files: ['js/**/*.js', 'config.js'],
