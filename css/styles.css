@@ -408,6 +408,17 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
 .tab:hover{ color:var(--ink); border-color:var(--ink-2); }
 .tab.active{ background:var(--ink); color:var(--cream); border-color:var(--ink); }
 
+/* layout back office: sidebar sinistra */
+.admin #app{ display:flex; gap:24px; align-items:flex-start; }
+.admin .wrap{ max-width:1180px; }
+.admin .tabs{
+  flex:0 0 190px; width:190px; align-self:flex-start;
+  flex-direction:column; flex-wrap:nowrap; gap:6px;
+  margin:0; padding:14px 0;
+}
+.admin .tabs .tab{ width:100%; text-align:left; border-radius:10px; }
+.admin .tabcontent{ flex:1 1 auto; min-width:0; }   /* min-width:0 evita overflow orizzontale da figli larghi */
+
 .admin-head{ display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 14px; margin-bottom:20px; }
 .admin h2, .admin-head h3{
   font-family:var(--serif); font-weight:500; font-size:27px; line-height:1.1;
@@ -759,6 +770,12 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
   /* meno padding laterale → ~28px di spazio in più ovunque (assorbe differenze iOS) */
   .admin .wrap{ padding:14px 13px 40px; }
   .admin .bar-in{ padding:14px 14px; }
+  .admin #app{ display:block; }
+  .admin .tabs{
+    flex-direction:row; flex-wrap:nowrap; overflow-x:auto;
+    flex-basis:auto; width:auto; padding:12px 13px 10px;
+  }
+  .admin .tabs .tab{ width:auto; white-space:nowrap; border-radius:999px; flex:none; }
   .tabs{ margin:0 -13px 16px; padding:12px 13px 10px; }
   /* riga di gestione: tutto su una sola riga */
   .mrow{ gap:7px; padding:13px 12px; }
