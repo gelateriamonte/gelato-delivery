@@ -1205,6 +1205,15 @@ function renderProduzione() {
   });
   updateProdStats();
 }
+$("prod-print").onclick = async () => {
+  const list = [...FLAVORS_ALL]
+    .filter((f) => f.prod_on)
+    .sort((a, b) => (a.prod_order || 0) - (b.prod_order || 0))
+    .map((f) => ({ name: f.name, kg: Number(f.prod_kg) || 3 }));
+  if (!list.length) { toast("Nessun gusto acceso."); return; }
+  const { error } = await sb.from("print_jobs").insert({ kind: "production", payload: list });
+  toast(error ? "Errore stampa." : "Inviato in stampa…");
+};
 
 // ========== PRODOTTI (ex Formati) — due categorie: Vaschette / Altri prodotti ==========
 const FORMAT_CATS = [
