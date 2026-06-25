@@ -3,6 +3,13 @@
   publish = "."
   command = ""
 
+# Sottodominio admin: admin.gelateriamontepetrosu.it/* → /admin.html (host-based rewrite).
+[[redirects]]
+  from = "https://admin.gelateriamontepetrosu.it/*"
+  to = "/admin.html"
+  status = 200
+  force = true
+
 # ⚠️ Sicurezza: publish="." servirebbe pubblicamente OGNI file git-tracked. Questi redirect
 # (force=true → vincono sul file statico esistente) bloccano i sorgenti NON-asset: schema e
 # migration SQL, doc interni, file di build/config. Restano in git (storia) ma → 404 sul sito.
