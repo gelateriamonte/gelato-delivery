@@ -119,4 +119,33 @@ function buildReceiptXml(order) {
   return '<epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">' + out.join("") + "</epos-print>";
 }
 
-module.exports = { buildReceiptXml };
+// Checklist di produzione (Epson 80mm/48col). `list` = [{name, kg}]; `createdAtIso` = quando è stato richiesto.
+// Quadratino di spunta = "[ ]" ASCII (la termica usa code-page: il glifo Unicode ☐ rischia di non renderizzare).
+function buildProductionXml(list, createdAtIso) {
+  const items = Array.isArray(list) ? list : [];
+  const sep = "-".repeat(WIDTH);
+  const seph = "=".repeat(WIDTH);
+  const out = [];
+  const line = (s) => out.push("<text>" + esc(s) + "&#10;</text>");
+  const raw = (xml) => out.push(xml);
+
+  raw('<text align="center"/><text width="2" height="2"/>');
+  line("PRODUZIONE");
+  raw('<text width="1" height="1"/><text align="left"/>');
+  line(seph);
+  const when = fmtDateTime(createdAtIso);
+  if (when) line(when);
+  line(sep);
+
+  for (const it of items) {
+    const nome = it && it.name != null ? String(it.name) : "?";
+    const q = it && it.kg != null ? it.kg : "";
+    line(padLine("[ ] " + nome, q + " kg"));
+  }
+  line(seph);
+
+  raw('<feed line="3"/><cut type="feed"/>');
+  return '<epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">' + out.join("") + "</epos-print>";
+}
+
+module.exports = { buildReceiptXml, buildProductionXml };
