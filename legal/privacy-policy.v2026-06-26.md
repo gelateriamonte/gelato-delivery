@@ -20,7 +20,7 @@ Il Titolare del trattamento è:
 
 - **Denominazione:** D.F.M di Giada Fenu
 - **Sede legale:** Via di li Graniti 1, 07052 San Teodoro (SS)
-- **Partita IVA:** [[PIVA]]
+- **Partita IVA:** 01650660911
 - **Codice Fiscale:** FNEGDI90H49G203H
 - **REA:** NU-118568
 - **Email di contatto:** store@gelateriamontepetrosu.it

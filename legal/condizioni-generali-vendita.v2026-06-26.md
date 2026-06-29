@@ -41,7 +41,7 @@ L'inoltro dell'ordine comporta la presa visione e l'accettazione integrale delle
 - **Insegna commerciale**: Gelateria BM&V
 - **Sede legale**: Via di li Graniti 1, 07052 San Teodoro (SS)
 - **Sede operativa / esercizio**: San Teodoro (SS), Sardegna, Italia
-- **Partita IVA**: [[PIVA]]
+- **Partita IVA**: 01650660911
 - **Codice Fiscale**: FNEGDI90H49G203H
 - **Iscrizione REA**: NU-118568
 - **Email di contatto**: store@gelateriamontepetrosu.it
