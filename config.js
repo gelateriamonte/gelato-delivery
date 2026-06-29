@@ -12,4 +12,4 @@ window.SUPABASE_CONFIG = {
 
 // Stripe — chiave PUBBLICABILE (pk_test_… in test, pk_live_… in produzione).
 // È pubblica per design (sta nel browser). La chiave segreta sta SOLO nelle env di Netlify.
-window.STRIPE_PUBLISHABLE_KEY = "pk_test_51TfKmZDURGKjK0gjwpU60Dogc2KtSTRsYIhKJakNVidDiO95yfEkwH55BMFpw4dKlnDOQXAJMKyExvavmrUg04Nq00keeeocdp";
+window.STRIPE_PUBLISHABLE_KEY = "pk_live_51Tma9pCg2YSipUVe92ymNtMP1q5g1UGF0uq6p90c7lUdEZDFrRH40AITkR2nn6ETCDMxl9oIkyqENyjt4DFhplXY00GLzuheV5";
