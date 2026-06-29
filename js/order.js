@@ -783,13 +783,7 @@ $("mode-delivery").onclick = () => setMode("delivery");
 $("mode-pickup").onclick = () => setMode("pickup");
 $("pickup-time").onchange = () => updateTotal();
 
-// ⚠️ PROTOTIPO: precompila i dati cliente con valori di fantasia per non
-// reinserirli a ogni test. Rimuovere in produzione.
-$("name").value = "Mario Rossi";
-$("phone").value = "333 1234567";
-$("email").value = "mario.rossi@email.it";
 syncCouponGate();   // stato iniziale del campo sconto
-$("address").value = "Via Lu Pitrali, San Teodoro";   // default di prova (fase test)
 toggleAddrClear();   // stato iniziale della X di reset
 
 initMap();
