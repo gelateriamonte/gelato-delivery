@@ -1,8 +1,8 @@
 # INFORMAZIONI SUGLI ALLERGENI — Gelateria BM&V
 
-Ultimo aggiornamento: [[DATA_AGGIORNAMENTO]]
+Ultimo aggiornamento: 29 giugno 2026
 
-La presente scheda informativa riassume le informazioni generali sugli allergeni relative ai prodotti di gelateria artigianale venduti tramite il sito **gelato26.netlify.app** da Gelateria BM&V. La scheda integra, ma non sostituisce, le informazioni specifiche rese disponibili per ciascun gusto/prodotto prima dell'acquisto e quelle fornite al momento della consegna.
+La presente scheda informativa riassume le informazioni generali sugli allergeni relative ai prodotti di gelateria artigianale venduti tramite il sito **www.gelateriamontepetrosu.it** da Gelateria BM&V. La scheda integra, ma non sostituisce, le informazioni specifiche rese disponibili per ciascun gusto/prodotto prima dell'acquisto e quelle fornite al momento della consegna.
 
 > **In breve.** Prima di ordinare consulta sempre gli allergeni indicati per ogni gusto/prodotto. Il laboratorio utilizza ingredienti contenenti allergeni e non puo' escludere contaminazioni crociate. In caso di allergie gravi, contatta la Gelateria prima di completare l'ordine e segnala l'allergia nell'apposito campo o casella del flusso d'ordine.
 

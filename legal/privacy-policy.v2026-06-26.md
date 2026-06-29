@@ -2,9 +2,9 @@
 
 **Informativa sul trattamento dei dati personali ai sensi dell'articolo 13 del Regolamento (UE) 2016/679 (GDPR)** (e, limitatamente ai dati eventualmente non raccolti presso l'interessato — es. risultati di reverse-geocoding restituiti dai servizi di mappa/geocodifica —, ai sensi dell'articolo 14 GDPR)
 
-Ultimo aggiornamento: [[DATA_AGGIORNAMENTO]]
+Ultimo aggiornamento: 29 giugno 2026
 
-La presente informativa descrive come vengono trattati i dati personali raccolti tramite il sito **gelato26.netlify.app** ("Sito") per l'acquisto e la consegna a domicilio (o il ritiro) di gelato artigianale a marchio "Gelateria BM&V". La versione italiana di questa informativa è l'unica giuridicamente vincolante; eventuali traduzioni (es. inglese) hanno valore meramente informativo.
+La presente informativa descrive come vengono trattati i dati personali raccolti tramite il sito **www.gelateriamontepetrosu.it** ("Sito") per l'acquisto e la consegna a domicilio (o il ritiro) di gelato artigianale a marchio "Gelateria BM&V". La versione italiana di questa informativa è l'unica giuridicamente vincolante; eventuali traduzioni (es. inglese) hanno valore meramente informativo.
 
 Il Sito non richiede la creazione di un account: l'ordine avviene in modalità "ospite" (guest checkout), inserendo i dati a ogni acquisto. Non esistono profili, login, password o storico ordini lato cliente.
 
@@ -18,14 +18,14 @@ Il Sito non richiede la creazione di un account: l'ordine avviene in modalità "
 
 Il Titolare del trattamento è:
 
-- **Denominazione:** [[RAGIONE_SOCIALE]]
-- **Sede legale:** [[SEDE_LEGALE]]
+- **Denominazione:** D.F.M di Giada Fenu
+- **Sede legale:** Via di li Graniti 1, 07052 San Teodoro (SS)
 - **Partita IVA:** [[PIVA]]
-- **Codice Fiscale:** [[CODICE_FISCALE]]
-- **REA:** [[REA]]
-- **Email di contatto:** [[EMAIL_CONTATTO]]
-- **PEC:** [[PEC]]
-- **Telefono:** [[TELEFONO]]
+- **Codice Fiscale:** FNEGDI90H49G203H
+- **REA:** NU-118568
+- **Email di contatto:** store@gelateriamontepetrosu.it
+- **PEC:** fenu.giada90@pec.it
+- **Telefono:** +39 379 3732437
 
 Per qualsiasi questione relativa al trattamento dei dati personali e all'esercizio dei diritti di cui alla Sezione 8, è possibile contattare il Titolare ai recapiti sopra indicati.
 
@@ -73,7 +73,7 @@ I dati personali sono trattati per le seguenti finalità e sulle relative basi g
 | # | Finalità | Categorie di dati | Base giuridica |
 |---|----------|-------------------|----------------|
 | a | Gestione della proposta d'ordine, verifica e accettazione da parte del Venditore, esecuzione della consegna a domicilio o del ritiro dell'ordine accettato, gestione del pagamento e invio delle comunicazioni di servizio relative all'ordine (ricezione e conferma su pagina finale e, se l'email è fornita, via email; aggiornamenti sullo stato dell'ordine — accettato, in preparazione, in consegna, consegnato — tramite WhatsApp) | Nome, cognome, telefono, email, indirizzo, coordinate, dettagli dell'ordine, dati di pagamento | **Art. 6, par. 1, lett. b)** — esecuzione del contratto di cui l'interessato è parte e misure precontrattuali adottate su richiesta dello stesso |
-| b | Adempimento di obblighi fiscali e contabili, fatturazione e conservazione della documentazione | Dati anagrafici, dati dell'ordine, importi, documento fiscale | **Art. 6, par. 1, lett. c)** — adempimento di un obbligo legale ([[REGIME_IVA]] — es. DPR 633/1972 e relativa disciplina IVA, ovvero, in caso di regime forfettario, operazioni non soggette a IVA ai sensi della L. 190/2014; DPR 600/1973; art. 2220 c.c.) |
+| b | Adempimento di obblighi fiscali e contabili, fatturazione e conservazione della documentazione | Dati anagrafici, dati dell'ordine, importi, documento fiscale | **Art. 6, par. 1, lett. c)** — adempimento di un obbligo legale (regime forfettario — es. DPR 633/1972 e relativa disciplina IVA, ovvero, in caso di regime forfettario, operazioni non soggette a IVA ai sensi della L. 190/2014; DPR 600/1973; art. 2220 c.c.) |
 | c | Invio al cliente, da parte del Titolare, degli aggiornamenti sullo stato dell'ordine tramite il proprio account **WhatsApp** | Nome, numero di telefono, riferimenti dell'ordine | **Art. 6, par. 1, lett. b)** — esecuzione del contratto: gli aggiornamenti di stato sono comunicazioni di servizio relative all'ordine; WhatsApp è il mero canale tecnico utilizzato per il loro invio |
 | d | Sicurezza del Sito e della piattaforma e prevenzione degli abusi | Dati dell'ordine, log tecnici, indirizzo IP | **Art. 6, par. 1, lett. f)** — legittimo interesse del Titolare a garantire la sicurezza del proprio Sito e a prevenire abusi |
 | e | Ottimizzazione e gestione operativa delle consegne (calcolo del percorso, della stima dei tempi di arrivo e dell'ordine ottimale del giro di consegna; eventuale apertura, da parte del Titolare, di link di navigazione verso l'indirizzo del cliente) | Coordinate geografiche del luogo di consegna | **Art. 6, par. 1, lett. f)** — legittimo interesse del Titolare all'organizzazione efficiente delle consegne |
@@ -229,4 +229,4 @@ Il Titolare **non adotta processi decisionali automatizzati**, compresa la profi
 
 Il Titolare si riserva di modificare o aggiornare la presente informativa, anche in conseguenza di variazioni normative o dei servizi utilizzati. La versione aggiornata è pubblicata sul Sito con indicazione della data di ultimo aggiornamento. Si invita l'utente a consultare periodicamente questa pagina.
 
-**Ultimo aggiornamento:** [[DATA_AGGIORNAMENTO]]
+**Ultimo aggiornamento:** 29 giugno 2026

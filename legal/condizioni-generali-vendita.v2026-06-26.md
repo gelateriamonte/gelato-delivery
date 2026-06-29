@@ -1,11 +1,11 @@
 # CONDIZIONI GENERALI DI VENDITA
 
 **Gelateria BM&V**
-Sito web: gelato26.netlify.app
+Sito web: www.gelateriamontepetrosu.it
 
 *Documento valido nella versione in lingua italiana. La versione in lingua inglese è fornita a fini di mera cortesia; in caso di divergenza o contrasto interpretativo prevale il presente testo italiano.*
 
-**Ultimo aggiornamento: [[DATA_AGGIORNAMENTO]]**
+**Ultimo aggiornamento: 29 giugno 2026**
 
 ---
 
@@ -25,7 +25,7 @@ Sito web: gelato26.netlify.app
 
 ## Premessa
 
-Le presenti Condizioni Generali di Vendita (di seguito "**Condizioni**") disciplinano la vendita a distanza di gelato artigianale e prodotti correlati offerti tramite il sito gelato26.netlify.app (di seguito il "**Sito**") da parte di [[RAGIONE_SOCIALE]], titolare dell'insegna "Gelateria BM&V" (di seguito il "**Venditore**").
+Le presenti Condizioni Generali di Vendita (di seguito "**Condizioni**") disciplinano la vendita a distanza di gelato artigianale e prodotti correlati offerti tramite il sito www.gelateriamontepetrosu.it (di seguito il "**Sito**") da parte di D.F.M di Giada Fenu, titolare dell'insegna "Gelateria BM&V" (di seguito il "**Venditore**").
 
 Il contratto è di norma concluso tra il Venditore e il cliente che agisce per scopi estranei all'attività imprenditoriale, commerciale, artigianale o professionale eventualmente svolta (di seguito il "**Consumatore**"), ai sensi dell'art. 3, comma 1, lett. a) del D.lgs. 6 settembre 2005, n. 206 ("**Codice del Consumo**"). Il termine "**Cliente**" è utilizzato nel presente documento per indicare in generale qualunque acquirente, consumatore o non consumatore; l'ambito di applicazione delle tutele riservate al Consumatore è precisato all'Articolo 15.
 
@@ -37,16 +37,16 @@ L'inoltro dell'ordine comporta la presa visione e l'accettazione integrale delle
 
 ## Articolo 1 — Identità e dati del Venditore
 
-- **Denominazione**: [[RAGIONE_SOCIALE]]
+- **Denominazione**: D.F.M di Giada Fenu
 - **Insegna commerciale**: Gelateria BM&V
-- **Sede legale**: [[SEDE_LEGALE]]
+- **Sede legale**: Via di li Graniti 1, 07052 San Teodoro (SS)
 - **Sede operativa / esercizio**: San Teodoro (SS), Sardegna, Italia
 - **Partita IVA**: [[PIVA]]
-- **Codice Fiscale**: [[CODICE_FISCALE]]
-- **Iscrizione REA**: [[REA]]
-- **Email di contatto**: [[EMAIL_CONTATTO]]
-- **PEC**: [[PEC]]
-- **Telefono**: [[TELEFONO]]
+- **Codice Fiscale**: FNEGDI90H49G203H
+- **Iscrizione REA**: NU-118568
+- **Email di contatto**: store@gelateriamontepetrosu.it
+- **PEC**: fenu.giada90@pec.it
+- **Telefono**: +39 379 3732437
 
 Per qualsiasi comunicazione, richiesta di informazioni o reclamo relativi all'ordine, il Cliente può utilizzare i recapiti email e telefonico sopra indicati, che consentono un contatto rapido ed efficace con il Venditore.
 
@@ -82,7 +82,7 @@ Per qualsiasi comunicazione, richiesta di informazioni o reclamo relativi all'or
 
 4.1 Tutti i prezzi sono espressi in **Euro (EUR)**.
 
-4.2 **Trattamento IVA**: [[REGIME_IVA]]. In ogni caso, il prezzo totale indicato al Cliente prima dell'inoltro dell'ordine è il prezzo finale dovuto, comprensivo di ogni imposta applicabile ove dovuta; non sono previsti costi o tributi ulteriori oltre a quelli espressamente indicati nel riepilogo dell'ordine.
+4.2 **Trattamento IVA**: operazione effettuata in **regime forfettario** ai sensi della L. 190/2014 (art. 1, commi 54-89), non soggetta a IVA; i prezzi indicati non recano addebito d'imposta. In ogni caso, il prezzo totale indicato al Cliente prima dell'inoltro dell'ordine è il prezzo finale dovuto, comprensivo di ogni imposta applicabile ove dovuta; non sono previsti costi o tributi ulteriori oltre a quelli espressamente indicati nel riepilogo dell'ordine.
 
 4.3 **Costo di consegna**: in caso di consegna a domicilio è dovuto un **contributo di consegna**, il cui importo è quello indicato sul Sito e nel **riepilogo dell'ordine** al momento dell'acquisto, prima della conclusione del contratto. Nessun costo di consegna è dovuto in caso di ritiro presso la gelateria.
 
@@ -214,7 +214,7 @@ b) **lett. e)** — ove i prodotti siano consegnati **sigillati**, beni che non 
 
 ## Articolo 12 — Trattamento dei dati personali
 
-12.1 I dati personali forniti dal Cliente sono trattati dal Venditore, in qualità di Titolare del trattamento, esclusivamente per la gestione dell'ordine, della consegna e del pagamento, per i connessi adempimenti di legge e nei limiti indicati nell'**Informativa Privacy** resa ai sensi degli artt. 13 e 14 del GDPR e pubblicata sul Sito all'indirizzo [[LINK_INFORMATIVA_PRIVACY]]. La pubblicazione delle presenti Condizioni presuppone che l'Informativa Privacy completa, coerente con i fatti e i trattamenti qui descritti, sia stata redatta e messa online al predetto indirizzo prima della messa in linea delle Condizioni medesime; il presente articolo ne costituisce mera sintesi e non sostituisce l'informativa resa ai sensi degli artt. 13 e 14 GDPR. Il Sito **non utilizza cookie di profilazione, strumenti di analytics o di tracciamento pubblicitario**, né presenta banner di consenso ai cookie, impiegando esclusivamente uno storage tecnico/funzionale per la preferenza di lingua. Il caricamento di risorse da terze parti (pagina di pagamento Stripe, tile cartografiche delle mappe) può comportare l'impostazione di identificatori tecnici lato dominio di tali fornitori, secondo quanto dettagliato nell'Informativa Privacy.
+12.1 I dati personali forniti dal Cliente sono trattati dal Venditore, in qualità di Titolare del trattamento, esclusivamente per la gestione dell'ordine, della consegna e del pagamento, per i connessi adempimenti di legge e nei limiti indicati nell'**Informativa Privacy** resa ai sensi degli artt. 13 e 14 del GDPR e pubblicata sul Sito all'indirizzo www.gelateriamontepetrosu.it/legal/privacy-policy.html. La pubblicazione delle presenti Condizioni presuppone che l'Informativa Privacy completa, coerente con i fatti e i trattamenti qui descritti, sia stata redatta e messa online al predetto indirizzo prima della messa in linea delle Condizioni medesime; il presente articolo ne costituisce mera sintesi e non sostituisce l'informativa resa ai sensi degli artt. 13 e 14 GDPR. Il Sito **non utilizza cookie di profilazione, strumenti di analytics o di tracciamento pubblicitario**, né presenta banner di consenso ai cookie, impiegando esclusivamente uno storage tecnico/funzionale per la preferenza di lingua. Il caricamento di risorse da terze parti (pagina di pagamento Stripe, tile cartografiche delle mappe) può comportare l'impostazione di identificatori tecnici lato dominio di tali fornitori, secondo quanto dettagliato nell'Informativa Privacy.
 
 12.2 Il conferimento dei dati contrassegnati come obbligatori (nome e cognome, telefono, indirizzo di consegna in caso di consegna a domicilio) è necessario per la conclusione e l'esecuzione del contratto; il rifiuto comporta l'impossibilità di dar corso all'ordine. I dati facoltativi (email, note) sono conferiti su base volontaria. Quanto alle **coordinate GPS** della consegna:
 - le coordinate **inserite manualmente** dal Cliente mediante posizionamento di un segnaposto sulla mappa costituiscono un dato fornito dall'interessato per l'esecuzione della consegna (art. 6, par. 1, lett. b, GDPR);
@@ -268,4 +268,4 @@ b) **lett. e)** — ove i prodotti siano consegnati **sigillati**, beni che non 
 
 ---
 
-**Il presente documento è stato da ultimo aggiornato in data [[DATA_AGGIORNAMENTO]].**
+**Il presente documento è stato da ultimo aggiornato in data 29 giugno 2026.**
