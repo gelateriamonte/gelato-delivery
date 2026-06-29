@@ -68,15 +68,7 @@ Per qualsiasi comunicazione, richiesta di informazioni o reclamo relativi all'or
 
 ## Articolo 3 — Caratteristiche essenziali dei prodotti
 
-3.1 I prodotti offerti sono **gelati artigianali** nei seguenti formati:
-
-| Prodotto | Formato | Prezzo |
-|---|---|---|
-| Coppetta | piccola | € 2,50 |
-| Coppetta | media | € 3,50 |
-| Coppetta | grande | € 4,50 |
-| Vaschetta | 500 g | € 9,00 |
-| Vaschetta | 750 g | € 13,00 |
+3.1 I prodotti offerti sono **gelati artigianali**, proposti in diversi formati (ad esempio coppette e vaschette). I **formati disponibili e i relativi prezzi** sono quelli indicati sul Sito al momento dell'ordine e richiamati nel **riepilogo dell'ordine** prima della conclusione del contratto. Il Venditore può aggiornare formati e prezzi; al Cliente si applicano in ogni caso i formati e i prezzi visualizzati e accettati al momento dell'inoltro dell'ordine.
 
 3.2 Il Cliente compone l'ordine selezionando i gusti tra quelli disponibili al momento dell'acquisto. La disponibilità dei singoli gusti può variare in funzione della produzione giornaliera artigianale.
 
@@ -92,9 +84,9 @@ Per qualsiasi comunicazione, richiesta di informazioni o reclamo relativi all'or
 
 4.2 **Trattamento IVA**: [[REGIME_IVA]]. In ogni caso, il prezzo totale indicato al Cliente prima dell'inoltro dell'ordine è il prezzo finale dovuto, comprensivo di ogni imposta applicabile ove dovuta; non sono previsti costi o tributi ulteriori oltre a quelli espressamente indicati nel riepilogo dell'ordine.
 
-4.3 **Costo di consegna**: in caso di consegna a domicilio è dovuto un contributo fisso di **€ 3,50**. Tale costo è chiaramente indicato nel riepilogo dell'ordine prima della conclusione del contratto. Nessun costo di consegna è dovuto in caso di ritiro presso la gelateria.
+4.3 **Costo di consegna**: in caso di consegna a domicilio è dovuto un **contributo di consegna**, il cui importo è quello indicato sul Sito e nel **riepilogo dell'ordine** al momento dell'acquisto, prima della conclusione del contratto. Nessun costo di consegna è dovuto in caso di ritiro presso la gelateria.
 
-4.4 **Ordine minimo**: per la consegna a domicilio è richiesto un importo minimo d'ordine di **€ 25,00** (al netto del costo di consegna).
+4.4 **Ordine minimo**: per la consegna a domicilio è richiesto un **importo minimo d'ordine**, indicato sul Sito al momento dell'acquisto (al netto del costo di consegna); il suo eventuale mancato raggiungimento è segnalato prima della conclusione del contratto.
 
 4.5 Eventuali **codici sconto** sono applicabili alle condizioni di volta in volta comunicate; lo sconto è evidenziato nel riepilogo dell'ordine prima della conclusione del contratto.
 
@@ -148,7 +140,7 @@ e) procede al pagamento.
 
 7.2 **Consegna a cura del Venditore**: la consegna è effettuata direttamente dal personale del Venditore con mezzi propri. **Non si avvale di corrieri o vettori terzi**.
 
-7.3 **Tempi e fasce orarie**: la consegna avviene nella data e nella **fascia oraria serale** concordate dalle parti al momento dell'ordine, conformemente all'art. 61 del Codice del Consumo; il termine residuale di trenta giorni opera solo in mancanza di un termine concordato. Trattandosi di prodotto deperibile, i tempi di consegna sono per loro natura contenuti e coerenti con la deperibilità del bene.
+7.3 **Tempi e fasce orarie**: la consegna avviene nella data e nella **fascia oraria** concordate dalle parti al momento dell'ordine, conformemente all'art. 61 del Codice del Consumo; il termine residuale di trenta giorni opera solo in mancanza di un termine concordato. Trattandosi di prodotto deperibile, i tempi di consegna sono per loro natura contenuti e coerenti con la deperibilità del bene.
 
 7.4 **Ritiro in gelateria**: in alternativa, il Cliente può ritirare gratuitamente l'ordine presso la gelateria in San Teodoro (SS), nella data e fascia oraria indicate al momento dell'ordine.
 
@@ -178,7 +170,7 @@ b) **lett. e)** — ove i prodotti siano consegnati **sigillati**, beni che non 
 
 8.5 Resta **impregiudicata** la garanzia legale di conformità e ogni altro diritto inderogabile del Consumatore in caso di prodotto non conforme o difettoso, di cui al successivo Articolo 10: l'esclusione del recesso riguarda il solo "ripensamento" e non incide sui rimedi spettanti per legge in caso di non conformità.
 
-8.6 **Facoltà commerciale di annullamento prima della fascia scelta**: ferma l'esclusione del diritto di recesso legale di cui ai commi precedenti, il Cliente può **annullare** l'ordine fino a **due ore prima dell'inizio della fascia** prescelta per la **consegna o il ritiro**. A titolo esemplificativo, per una fascia che inizia alle ore 18:00, la richiesta di annullamento deve pervenire entro le ore 16:00. La richiesta va inviata ai recapiti indicati all'Articolo 1, indicando nome, numero di telefono e riferimenti dell'ordine. Se l'annullamento è richiesto nei termini, oppure se il Venditore lo accetta anche oltre tale termine perché la preparazione non è ancora iniziata, l'importo pagato è rimborsato integralmente sul **canale di pagamento originale**, secondo i tempi tecnici previsti da ciascun canale di pagamento. Le richieste ricevute oltre tale termine possono essere rifiutate quando la preparazione del prodotto deperibile sia già iniziata o non sia più ragionevolmente arrestabile.
+8.6 **Facoltà commerciale di annullamento prima della fascia scelta**: ferma l'esclusione del diritto di recesso legale di cui ai commi precedenti, il Cliente può **annullare** l'ordine entro il **termine di anticipo indicato sul Sito** per la fascia prescelta di **consegna o ritiro**; tale termine è quello mostrato al Cliente nel flusso d'ordine e nelle relative comunicazioni di servizio. Decorso tale termine la preparazione del prodotto deperibile può essere già avviata e l'annullamento può non essere più possibile. L'annullamento può essere richiesto tramite l'**apposito link** contenuto nell'email relativa all'ordine, ove disponibile, ovvero ai recapiti indicati all'Articolo 1, indicando nome, numero di telefono e riferimenti dell'ordine. Se l'annullamento è richiesto nei termini, oppure se il Venditore lo accetta anche oltre tale termine perché la preparazione non è ancora iniziata, l'eventuale importo pagato è rimborsato integralmente sul **canale di pagamento originale**, secondo i tempi tecnici previsti da ciascun canale di pagamento. Le richieste ricevute oltre tale termine possono essere rifiutate quando la preparazione del prodotto deperibile sia già iniziata o non sia più ragionevolmente arrestabile.
 
 ---
 

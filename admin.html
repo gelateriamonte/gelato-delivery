@@ -187,8 +187,11 @@
             <input id="set-delivery" type="number" min="0" step="0.50"></div>
           <div class="field" style="margin:0"><label>Ordine minimo €</label>
             <input id="set-min" type="number" min="0" step="0.50"></div>
+          <div class="field" style="margin:0"><label>Termine annullamento (ore prima fascia)</label>
+            <input id="set-cancel-lead" type="number" min="0" max="24" step="1"></div>
           <button class="btn" id="set-save">Salva parametri</button>
         </div>
+        <p class="muted small" style="margin:10px 0 0">Entro quante ore prima dell'inizio della fascia il cliente può annullare l'ordine dal link in email (es. 2h → la fascia 18:00 è annullabile fino alle 16:00). Vale anche per i Termini e Condizioni.</p>
       </div>
       <div class="banner" style="margin-top:18px">Le modifiche si riflettono nella web app cliente dopo il refresh.</div>
 

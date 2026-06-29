@@ -54,11 +54,12 @@ function summaryLine(order, lang) {
 function waLink() { return business.whatsappUrl; }
 
 // pagina "non annullabile" con motivo + contatto WhatsApp
-function notCancellablePage(order, lang, reason) {
+function notCancellablePage(order, lang, reason, anticipoH) {
   const en = isEN(lang);
+  const h = anticipoH != null ? anticipoH : 2;
   const msg = reason === "window"
-    ? (en ? "The cancellation window has closed (cancellations are possible up to 2 hours before the time slot)."
-          : "La finestra di annullamento è chiusa (si può annullare fino a 2 ore prima della fascia).")
+    ? (en ? `The cancellation window has closed (cancellation is possible up to ${h} hour(s) before the time slot).`
+          : `La finestra di annullamento è chiusa (si può annullare fino a ${h} or${h === 1 ? "a" : "e"} prima della fascia).`)
     : reason === "refunded"
     ? (en ? "This order has already been cancelled and refunded." : "Questo ordine è già stato annullato e rimborsato.")
     : reason === "status"
@@ -92,11 +93,14 @@ exports.handler = async (event) => {
 
   const lang = order.lang || "it";
   const en = isEN(lang);
-  const decision = canCancel(order, new Date());
+  // termine di annullamento configurabile nel back office (Parametri → cancel_lead_hours)
+  const { data: cfg } = await supa.from("settings").select("cancel_lead_hours").eq("id", 1).maybeSingle();
+  const anticipoH = cfg && cfg.cancel_lead_hours != null ? Number(cfg.cancel_lead_hours) : undefined;
+  const decision = canCancel(order, new Date(), anticipoH);
 
   // --- GET: solo pagina di conferma (nessun effetto) ---
   if (method !== "POST") {
-    if (!decision.ok) return html(200, notCancellablePage(order, lang, decision.reason));
+    if (!decision.ok) return html(200, notCancellablePage(order, lang, decision.reason, anticipoH));
     return html(200, page(lang, {
       title: en ? "Cancel order" : "Annulla ordine",
       bodyHtml: `<p class="kick">${en ? "Cancellation" : "Annullamento"}</p>
@@ -119,7 +123,7 @@ exports.handler = async (event) => {
       return html(200, page(lang, { tone: "ok", title: en ? "Already cancelled" : "Già annullato",
         bodyHtml: `<p class="kick">${en ? "Cancellation" : "Annullamento"}</p><h1>${en ? "Order already cancelled" : "Ordine già annullato"}</h1><p>${en ? "This order was already cancelled and the refund issued to your original payment method." : "Questo ordine era già stato annullato e il rimborso emesso sul tuo metodo di pagamento originale."}</p>` }));
     }
-    return html(200, notCancellablePage(order, lang, decision.reason));
+    return html(200, notCancellablePage(order, lang, decision.reason, anticipoH));
   }
 
   const r = await refundOrder(supa, stripe, order.id, "annullato");

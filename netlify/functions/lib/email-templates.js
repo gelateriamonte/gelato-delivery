@@ -65,8 +65,8 @@ function cancelBlock(lang, cancelUrl) {
     </td></tr>
     <tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.55;color:#7a6e5d;text-align:center;">
       ${en
-        ? "You can cancel up to <strong>2 hours before</strong> your time slot. The refund will be issued to the <strong>same payment method</strong> used for the order."
-        : "Puoi annullare <strong>fino a 2 ore prima</strong> dell'inizio della fascia. Il rimborso avverrà <strong>sullo stesso metodo di pagamento</strong> usato per l'ordine."}
+        ? "You can cancel until the cut-off time shown for your time slot. The refund will be issued to the <strong>same payment method</strong> used for the order."
+        : "Puoi annullare entro il <strong>termine indicato</strong> per la tua fascia. Il rimborso avverrà <strong>sullo stesso metodo di pagamento</strong> usato per l'ordine."}
     </td></tr>
   </table>`;
 }

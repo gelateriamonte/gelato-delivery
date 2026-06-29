@@ -1463,6 +1463,7 @@ async function loadSettings() {
   $("set-min").value = data.min_order;
   $("set-lead").value = data.slot_lead_hours != null ? data.slot_lead_hours : 2;
   $("set-maxdays").value = data.max_advance_days != null ? data.max_advance_days : 6;
+  $("set-cancel-lead").value = data.cancel_lead_hours != null ? data.cancel_lead_hours : 2;
   const t = waTemplates();
   WA_STATUSES.forEach((s) => { const el = $("wa-" + STATUS_META[s].slug); if (el) el.value = t[s] || ""; });
   renderOpeningHoursEditor();
@@ -1473,11 +1474,16 @@ async function loadSettings() {
   loadHomeContent();
 }
 $("set-save").onclick = async () => {
+  let cl = parseInt($("set-cancel-lead").value || "2", 10);
+  if (!(cl >= 0)) cl = 0; if (cl > 24) cl = 24;
+  $("set-cancel-lead").value = cl;
   const { error } = await sb.from("settings").update({
     delivery_cost: parseFloat($("set-delivery").value || "0"),
     min_order: parseFloat($("set-min").value || "0"),
+    cancel_lead_hours: cl,
   }).eq("id", 1);
   if (error) { console.error(error); toast("Errore salvataggio."); return; }
+  SETTINGS.cancel_lead_hours = cl;
   toast("Parametri salvati.");
 };
 // Tempo di anticipo da inizio fascia (ore, 1..6): auto-save

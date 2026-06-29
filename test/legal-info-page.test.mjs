@@ -53,7 +53,8 @@ test("versioned legal documents describe shop acceptance, refunds, and the cance
   assert.match(terms, /back[- ]office/i);
   assert.match(terms, /contratto[\s\S]{0,160}accettazione[\s\S]{0,120}Venditore/i);
   assert.match(terms, /rifiut[\wàèéìòù]*[\s\S]{0,220}rimbors\w*[\s\S]{0,160}canale di pagamento originale/i);
-  assert.match(terms, /annullare[\s\S]{0,160}due ore[\s\S]{0,160}inizio della fascia[\s\S]{0,120}(consegna|ritiro)/i);
+  assert.match(terms, /annullare[\s\S]{0,200}termine di anticipo indicato sul Sito[\s\S]{0,160}(consegna|ritiro)/i);
+  assert.doesNotMatch(terms, /€ ?25,00|€ ?3,50|due ore prima/i);   // niente valori hardcoded cambiabili nel back office
   assert.doesNotMatch(terms, /contratto si perfeziona e l'ordine viene registrato solo dopo la conferma del buon esito del pagamento/i);
 
   assert.match(privacy, /ordine[\s\S]{0,160}accettazione[\s\S]{0,120}Venditore/i);
