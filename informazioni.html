@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="it" data-accent="terracotta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Informazioni clienti - Gelateria BM&amp;V</title>
+  <meta name="description" content="Informazioni su allergeni, privacy e condizioni di vendita della Gelateria BM&amp;V.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --cream:#fffdf8; --paper:oklch(0.993 0.006 84); --paper-2:oklch(0.960 0.013 82);
+      --ink:oklch(0.265 0.014 58); --ink-2:oklch(0.405 0.014 60); --muted:oklch(0.545 0.013 62);
+      --line:oklch(0.902 0.012 78); --line-2:oklch(0.845 0.015 76);
+      --accent:oklch(0.560 0.105 42); --accent-ink:oklch(0.470 0.100 42); --accent-soft:oklch(0.932 0.034 50);
+      --blue:#63819f; --green:#537f68;
+      --serif:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+      --sans:"Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+      --shadow-card:0 1px 2px rgba(60,40,30,.04), 0 14px 34px -20px rgba(70,45,30,.28);
+      --shadow-screen:0 2px 6px rgba(60,40,30,.05), 0 40px 80px -42px rgba(60,40,30,.42);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; }
+    body{ background:var(--paper); font-family:var(--sans); color:var(--ink); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+    a{ color:inherit; }
+    .page{ max-width:760px; margin:0 auto; min-height:100dvh; background:var(--cream); box-shadow:var(--shadow-screen); }
+    .top{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 22px; border-bottom:1px solid var(--line); }
+    .brand{ display:flex; align-items:center; gap:12px; text-decoration:none; min-width:0; }
+    .brand img{ width:58px; height:auto; display:block; background:rgba(255,255,255,.7); border:1px solid rgba(168,85,47,.25); border-radius:12px; padding:6px; }
+    .brand span{ font-size:12px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+    .top-actions{ display:flex; align-items:center; gap:12px; flex:none; }
+    .lang-switch{ display:flex; gap:2px; background:rgba(253,251,247,.94); border:1px solid rgba(168,85,47,.28); border-radius:999px; padding:3px; box-shadow:0 4px 14px -10px rgba(60,40,30,.5); }
+    .lang-switch button{ appearance:none; border:0; background:transparent; cursor:pointer; font-family:var(--sans); font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--muted); padding:5px 9px; border-radius:999px; transition:background .15s,color .15s; }
+    .lang-switch button.on{ background:var(--blue); color:#fff; }
+    .back{ text-decoration:none; color:var(--accent-ink); font-size:13px; font-weight:700; white-space:nowrap; }
+    .hero{ padding:42px 22px 28px; border-bottom:1px solid var(--line); background:linear-gradient(180deg, var(--paper), var(--cream)); }
+    .eyebrow{ font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-ink); margin:0 0 10px; }
+    h1{ font-family:var(--serif); font-size:42px; line-height:.98; font-weight:500; margin:0; letter-spacing:0; color:var(--ink); }
+    .lede{ max-width:620px; font-size:15px; line-height:1.65; color:var(--ink-2); margin:18px 0 0; }
+    .docs{ display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; padding:22px; border-bottom:1px solid var(--line); }
+    .doc-card{ display:block; min-height:132px; text-decoration:none; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:16px; box-shadow:var(--shadow-card); transition:border-color .15s, transform .15s; }
+    .doc-card:hover{ border-color:var(--accent); transform:translateY(-1px); }
+    .doc-card:focus-visible,.back:focus-visible,.brand:focus-visible,.lang-switch button:focus-visible{ outline:2px solid var(--blue); outline-offset:3px; }
+    .doc-tag{ display:block; font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+    .doc-title{ display:block; font-family:var(--serif); font-size:23px; font-weight:600; line-height:1.02; color:var(--ink); }
+    .doc-copy{ display:block; font-size:12.5px; line-height:1.45; color:var(--muted); margin-top:10px; }
+    .content{ padding:28px 22px 44px; }
+    .sheet{ max-width:680px; margin:0 auto; }
+    h2{ font-family:var(--serif); font-size:30px; line-height:1.08; font-weight:600; margin:0 0 14px; color:var(--ink); }
+    h3{ font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink); margin:28px 0 10px; }
+    p{ font-size:15px; line-height:1.65; color:var(--ink-2); margin:0 0 14px; }
+    ul,ol{ margin:0 0 16px; padding-left:22px; color:var(--ink-2); }
+    li{ font-size:14.5px; line-height:1.55; margin:5px 0; }
+    .notice{ border-left:4px solid var(--green); background:color-mix(in oklch, var(--paper) 82%, #e5f1e8); padding:14px 16px; margin:18px 0 20px; }
+    .notice p{ margin:0; }
+    .allergen-list{ columns:2; column-gap:28px; }
+    .footer{ padding:22px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; line-height:1.5; }
+    .lang-panel[hidden]{ display:none; }
+    @media (max-width:680px){
+      .top{ align-items:flex-start; gap:12px; }
+      .top-actions{ flex-direction:column; align-items:flex-end; gap:8px; }
+      .docs{ grid-template-columns:1fr; }
+      h1{ font-size:36px; }
+      .allergen-list{ columns:1; }
+    }
+    @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="top">
+      <a class="brand" href="index.html" aria-label="Torna alla home">
+        <img src="img/logo-full.png" alt="Gelateria BM&amp;V">
+        <span>Monte Petrosu</span>
+      </a>
+      <div class="top-actions">
+        <div class="lang-switch" aria-label="Lingua / Language">
+          <button type="button" class="on" data-lang-btn="it">IT</button>
+          <button type="button" data-lang-btn="en">EN</button>
+        </div>
+        <a class="back" href="index.html" data-back-link>Torna alla home</a>
+      </div>
+    </header>
+
+    <article class="lang-panel" data-lang-panel="it" lang="it">
+      <section class="hero">
+        <p class="eyebrow">Info clienti</p>
+        <h1>Allergeni, Privacy e Condizioni</h1>
+        <p class="lede">Qui trovi i documenti principali del servizio di ordine online e una scheda rapida sugli allergeni. La versione italiana dei documenti e' quella di riferimento.</p>
+      </section>
+
+      <nav class="docs" aria-label="Documenti">
+        <a class="doc-card" href="legal/allergeni.v2026-06-26.md">
+          <span class="doc-tag">Alimenti</span>
+          <span class="doc-title">Scheda allergeni</span>
+          <span class="doc-copy">Documento completo su allergeni, tracce e allergie gravi.</span>
+        </a>
+        <a class="doc-card" href="legal/privacy-policy.v2026-06-26.md">
+          <span class="doc-tag">Dati</span>
+          <span class="doc-title">Privacy policy</span>
+          <span class="doc-copy">Come trattiamo i dati dell'ordine e dei servizi collegati.</span>
+        </a>
+        <a class="doc-card" href="legal/condizioni-generali-vendita.v2026-06-26.md">
+          <span class="doc-tag">Acquisto</span>
+          <span class="doc-title">Termini e condizioni</span>
+          <span class="doc-copy">Regole di vendita, consegna, recesso e garanzia.</span>
+        </a>
+      </nav>
+
+      <section class="content" aria-labelledby="allergeni-title-it">
+        <div class="sheet">
+          <p class="eyebrow">Scheda informativa</p>
+          <h2 id="allergeni-title-it">Informazioni sugli allergeni</h2>
+          <p>Prima di ordinare consulta sempre gli allergeni indicati per ogni gusto o prodotto. Le disponibilita' e le ricette possono variare con la produzione giornaliera artigianale.</p>
+
+          <div class="notice">
+            <p><strong>Avvertenza importante.</strong> Il laboratorio utilizza ingredienti contenenti allergeni e non puo' escludere contaminazione crociata. In caso di allergie gravi contatta la Gelateria prima di completare l'ordine.</p>
+          </div>
+
+          <h3>I 14 allergeni</h3>
+          <ol class="allergen-list">
+            <li>Cereali contenenti glutine.</li>
+            <li>Crostacei.</li>
+            <li>Uova.</li>
+            <li>Pesce.</li>
+            <li>Arachidi.</li>
+            <li>Soia.</li>
+            <li>Latte.</li>
+            <li>Frutta a guscio.</li>
+            <li>Sedano.</li>
+            <li>Senape.</li>
+            <li>Semi di sesamo.</li>
+            <li>Anidride solforosa e solfiti.</li>
+            <li>Lupini.</li>
+            <li>Molluschi.</li>
+          </ol>
+
+          <h3>Contaminazione crociata</h3>
+          <p>I prodotti sono preparati in un laboratorio artigianale in cui possono essere presenti latte, frutta a guscio, uova, soia, arachidi, cereali contenenti glutine e altri allergeni. Anche quando un allergene non e' usato intenzionalmente in una ricetta, possono essere presenti tracce.</p>
+
+          <h3>Allergie gravi</h3>
+          <p>Se hai allergie gravi o rischio di reazioni importanti, contatta la Gelateria prima del pagamento e segnala l'allergia nel flusso d'ordine. Se la compatibilita' non puo' essere garantita, l'ordine non viene eseguito e l'eventuale importo pagato viene rimborsato integralmente.</p>
+
+          <h3>Alla consegna</h3>
+          <p>Le informazioni sugli allergeni e le istruzioni essenziali di conservazione sono rese nuovamente disponibili al momento della consegna o del ritiro tramite etichetta, scheda, riepilogo o altra informazione associata al prodotto.</p>
+        </div>
+      </section>
+
+      <footer class="footer">
+        Documento informativo per il sito gelato26.netlify.app. Per il testo completo consulta la scheda allergeni versionata e le condizioni di vendita.
+      </footer>
+    </article>
+
+    <article class="lang-panel" data-lang-panel="en" lang="en" hidden>
+      <section class="hero">
+        <p class="eyebrow">Customer info</p>
+        <h1>Allergens, Privacy and Terms</h1>
+        <p class="lede">Here you can find the main online ordering documents and a quick allergen sheet. The Italian version of the documents is the reference version.</p>
+      </section>
+
+      <nav class="docs" aria-label="Documents">
+        <a class="doc-card" href="legal/allergeni.v2026-06-26.md">
+          <span class="doc-tag">Food</span>
+          <span class="doc-title">Allergen sheet</span>
+          <span class="doc-copy">Complete Italian source document on allergens, traces and severe allergies.</span>
+        </a>
+        <a class="doc-card" href="legal/privacy-policy.v2026-06-26.md">
+          <span class="doc-tag">Data</span>
+          <span class="doc-title">Privacy policy</span>
+          <span class="doc-copy">How we process order data and connected service data.</span>
+        </a>
+        <a class="doc-card" href="legal/condizioni-generali-vendita.v2026-06-26.md">
+          <span class="doc-tag">Purchase</span>
+          <span class="doc-title">Terms and conditions</span>
+          <span class="doc-copy">Sales, delivery, cancellation, withdrawal and warranty rules.</span>
+        </a>
+      </nav>
+
+      <section class="content" aria-labelledby="allergeni-title-en">
+        <div class="sheet">
+          <p class="eyebrow">Information sheet</p>
+          <h2 id="allergeni-title-en">Allergen information</h2>
+          <p>Before ordering, always check the allergens shown for each flavour or product. Availability and recipes may change with daily artisanal production.</p>
+
+          <div class="notice">
+            <p><strong>Important notice.</strong> The workshop uses ingredients containing allergens and cannot exclude cross-contamination. In case of severe allergies, please contact the Gelateria before completing the order.</p>
+          </div>
+
+          <h3>The 14 allergens</h3>
+          <ol class="allergen-list">
+            <li>Cereals containing gluten.</li>
+            <li>Crustaceans.</li>
+            <li>Eggs.</li>
+            <li>Fish.</li>
+            <li>Peanuts.</li>
+            <li>Soybeans.</li>
+            <li>Milk.</li>
+            <li>Nuts.</li>
+            <li>Celery.</li>
+            <li>Mustard.</li>
+            <li>Sesame seeds.</li>
+            <li>Sulphur dioxide and sulphites.</li>
+            <li>Lupin.</li>
+            <li>Molluscs.</li>
+          </ol>
+
+          <h3>Cross-contamination</h3>
+          <p>Products are prepared in an artisanal workshop where milk, nuts, eggs, soy, peanuts, cereals containing gluten and other allergens may be present. Even when an allergen is not intentionally used in a recipe, traces may be present.</p>
+
+          <h3>Severe allergies</h3>
+          <p>If you have severe allergies or a risk of major reactions, contact the Gelateria before payment and report the allergy during the order flow. If compatibility cannot be guaranteed, the order will not be prepared and any amount already paid will be fully refunded.</p>
+
+          <h3>At delivery or pickup</h3>
+          <p>Allergen information and essential storage instructions are made available again at delivery or pickup through a label, sheet, summary or other information associated with the product.</p>
+        </div>
+      </section>
+
+      <footer class="footer">
+        Customer information for gelato26.netlify.app. For the complete text, see the versioned allergen sheet and the terms and conditions. The Italian documents are the reference version.
+      </footer>
+    </article>
+  </main>
+
+  <script>
+    (function () {
+      var key = "gelato_lang";
+      function preferredLang() {
+        try {
+          var saved = localStorage.getItem(key);
+          if (saved === "it" || saved === "en") return saved;
+        } catch (e) {}
+        return (navigator.language || "it").slice(0, 2).toLowerCase() === "it" ? "it" : "en";
+      }
+      function setLang(lang) {
+        lang = lang === "en" ? "en" : "it";
+        document.documentElement.lang = lang;
+        document.querySelectorAll("[data-lang-panel]").forEach(function (panel) {
+          panel.hidden = panel.getAttribute("data-lang-panel") !== lang;
+        });
+        document.querySelectorAll("[data-lang-btn]").forEach(function (button) {
+          button.classList.toggle("on", button.getAttribute("data-lang-btn") === lang);
+        });
+        var back = document.querySelector("[data-back-link]");
+        if (back) back.textContent = lang === "en" ? "Back to home" : "Torna alla home";
+        var brand = document.querySelector(".brand");
+        if (brand) brand.setAttribute("aria-label", lang === "en" ? "Back to home" : "Torna alla home");
+        document.title = lang === "en" ? "Customer information - BM&V Gelateria" : "Informazioni clienti - Gelateria BM&V";
+        try { localStorage.setItem(key, lang); } catch (e) {}
+      }
+      document.querySelectorAll("[data-lang-btn]").forEach(function (button) {
+        button.addEventListener("click", function () { setLang(button.getAttribute("data-lang-btn")); });
+      });
+      setLang(preferredLang());
+    })();
+  </script>
+</body>
+</html>
