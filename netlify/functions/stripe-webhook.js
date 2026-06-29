@@ -3,9 +3,11 @@
 // Verifica la firma sul body GREZZO, poi crea l'ordine in `orders` dalla bozza e la cancella.
 // Idempotente: lo stesso pagamento non crea ordini doppi.
 
+const crypto = require("crypto");
 const Stripe = require("stripe");
 const { createClient } = require("@supabase/supabase-js");
 const { notifyOrder } = require("./lib/telegram");
+const { sendOrderEmail } = require("./lib/order-email");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supa = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -66,9 +68,20 @@ exports.handler = async (event) => {
       payment_intent: paymentIntentId,                   // ID stringa, per eventuale rimborso
       payment_method,                                    // card / paypal / satispay
       paid_at: new Date().toISOString(),
+      cancel_token: crypto.randomBytes(16).toString("hex"),  // link "Annulla ordine" in email
     });
-    const { data: ins, error: insErr } = await supa.from("orders").insert(order).select("id").single();
-    if (insErr) return { statusCode: 500, body: "insert ordine: " + insErr.message };
+    let { data: ins, error: insErr } = await supa.from("orders").insert(order).select("id").single();
+    if (insErr) {
+      // Fallback anti-perdita: se l'insert fallisce per colonne nuove non ancora
+      // migrate (cancel_token/lang), ritenta SENZA di esse. Meglio un ordine senza
+      // link-annulla/lingua che un ordine perso pur essendo pagato.
+      const base = Object.assign({}, order);
+      delete base.cancel_token; delete base.lang;
+      ({ data: ins, error: insErr } = await supa.from("orders").insert(base).select("id").single());
+      if (insErr) return { statusCode: 500, body: "insert ordine: " + insErr.message };
+      console.error("orders insert: fallback senza cancel_token/lang (migration applicata?)");
+    }
+    if (ins && ins.id) order.id = ins.id;
 
     // traccia/brucia il codice sconto usato (best-effort)
     if (order.coupon_code) {
@@ -84,6 +97,9 @@ exports.handler = async (event) => {
 
     // notifica Telegram al titolare (best-effort: non deve mai far fallire la risposta a Stripe)
     try { await notifyOrder(order); } catch (e) { console.error("telegram notify:", e.message); }
+
+    // email "ordine ricevuto" al cliente (best-effort; no-op se manca email o SMTP)
+    try { await sendOrderEmail(order, "ricevuto"); } catch (e) { console.error("email ricevuto:", e.message); }
 
     // accoda la stampa automatica dello scontrino (best-effort, come Telegram)
     try { if (ins && ins.id) await supa.from("print_jobs").insert({ order_id: ins.id }); }

@@ -112,6 +112,7 @@ exports.handler = async (event) => {
       items, subtotal: subtotalCents / 100, delivery_cost: deliveryCents / 100,
       coupon_code: couponCode, discount: discountCents / 100, total: finalAmount / 100,
       notes: notes || null,
+      lang: body.lang === "en" ? "en" : "it",   // per email transazionali IT/EN
     };
     const { data: pend, error: pErr } = await supa.from("pending_orders").insert({ payload, amount: finalAmount }).select("id").single();
     if (pErr) return json(500, { error: "Errore creazione bozza." });

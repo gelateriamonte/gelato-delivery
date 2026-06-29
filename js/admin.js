@@ -73,7 +73,27 @@ function waOpen(o, status) {
   window.open("https://wa.me/" + normPhone(o.customer_phone) + "?text=" + encodeURIComponent(waMessage(o, status)), "_blank");
 }
 // cambia stato + apre WhatsApp col messaggio di quello stato (window.open sincrono nel gesto)
-function changeStatus(o, status) { waOpen(o, status); updateStatus(o.id, status); }
+function changeStatus(o, status) {
+  waOpen(o, status); updateStatus(o.id, status);
+  if (status === "accettato" || status === "consegnato") sendOrderEmail(o.id, status);
+}
+
+// Header Authorization con il JWT della sessione admin (per function protette).
+async function authHeaders() {
+  const { data: { session } } = await sb.auth.getSession();
+  return session ? { Authorization: "Bearer " + session.access_token } : {};
+}
+
+// Invia (best-effort) l'email transazionale al cliente per lo stato dato.
+async function sendOrderEmail(orderId, status) {
+  try {
+    await fetch("/.netlify/functions/send-order-email", {
+      method: "POST",
+      headers: Object.assign({ "content-type": "application/json" }, await authHeaders()),
+      body: JSON.stringify({ order_id: orderId, status }),
+    });
+  } catch (e) { /* best-effort: l'email non deve bloccare il back office */ }
+}
 
 // Ristampa: accoda un nuovo job di stampa per l'ordine (la stampante lo prende al polling).
 async function reprint(o) {
@@ -914,9 +934,9 @@ async function rejectOrRefund(o, status) {
   const verb = status === "rifiutato" ? "Rifiutare" : "Annullare";
   const paid = o.payment_id && !o.refunded_at;
   if (!confirm(paid ? `${verb} l'ordine e rimborsare ${euro(o.total)} al cliente?` : `${verb} questo ordine?`)) return;
-  if (!paid) { changeStatus(o, status); return; }
+  if (!paid) { changeStatus(o, status); sendOrderEmail(o.id, status); return; }
   const res = await fetch("/.netlify/functions/refund", {
-    method: "POST", headers: { "content-type": "application/json" },
+    method: "POST", headers: Object.assign({ "content-type": "application/json" }, await authHeaders()),
     body: JSON.stringify({ order_id: o.id, status }),
   }).catch(() => null);
   const data = res ? await res.json().catch(() => ({})) : {};
@@ -924,6 +944,7 @@ async function rejectOrRefund(o, status) {
   const i = ORDERS.findIndex((x) => x.id === o.id);
   if (i >= 0) { ORDERS[i].status = status; ORDERS[i].refunded_at = data.refunded_at || new Date().toISOString(); }
   renderOrders();
+  sendOrderEmail(o.id, status);
   toast(data.already ? "Era già rimborsato." : "Rimborsato €" + Number(o.total).toFixed(2) + " e " + status + ".");
 }
 
