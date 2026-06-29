@@ -21,9 +21,9 @@ test("home exposes the information link through the multilingual dictionary", ()
 
 test("consumer information page separates Italian and English detail panels", () => {
   const html = read("informazioni.html");
-  assert.match(html, /legal\/privacy-policy\.v2026-06-26\.md/);
-  assert.match(html, /legal\/condizioni-generali-vendita\.v2026-06-26\.md/);
-  assert.match(html, /legal\/allergeni\.v2026-06-26\.md/);
+  assert.match(html, /legal\/privacy-policy\.html/);
+  assert.match(html, /legal\/condizioni-generali-vendita\.html/);
+  assert.match(html, /legal\/allergeni\.html/);
   assert.match(html, /data-lang-btn="it"/);
   assert.match(html, /data-lang-btn="en"/);
   assert.match(html, /data-lang-panel="it"/);

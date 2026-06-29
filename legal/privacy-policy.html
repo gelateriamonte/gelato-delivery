@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="it" data-accent="terracotta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>INFORMATIVA SULLA PRIVACY — Gelateria BM&amp;V</title>
+  <meta name="description" content="INFORMATIVA SULLA PRIVACY — Gelateria BM&amp;V, Monte Petrosu (San Teodoro).">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <link rel="apple-touch-icon" href="/img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+  :root{
+    --cream:#fffdf8; --paper:oklch(0.993 0.006 84); --paper-2:oklch(0.960 0.013 82);
+    --ink:oklch(0.265 0.014 58); --ink-2:oklch(0.405 0.014 60); --muted:oklch(0.545 0.013 62);
+    --line:oklch(0.902 0.012 78); --line-2:oklch(0.845 0.015 76);
+    --accent:oklch(0.560 0.105 42); --accent-ink:oklch(0.470 0.100 42); --accent-soft:oklch(0.932 0.034 50);
+    --blue:#63819f; --green:#537f68;
+    --serif:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --sans:"Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --shadow-card:0 1px 2px rgba(60,40,30,.04), 0 14px 34px -20px rgba(70,45,30,.28);
+    --shadow-screen:0 2px 6px rgba(60,40,30,.05), 0 40px 80px -42px rgba(60,40,30,.42);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{ background:var(--paper); font-family:var(--sans); color:var(--ink); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  a{ color:var(--accent-ink); }
+  .page{ max-width:820px; margin:0 auto; min-height:100dvh; background:var(--cream); box-shadow:var(--shadow-screen); }
+  .top{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 26px; border-bottom:1px solid var(--line); position:sticky; top:0; background:rgba(255,253,248,.92); backdrop-filter:saturate(1.1) blur(6px); z-index:5; }
+  .brand{ display:flex; align-items:center; gap:12px; text-decoration:none; min-width:0; }
+  .brand img{ width:52px; height:auto; display:block; background:rgba(255,255,255,.7); border:1px solid rgba(168,85,47,.25); border-radius:11px; padding:6px; }
+  .brand span{ font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+  .back{ text-decoration:none; color:var(--accent-ink); font-size:13px; font-weight:700; white-space:nowrap; }
+  .hero{ padding:46px 30px 26px; border-bottom:1px solid var(--line); background:linear-gradient(180deg, var(--paper), var(--cream)); }
+  .eyebrow{ font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-ink); margin:0 0 12px; }
+  .hero h1{ font-family:var(--serif); font-size:40px; line-height:1.02; font-weight:600; margin:0; letter-spacing:0; color:var(--ink); }
+  .content{ padding:30px 30px 50px; }
+  .sheet{ max-width:680px; margin:0 auto; }
+  .sheet h2{ font-family:var(--serif); font-size:27px; line-height:1.12; font-weight:600; margin:34px 0 12px; color:var(--ink); }
+  .sheet h3{ font-size:12.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--accent-ink); margin:26px 0 10px; font-weight:700; }
+  .sheet h4{ font-size:15px; font-weight:700; margin:18px 0 8px; color:var(--ink); }
+  .sheet p{ font-size:15px; line-height:1.7; color:var(--ink-2); margin:0 0 14px; }
+  .sheet ul,.sheet ol{ margin:0 0 16px; padding-left:22px; color:var(--ink-2); }
+  .sheet li{ font-size:14.5px; line-height:1.6; margin:6px 0; }
+  .sheet strong{ color:var(--ink); font-weight:700; }
+  .sheet a{ color:var(--accent-ink); }
+  .sheet blockquote{ border-left:4px solid var(--green); background:color-mix(in oklch, var(--paper) 82%, #e5f1e8); padding:12px 16px; margin:18px 0; border-radius:0 8px 8px 0; }
+  .sheet blockquote p{ margin:0; font-size:14px; }
+  .sheet table{ width:100%; border-collapse:collapse; margin:16px 0; font-size:13.5px; }
+  .sheet th,.sheet td{ border:1px solid var(--line-2); padding:9px 11px; text-align:left; vertical-align:top; line-height:1.5; color:var(--ink-2); }
+  .sheet th{ background:var(--paper-2); color:var(--ink); font-weight:700; }
+  .sheet hr{ border:0; border-top:1px solid var(--line); margin:30px 0; }
+  .sheet code{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; background:var(--paper-2); padding:1px 5px; border-radius:5px; }
+  .footer{ padding:24px 30px 34px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; line-height:1.6; }
+  .footer a{ color:var(--muted); }
+  .top:focus-within, .back:focus-visible, .brand:focus-visible{ outline:2px solid var(--blue); outline-offset:3px; }
+  @media (max-width:680px){
+    .top{ padding:14px 18px; }
+    .hero{ padding:34px 20px 22px; }
+    .hero h1{ font-size:31px; }
+    .content{ padding:24px 20px 40px; }
+    .sheet table{ font-size:12.5px; }
+  }
+  @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+  <main class="page">
+    <header class="top">
+      <a class="brand" href="/index.html" aria-label="Torna alla home">
+        <img src="/img/logo-full.png" alt="Gelateria BM&amp;V">
+        <span>Monte Petrosu</span>
+      </a>
+      <a class="back" href="/informazioni.html">← Informazioni</a>
+    </header>
+    <section class="hero">
+      <p class="eyebrow">Protezione dati</p>
+      <h1>INFORMATIVA SULLA PRIVACY</h1>
+    </section>
+    <section class="content"><article class="sheet"><p><strong>Informativa sul trattamento dei dati personali ai sensi dell&#39;articolo 13 del Regolamento (UE) 2016/679 (GDPR)</strong> (e, limitatamente ai dati eventualmente non raccolti presso l&#39;interessato — es. risultati di reverse-geocoding restituiti dai servizi di mappa/geocodifica —, ai sensi dell&#39;articolo 14 GDPR)</p>
+<p>Ultimo aggiornamento: [[DATA_AGGIORNAMENTO]]</p>
+<p>La presente informativa descrive come vengono trattati i dati personali raccolti tramite il sito <strong>gelato26.netlify.app</strong> (&quot;Sito&quot;) per l&#39;acquisto e la consegna a domicilio (o il ritiro) di gelato artigianale a marchio &quot;Gelateria BM&amp;V&quot;. La versione italiana di questa informativa è l&#39;unica giuridicamente vincolante; eventuali traduzioni (es. inglese) hanno valore meramente informativo.</p>
+<p>Il Sito non richiede la creazione di un account: l&#39;ordine avviene in modalità &quot;ospite&quot; (guest checkout), inserendo i dati a ogni acquisto. Non esistono profili, login, password o storico ordini lato cliente.</p>
+<blockquote>
+<p><strong>In breve.</strong> Usiamo i tuoi dati solo per ricevere e valutare l&#39;ordine, gestire il pagamento, preparare e consegnare o far ritirare l&#39;ordine accettato, e rispettare gli obblighi fiscali. Non facciamo pubblicità, non creiamo profili commerciali, non usiamo cookie di tracciamento. Ricevi la ricezione dell&#39;ordine sulla pagina finale e, se ci fornisci l&#39;email, anche via email; l&#39;ordine diventa confermato solo dopo l&#39;accettazione del Venditore. Gli aggiornamenti successivi sullo stato dell&#39;ordine te li inviamo tramite WhatsApp. Per esercitare i tuoi diritti scrivici ai contatti indicati nella Sezione 1.</p>
+</blockquote>
+<blockquote>
+<p><strong>Avvertenza — Documenti separati.</strong> La presente informativa disciplina esclusivamente il trattamento dei dati personali. Le condizioni economiche e giuridiche dell&#39;acquisto (caratteristiche e prezzo dei prodotti, fee di consegna, ordine minimo, momento di conclusione del contratto, <strong>esclusione del diritto di recesso</strong> per i beni alimentari deteriorabili e personalizzati su misura, <strong>informazioni sugli allergeni</strong>, garanzia legale di conformità, conservazione del prodotto, foro del consumatore e ADR) sono contenute nel documento <strong><a href="/termini-e-condizioni">&quot;Termini e Condizioni di Vendita&quot;</a></strong>, che costituisce parte integrante del rapporto contrattuale e va consultato prima dell&#39;acquisto.</p>
+</blockquote>
+<hr>
+<h2>1. Titolare del trattamento e contatti</h2>
+<p>Il Titolare del trattamento è:</p>
+<ul>
+<li><strong>Denominazione:</strong> [[RAGIONE_SOCIALE]]</li>
+<li><strong>Sede legale:</strong> [[SEDE_LEGALE]]</li>
+<li><strong>Partita IVA:</strong> [[PIVA]]</li>
+<li><strong>Codice Fiscale:</strong> [[CODICE_FISCALE]]</li>
+<li><strong>REA:</strong> [[REA]]</li>
+<li><strong>Email di contatto:</strong> [[EMAIL_CONTATTO]]</li>
+<li><strong>PEC:</strong> [[PEC]]</li>
+<li><strong>Telefono:</strong> [[TELEFONO]]</li>
+</ul>
+<p>Per qualsiasi questione relativa al trattamento dei dati personali e all&#39;esercizio dei diritti di cui alla Sezione 8, è possibile contattare il Titolare ai recapiti sopra indicati.</p>
+<p>Il Titolare <strong>non è tenuto alla nomina di un Responsabile della protezione dei dati (DPO)</strong> ai sensi dell&#39;art. 37 GDPR e non lo ha nominato.</p>
+<hr>
+<h2>2. Tipologie di dati personali raccolti</h2>
+<blockquote>
+<p><strong>In breve.</strong> Raccogliamo i dati che inserisci nel modulo d&#39;ordine (contatto, indirizzo, dettagli dell&#39;ordine) e l&#39;indicazione del metodo di pagamento scelto. I dati della tua carta non passano dai nostri server: li gestisce Stripe.</p>
+</blockquote>
+<p>Nell&#39;ambito dell&#39;utilizzo del Sito e della gestione degli ordini, il Titolare tratta le seguenti categorie di dati personali:</p>
+<p><strong>a) Dati forniti dall&#39;utente al momento dell&#39;ordine:</strong></p>
+<ul>
+<li>nome e cognome (obbligatorio);</li>
+<li>numero di telefono (obbligatorio);</li>
+<li>indirizzo email (facoltativo, utilizzato per inviare conferma e riepilogo dell&#39;ordine quando fornito);</li>
+<li>indirizzo di consegna (obbligatorio in caso di consegna a domicilio);</li>
+<li>coordinate geografiche (latitudine/longitudine) del luogo di consegna (facoltative: fornite tramite geolocalizzazione del browser, previo consenso, oppure posizionando manualmente un segnaposto sulla mappa);</li>
+<li>data di consegna e fascia oraria prescelta;</li>
+<li>articoli ordinati (prodotti, gusti, formati, quantità);</li>
+<li>eventuali note (facoltative);</li>
+<li>eventuale codice sconto (facoltativo);</li>
+<li>preferenza di lingua.</li>
+</ul>
+<p><strong>b) Dati relativi al pagamento:</strong></p>
+<ul>
+<li>metodo di pagamento scelto (carta, PayPal, Satispay);</li>
+<li>identificativo della sessione di pagamento / payment intent generato da Stripe.</li>
+</ul>
+<p>I dati della carta di pagamento <strong>non transitano né sono conservati</strong> sui server del Sito: l&#39;intera fase di pagamento è gestita direttamente da <strong>Stripe</strong> (Stripe Checkout integrato), fornitore certificato PCI-DSS. Il Titolare non ha accesso ai dati completi della carta. <strong>Tutti i metodi di pagamento (carta, PayPal e Satispay) sono gestiti interamente da Stripe Checkout:</strong> il Titolare comunica i dati di pagamento esclusivamente a Stripe e <strong>non comunica dati direttamente a PayPal o a Satispay</strong> (vedi Sezione 5).</p>
+<p><strong>c) Dati tecnici di navigazione:</strong></p>
+<ul>
+<li>indirizzo IP e log tecnici, trattati dai fornitori di hosting e dei servizi connessi al funzionamento del Sito (es. Netlify, Supabase, Stripe), per finalità tecniche e di sicurezza. L&#39;indirizzo IP è inoltre comunicato a determinati servizi di terze parti che erogano risorse esterne caricate dal Sito (font, librerie tecniche, mappa e geocodifica), come precisato alle Sezioni 5, 6 e 9.</li>
+</ul>
+<p><strong>Dati non raccolti presso l&#39;interessato (art. 14 GDPR).</strong> Quando l&#39;utente utilizza la mappa o la ricerca/autocompletamento dell&#39;indirizzo, i servizi di geocodifica (OpenStreetMap/Nominatim e Photon/Komoot) possono restituire dati relativi all&#39;indirizzo (es. indirizzo normalizzato ottenuto da coordinate, o coordinate ottenute da un indirizzo digitato): la <strong>fonte</strong> di tali dati è costituita dai predetti servizi di mappa e geocodifica (vedi Sezione 6).</p>
+<p><strong>Minore età.</strong> Il Sito <strong>non è destinato a minori</strong>. La conclusione del contratto di vendita presuppone la capacità di agire ai sensi dell&#39;art. 2 del Codice civile (maggiore età). Il Titolare non rivolge consapevolmente alcun trattamento a soggetti minori di età.</p>
+<hr>
+<h2>3. Finalità del trattamento e basi giuridiche</h2>
+<p>I dati personali sono trattati per le seguenti finalità e sulle relative basi giuridiche, ai sensi dell&#39;art. 6 del GDPR:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Finalità</th>
+<th>Categorie di dati</th>
+<th>Base giuridica</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>a</td>
+<td>Gestione della proposta d&#39;ordine, verifica e accettazione da parte del Venditore, esecuzione della consegna a domicilio o del ritiro dell&#39;ordine accettato, gestione del pagamento e invio delle comunicazioni di servizio relative all&#39;ordine (ricezione e conferma su pagina finale e, se l&#39;email è fornita, via email; aggiornamenti sullo stato dell&#39;ordine — accettato, in preparazione, in consegna, consegnato — tramite WhatsApp)</td>
+<td>Nome, cognome, telefono, email, indirizzo, coordinate, dettagli dell&#39;ordine, dati di pagamento</td>
+<td><strong>Art. 6, par. 1, lett. b)</strong> — esecuzione del contratto di cui l&#39;interessato è parte e misure precontrattuali adottate su richiesta dello stesso</td>
+</tr>
+<tr>
+<td>b</td>
+<td>Adempimento di obblighi fiscali e contabili, fatturazione e conservazione della documentazione</td>
+<td>Dati anagrafici, dati dell&#39;ordine, importi, documento fiscale</td>
+<td><strong>Art. 6, par. 1, lett. c)</strong> — adempimento di un obbligo legale ([[REGIME_IVA]] — es. DPR 633/1972 e relativa disciplina IVA, ovvero, in caso di regime forfettario, operazioni non soggette a IVA ai sensi della L. 190/2014; DPR 600/1973; art. 2220 c.c.)</td>
+</tr>
+<tr>
+<td>c</td>
+<td>Invio al cliente, da parte del Titolare, degli aggiornamenti sullo stato dell&#39;ordine tramite il proprio account <strong>WhatsApp</strong></td>
+<td>Nome, numero di telefono, riferimenti dell&#39;ordine</td>
+<td><strong>Art. 6, par. 1, lett. b)</strong> — esecuzione del contratto: gli aggiornamenti di stato sono comunicazioni di servizio relative all&#39;ordine; WhatsApp è il mero canale tecnico utilizzato per il loro invio</td>
+</tr>
+<tr>
+<td>d</td>
+<td>Sicurezza del Sito e della piattaforma e prevenzione degli abusi</td>
+<td>Dati dell&#39;ordine, log tecnici, indirizzo IP</td>
+<td><strong>Art. 6, par. 1, lett. f)</strong> — legittimo interesse del Titolare a garantire la sicurezza del proprio Sito e a prevenire abusi</td>
+</tr>
+<tr>
+<td>e</td>
+<td>Ottimizzazione e gestione operativa delle consegne (calcolo del percorso, della stima dei tempi di arrivo e dell&#39;ordine ottimale del giro di consegna; eventuale apertura, da parte del Titolare, di link di navigazione verso l&#39;indirizzo del cliente)</td>
+<td>Coordinate geografiche del luogo di consegna</td>
+<td><strong>Art. 6, par. 1, lett. f)</strong> — legittimo interesse del Titolare all&#39;organizzazione efficiente delle consegne</td>
+</tr>
+<tr>
+<td>f</td>
+<td>Geolocalizzazione del browser per precompilare o verificare l&#39;indirizzo/area di consegna</td>
+<td>Coordinate geografiche fornite dal dispositivo</td>
+<td><strong>Art. 6, par. 1, lett. a)</strong> — consenso libero, specifico e revocabile</td>
+</tr>
+<tr>
+<td>g</td>
+<td>Caricamento dei font tipografici del Sito tramite CDN, con conseguente comunicazione dell&#39;indirizzo IP a Google LLC</td>
+<td>Indirizzo IP</td>
+<td><strong>Art. 6, par. 1, lett. f)</strong> — legittimo interesse al corretto rendering tipografico delle pagine</td>
+</tr>
+</tbody></table>
+<p><strong>Comunicazioni di stato ordine via WhatsApp (finalità c):</strong> gli aggiornamenti sullo stato dell&#39;ordine (accettato, in preparazione, in consegna, consegnato) sono comunicazioni di servizio strumentali all&#39;esecuzione del contratto e sono pertanto fondati sull&#39;art. 6, par. 1, lett. b) GDPR; WhatsApp costituisce unicamente il canale tecnico utilizzato dal Titolare per inviarli, manualmente, al numero di telefono fornito dal cliente. La ricezione della proposta d&#39;ordine e la successiva conferma dell&#39;ordine accettato sono comunque rese disponibili tramite il Sito e, ove l&#39;email sia stata fornita, sono inviate anche via email. L&#39;invio tramite WhatsApp comporta la comunicazione di nome e numero di telefono a WhatsApp/Meta, che opera come titolare autonomo per le proprie finalità: sui relativi profili di trasferimento extra-UE si veda la Sezione 6.</p>
+<p><strong>Legittimo interesse (finalità d — sicurezza):</strong> il legittimo interesse perseguito consiste nel proteggere il Titolare e gli utenti da accessi abusivi o usi impropri del Sito e nel garantirne l&#39;integrità e la sicurezza. Tale interesse è bilanciato con i diritti e le libertà degli interessati. L&#39;utente può opporsi ai sensi dell&#39;art. 21 GDPR (vedi Sezione 8). Si precisa che le misure antifrode e di sicurezza sulle <strong>transazioni di pagamento</strong> sono adottate da Stripe in qualità di titolare autonomo, anche in adempimento di obblighi legali propri (normativa antiriciclaggio, direttiva PSD2 e relativi standard SCA), e non rientrano nel legittimo interesse del Titolare (vedi Sezioni 5 e 9).</p>
+<p><strong>Legittimo interesse (finalità e — gestione e ottimizzazione delle consegne):</strong> per organizzare in modo efficiente il giro di consegna, calcolare il percorso e stimare i tempi di arrivo, le coordinate geografiche del luogo di consegna del cliente sono trasmesse, lato back-office del Titolare, al servizio di calcolo percorsi <strong>OSRM (Project OSRM)</strong>. Inoltre il Titolare può aprire link di navigazione verso l&#39;indirizzo di consegna del cliente tramite <strong>Google Maps</strong>, con conseguente comunicazione delle coordinate a Google. L&#39;interesse perseguito è l&#39;organizzazione efficiente delle consegne, bilanciato con i diritti e le libertà degli interessati; sono comunicate le sole coordinate necessarie al calcolo del percorso. L&#39;utente può opporsi ai sensi dell&#39;art. 21 GDPR. Si segnala che l&#39;endpoint OSRM attualmente utilizzato è un server pubblico dimostrativo, in relazione al quale non sono disponibili specifiche garanzie contrattuali (vedi Sezione 6). Il link statico di posizione presente in homepage rimanda alla sola sede della gelateria e non comporta la comunicazione di alcun dato personale del cliente.</p>
+<p><strong>Legittimo interesse (finalità g — Google Fonts):</strong> il caricamento dei font dalla CDN di Google comporta la comunicazione dell&#39;indirizzo IP dell&#39;utente a Google LLC, a ogni pagina del Sito. L&#39;interesse del Titolare consiste nel garantire una resa tipografica corretta e coerente delle pagine. Nel bilanciamento si è tenuto conto: (i) della natura limitata del dato comunicato (il solo indirizzo IP, ai fini della mera erogazione del font); (ii) del fatto che in questo contesto <strong>l&#39;IP non è utilizzato dal Titolare per finalità di profilazione</strong> e i font sono richiesti solo per il rendering delle pagine; (iii) della circostanza che, allo stato, il caricamento avviene tramite la CDN di Google e non in modalità self-hosted. Il Titolare dà atto, con trasparenza, che tale modalità comporta un <strong>trasferimento dell&#39;indirizzo IP verso un fornitore con sede negli Stati Uniti</strong> (vedi Sezione 6) e che il rischio residuo connesso a tale trasferimento, pur presidiato dalle garanzie ivi indicate, non è del tutto eliminato; il Titolare valuta l&#39;adozione del self-hosting dei font quale misura idonea ad azzerare tale trasferimento. L&#39;utente può opporsi ai sensi dell&#39;art. 21 GDPR.</p>
+<p><strong>Consenso alla geolocalizzazione (finalità f):</strong> il consenso è facoltativo, non condiziona l&#39;acquisto e può essere revocato in qualsiasi momento (anche dalle impostazioni del browser), senza pregiudicare la liceità del trattamento effettuato prima della revoca (art. 7, par. 3, GDPR). In assenza di consenso, l&#39;utente può comunque inserire manualmente l&#39;indirizzo e il servizio resta pienamente fruibile. L&#39;accesso alle informazioni di posizione memorizzate sul dispositivo avviene previo consenso prestato tramite il browser, in coerenza con quanto indicato alla Sezione 9 (art. 122 D.lgs. 196/2003).</p>
+<p>Si precisa che gli stessi dati raccolti per l&#39;esecuzione del contratto (finalità a), una volta emesso il documento fiscale, continuano a essere conservati anche in forza dell&#39;obbligo legale di conservazione contabile (finalità b), indipendentemente da un&#39;eventuale richiesta di cancellazione.</p>
+<p>Il Titolare <strong>non svolge attività di marketing, newsletter, profilazione o programmi fedeltà</strong> tramite il Sito.</p>
+<hr>
+<h2>4. Natura del conferimento e conseguenze del rifiuto</h2>
+<blockquote>
+<p><strong>In breve.</strong> I dati contrassegnati come obbligatori (nome, telefono, indirizzo se c&#39;è consegna) servono per valutare, accettare ed evadere l&#39;ordine: senza, non possiamo completarlo. Gli altri dati sono facoltativi. Senza email, la ricezione e la conferma dell&#39;ordine restano disponibili tramite il Sito ove tecnicamente possibile e gli aggiornamenti di stato arrivano via WhatsApp.</p>
+</blockquote>
+<ul>
+<li>I dati contrassegnati come <strong>obbligatori</strong> (nome e cognome, telefono, indirizzo di consegna in caso di consegna a domicilio) sono necessari per concludere ed eseguire il contratto e per adempiere agli obblighi di legge. Il loro mancato conferimento rende <strong>impossibile</strong> completare l&#39;ordine, effettuare la consegna e incassare il pagamento.</li>
+<li>I dati di <strong>pagamento</strong> sono necessari per inoltrare la proposta d&#39;ordine al Venditore e consentirne la verifica; il contratto si conclude e l&#39;ordine diventa confermato solo dopo l&#39;accettazione del Venditore. Il mancato pagamento comporta il mancato inoltro della proposta d&#39;ordine.</li>
+<li>Il conferimento dei dati <strong>facoltativi</strong> (email, coordinate di geolocalizzazione, note, codice sconto) è libero; il loro mancato conferimento non impedisce la conclusione dell&#39;ordine, ma può limitare alcune funzionalità accessorie (es. la precompilazione dell&#39;indirizzo tramite mappa o l&#39;invio della conferma d&#39;ordine via email).</li>
+<li>In particolare, <strong>in assenza dell&#39;indirizzo email</strong> la ricezione e, ove tecnicamente possibile, la conferma e il riepilogo dell&#39;ordine restano disponibili tramite il Sito; gli aggiornamenti sullo stato dell&#39;ordine sono inviati tramite WhatsApp al numero fornito. Nessuna comunicazione via email verrà inviata.</li>
+</ul>
+<hr>
+<h2>5. Destinatari e responsabili del trattamento</h2>
+<blockquote>
+<p><strong>In breve.</strong> Per funzionare, il Sito si appoggia a fornitori esterni (pagamenti, database, hosting, mappe, calcolo percorsi, notifiche). Ciascuno tratta solo i dati necessari alla propria funzione. Non vendiamo i tuoi dati a nessuno.</p>
+</blockquote>
+<p>Per le finalità sopra descritte, i dati personali possono essere comunicati ai seguenti soggetti, che li trattano in qualità di <strong>responsabili del trattamento</strong> (art. 28 GDPR), di titolari autonomi o di destinatari terzi, ciascuno per la parte di rispettiva competenza:</p>
+<table>
+<thead>
+<tr>
+<th>Fornitore</th>
+<th>Funzione</th>
+<th>Ruolo</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Stripe</strong> (Stripe Payments Europe Ltd / Stripe Inc.)</td>
+<td>Gestione dell&#39;intera fase di pagamento (carta, PayPal, Satispay) tramite Stripe Checkout</td>
+<td>Responsabile del trattamento per i dati trattati per conto del Titolare; titolare autonomo per gli obblighi propri (antiriciclaggio, PSD2/SCA, regole dei circuiti di pagamento). Certificato PCI-DSS</td>
+</tr>
+<tr>
+<td><strong>Supabase</strong> (Supabase Inc.)</td>
+<td>Infrastruttura di database in cui sono conservati i dati degli ordini</td>
+<td>Responsabile del trattamento</td>
+</tr>
+<tr>
+<td><strong>Netlify</strong> (Netlify Inc.)</td>
+<td>Hosting del Sito e funzioni serverless che elaborano l&#39;ordine</td>
+<td>Responsabile del trattamento</td>
+</tr>
+<tr>
+<td><strong>WhatsApp / Meta</strong> (Meta Platforms Ireland Ltd)</td>
+<td>Canale tramite cui il Titolare invia manualmente, dal proprio account, gli aggiornamenti sullo stato dell&#39;ordine; riceve nome e numero di telefono</td>
+<td>Titolare autonomo del trattamento per i dati che tratta secondo le proprie policy. Base giuridica della comunicazione: esecuzione del contratto (art. 6, par. 1, lett. b GDPR — vedi Sez. 3 lett. c), essendo WhatsApp il canale tecnico delle comunicazioni di servizio</td>
+</tr>
+<tr>
+<td><strong>OSRM</strong> (Project OSRM — server pubblico dimostrativo)</td>
+<td>Calcolo del percorso, della stima dei tempi di arrivo e dell&#39;ordine ottimale del giro di consegna, a partire dalle coordinate del luogo di consegna</td>
+<td>Titolare autonomo/destinatario terzo che riceve le coordinate geografiche di consegna del cliente. Base giuridica della comunicazione: legittimo interesse del Titolare all&#39;ottimizzazione delle consegne (art. 6, par. 1, lett. f GDPR — vedi Sez. 3 lett. e)</td>
+</tr>
+<tr>
+<td><strong>Google</strong> (Google LLC / Google Ireland Ltd) — funzione mappe di navigazione</td>
+<td>Eventuale apertura, da parte del Titolare, di link di navigazione (Google Maps) verso l&#39;indirizzo di consegna del cliente</td>
+<td>Titolare autonomo del trattamento che riceve le coordinate di consegna quando il Titolare apre il link di navigazione. Base giuridica: legittimo interesse del Titolare alla gestione operativa delle consegne (art. 6, par. 1, lett. f GDPR — vedi Sez. 3 lett. e)</td>
+</tr>
+<tr>
+<td><strong>OpenStreetMap Foundation</strong> (tile della mappa), <strong>Nominatim</strong> (OpenStreetMap Foundation — geocodifica/ricerca indirizzo), <strong>Photon</strong> (Komoot GmbH — autocompletamento dell&#39;indirizzo)</td>
+<td>Visualizzazione della mappa, geocodifica e autocompletamento dell&#39;indirizzo</td>
+<td>Titolari autonomi del trattamento (servizi terzi interrogati). Ricevono l&#39;indirizzo e/o le coordinate digitate e l&#39;indirizzo IP <strong>solo quando</strong> l&#39;utente utilizza la mappa o la ricerca/autocompletamento dell&#39;indirizzo. Base giuridica: esecuzione del contratto e misure precontrattuali (art. 6, par. 1, lett. b GDPR)</td>
+</tr>
+<tr>
+<td><strong>Google Fonts (Google LLC)</strong></td>
+<td>Caricamento dei font tipografici del Sito</td>
+<td>Titolare autonomo/destinatario terzo che riceve l&#39;indirizzo IP dell&#39;utente per la sola erogazione del font. Base giuridica: legittimo interesse (art. 6, par. 1, lett. f GDPR — vedi Sez. 3 lett. g)</td>
+</tr>
+<tr>
+<td><strong>unpkg</strong> (Cloudflare, Inc.) e <strong>jsDelivr</strong> (CDN)</td>
+<td>Erogazione tramite CDN di librerie tecniche di terze parti necessarie al funzionamento del Sito (es. componente mappa e libreria di accesso al database)</td>
+<td>Destinatari terzi/titolari autonomi che ricevono l&#39;indirizzo IP dell&#39;utente all&#39;atto del caricamento delle relative risorse, per la sola erogazione tecnica. Base giuridica: legittimo interesse al corretto funzionamento del Sito (art. 6, par. 1, lett. f GDPR)</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Nota — Pagamenti PayPal e Satispay.</strong> Quando l&#39;utente sceglie PayPal o Satispay come metodo di pagamento, è <strong>Stripe</strong> a instradare la transazione verso il relativo circuito (PayPal Europe S.à r.l. et Cie, S.C.A.; Satispay S.p.A. / Satispay Europe S.A.), che opera come <strong>titolare autonomo</strong> per le proprie finalità, secondo la rispettiva privacy policy. <strong>Il Titolare non comunica dati direttamente a tali circuiti</strong>: la comunicazione dei dati di pagamento avviene unicamente verso Stripe.</p>
+</blockquote>
+<p>I dati possono inoltre essere comunicati al <strong>consulente fiscale/commercialista</strong> del Titolare, nonché alle <strong>autorità competenti</strong> ove richiesto dalla legge o per la tutela dei diritti del Titolare.</p>
+<p>I servizi <strong>Open-Meteo</strong> (dati meteo basati su coordinate fisse della gelateria) e <strong>Anthropic Claude API</strong> (traduzione automatica dei testi del Sito) <strong>non ricevono dati personali dei clienti</strong>.</p>
+<p>I dati <strong>non sono diffusi</strong> né ceduti a terzi per finalità commerciali.</p>
+<hr>
+<h2>6. Trasferimenti di dati verso Paesi terzi</h2>
+<blockquote>
+<p><strong>In breve.</strong> Alcuni fornitori hanno sede o infrastrutture fuori dall&#39;Unione Europea. In questi casi usiamo le tutele previste dalla legge (es. clausole contrattuali tipo o adesione al Data Privacy Framework). In un caso (calcolo percorsi) ci appoggiamo a un servizio pubblico dimostrativo le cui garanzie sono in corso di verifica.</p>
+</blockquote>
+<p>Alcuni dei fornitori sopra indicati hanno sede o infrastrutture al di fuori dello Spazio Economico Europeo (SEE). In tali casi il trasferimento avviene nel rispetto delle garanzie previste dal Capo V del GDPR (artt. 44-49). Per ciascun fornitore è indicata la garanzia in concreto operante alla data di pubblicazione della presente informativa.</p>
+<ul>
+<li><strong>Stripe:</strong> il contraente europeo è Stripe Payments Europe Ltd (Irlanda); i flussi verso Stripe Inc. (USA) sono coperti dall&#39;<strong>adesione di Stripe all&#39;EU-US Data Privacy Framework</strong> (Stripe Inc. è iscritta alla DPF List), integrata dalle <strong>Clausole Contrattuali Tipo (SCC)</strong> quale garanzia ulteriore prevista dal Data Processing Agreement di Stripe.</li>
+<li><strong>Netlify:</strong> i trasferimenti verso Netlify Inc. (USA) sono coperti dalle <strong>Clausole Contrattuali Tipo (SCC)</strong> adottate dalla Commissione europea.</li>
+<li><strong>Supabase:</strong> Supabase Inc. (USA) tratta, in qualità di responsabile, la totalità dei dati degli ordini (nome, telefono, indirizzo, coordinate). Qualora l&#39;infrastruttura di hosting del database sia situata al di fuori del SEE, il trasferimento è coperto dalle <strong>Clausole Contrattuali Tipo (SCC)</strong> previste dal Data Processing Addendum di Supabase, integrate — ove applicabile — dall&#39;adesione del fornitore a meccanismi di adeguatezza riconosciuti; trattandosi del flusso più rilevante per volume e natura dei dati, il Titolare lo tratta come trasferimento sistematico, previa valutazione dell&#39;impatto del trasferimento (Transfer Impact Assessment). <em>(Il Titolare verifica la regione effettiva del progetto Supabase prima della pubblicazione: se l&#39;infrastruttura risulta interamente situata nell&#39;Unione Europea, non si configura alcun trasferimento extra-UE per tali dati.)</em></li>
+<li><strong>WhatsApp / Meta (Meta Platforms Ireland Ltd):</strong> l&#39;invio manuale degli aggiornamenti tramite WhatsApp comporta la comunicazione di nome e numero di telefono del cliente. Il contraente europeo ha sede nell&#39;UE (Irlanda); i flussi infrastrutturali verso gli Stati Uniti (Meta Platforms, Inc.) sono coperti dall&#39;<strong>adesione di Meta all&#39;EU-US Data Privacy Framework</strong> (Meta Platforms, Inc. è iscritta alla DPF List), integrata dalle <strong>Clausole Contrattuali Tipo (SCC)</strong>. Trattandosi di un flusso ripetitivo (una comunicazione per ciascun ordine notificato), il Titolare <strong>non</strong> ricorre alle deroghe di cui all&#39;art. 49 GDPR, riservate ai trasferimenti occasionali, e ha svolto una valutazione dell&#39;impatto del trasferimento (Transfer Impact Assessment) con riferimento ai dati trasmessi (nome e numero di telefono). Il cliente può chiedere al Titolare, ove possibile, l&#39;utilizzo di un canale alternativo per le comunicazioni di stato dell&#39;ordine.</li>
+<li><strong>OSRM (Project OSRM):</strong> il calcolo del percorso e dei tempi di consegna è effettuato, lato back-office del Titolare, tramite un <strong>server pubblico dimostrativo</strong> (router.project-osrm.org), al quale sono trasmesse le sole coordinate geografiche del luogo di consegna. Tale server <strong>non offre un accordo sul trattamento dei dati (DPA) né Clausole Contrattuali Tipo</strong> e la localizzazione geografica dell&#39;infrastruttura <strong>non è nota</strong>: non è pertanto possibile garantire che il trasferimento avvenga all&#39;interno del SEE né individuare specifiche garanzie ex Capo V GDPR. Per minimizzare il rischio, sono comunicate esclusivamente le coordinate strettamente necessarie al calcolo del percorso, senza ulteriori identificativi del cliente. Il Titolare <strong>valuta, quale misura prioritaria prima dell&#39;utilizzo in produzione, la sostituzione dell&#39;endpoint con un&#39;istanza self-hosted o con un servizio dotato di idonee garanzie contrattuali</strong> (l&#39;endpoint dimostrativo non è destinato a uso produttivo).</li>
+<li><strong>Google — Google Fonts e mappe di navigazione (Google LLC, USA):</strong> il caricamento dei font comporta la comunicazione dell&#39;indirizzo IP a Google LLC a ogni pagina; l&#39;eventuale apertura di link di navigazione Google Maps da parte del Titolare comporta la comunicazione delle coordinate di consegna. I trasferimenti sono coperti dall&#39;<strong>adesione di Google all&#39;EU-US Data Privacy Framework</strong> (Google LLC è iscritta alla DPF List), integrata dalle <strong>Clausole Contrattuali Tipo (SCC)</strong>. Il Titolare dà atto che il self-hosting dei font costituisce misura alternativa idonea a eliminare del tutto il trasferimento dell&#39;IP a Google ed è oggetto di valutazione (vedi Sez. 3, lett. g).</li>
+<li><strong>unpkg (Cloudflare, Inc.) e jsDelivr:</strong> l&#39;erogazione delle librerie tecniche tramite CDN può comportare la comunicazione dell&#39;indirizzo IP dell&#39;utente a nodi situati anche al di fuori del SEE. I trasferimenti verso fornitori con sede negli Stati Uniti sono presidiati, secondo i casi, dall&#39;adesione del fornitore all&#39;<strong>EU-US Data Privacy Framework</strong> e/o dalle <strong>Clausole Contrattuali Tipo (SCC)</strong>.</li>
+</ul>
+<p>I servizi di mappa e geocodifica (OpenStreetMap, Nominatim, Photon/Komoot GmbH) sono erogati da server situati nell&#39;Unione Europea. I dati eventualmente restituiti da tali servizi e non raccolti presso l&#39;interessato (es. indirizzo normalizzato in reverse-geocoding) provengono da detti servizi, quale fonte dei dati ai sensi dell&#39;art. 14, par. 2, lett. f) GDPR.</p>
+<p>È possibile richiedere copia delle garanzie adottate scrivendo ai recapiti indicati nella Sezione 1.</p>
+<hr>
+<h2>7. Periodo di conservazione</h2>
+<blockquote>
+<p><strong>In breve.</strong> Teniamo i dati contenuti nei documenti fiscali per il tempo richiesto dalla legge (10 anni). Gli altri dati operativi non necessari (es. le coordinate GPS) li eliminiamo appena non servono più.</p>
+</blockquote>
+<p>I dati personali sono conservati per il tempo strettamente necessario alle finalità per cui sono stati raccolti, nel rispetto dei principi di minimizzazione e limitazione della conservazione (art. 5, par. 1, lett. c) ed e) GDPR). In particolare:</p>
+<ul>
+<li><strong>Dati contenuti nei documenti fiscali/contabili obbligatori</strong> (dati anagrafici essenziali, dettaglio degli articoli e importi confluiti nel documento fiscale): conservati per <strong>10 anni</strong> in adempimento agli obblighi di conservazione previsti dall&#39;art. 2220 c.c. e dalla normativa fiscale e IVA. Il termine decennale <strong>riguarda esclusivamente</strong> i dati effettivamente presenti in tali documenti; il <em>dies a quo</em> decorre <strong>dalla data del documento fiscale</strong> e, per la tutela dei diritti contrattuali, entro il termine di prescrizione ordinaria decennale ex <strong>art. 2946 c.c.</strong> (che decorre dall&#39;esigibilità del relativo diritto).</li>
+<li><strong>Dati di contatto e operativi non confluiti nei documenti fiscali obbligatori</strong> (in particolare le coordinate GPS di consegna, nonché — ove non presenti nel documento fiscale — telefono, email, note libere, fascia oraria e codice sconto): in applicazione del principio di minimizzazione, il Titolare <strong>provvederà a cancellarli o renderli anonimi non appena non più necessari</strong> alle finalità per cui sono stati raccolti (di norma una volta eseguita la consegna), secondo termini operativi più brevi, salvo che una specifica contestazione ne renda necessaria la conservazione per il tempo strettamente occorrente alla relativa gestione.</li>
+<li><strong>Ordini non andati a buon fine (&quot;pending&quot;):</strong> gli ordini non perfezionati per mancato completamento del pagamento sono conservati nella tabella temporanea e <strong>cancellati a breve termine</strong> (tipicamente entro circa 30 minuti dall&#39;abbandono).</li>
+<li><strong>Log tecnici e dati di sicurezza:</strong> conservati per un periodo limitato per finalità di sicurezza e diagnostica e comunque non oltre i termini previsti dai rispettivi fornitori di hosting/servizi e il termine di prescrizione applicabile a eventuali contestazioni.</li>
+<li><strong>Dati trattati sulla base del consenso (geolocalizzazione):</strong> fino alla revoca del consenso o al venir meno della finalità, e comunque non oltre i termini sopra indicati per i dati operativi.</li>
+</ul>
+<p>Decorsi tali termini, i dati vengono cancellati o resi anonimi.</p>
+<hr>
+<h2>8. Diritti dell&#39;interessato</h2>
+<blockquote>
+<p><strong>In breve.</strong> Puoi chiederci di vedere, correggere o cancellare i tuoi dati, oppure opporti ad alcuni trattamenti, scrivendoci ai contatti indicati nella Sezione 1. Poiché non esistono account, indica nome, telefono e data dell&#39;ordine per farci ritrovare la tua richiesta. Puoi anche reclamare a un&#39;Autorità di controllo.</p>
+</blockquote>
+<p>In relazione ai dati trattati, l&#39;interessato ha il diritto, nei limiti e alle condizioni previsti dagli artt. 15-22 del GDPR, di:</p>
+<ul>
+<li><strong>accedere</strong> ai propri dati personali (art. 15);</li>
+<li>ottenere la <strong>rettifica</strong> dei dati inesatti o l&#39;integrazione di quelli incompleti (art. 16);</li>
+<li>ottenere la <strong>cancellazione</strong> dei dati (&quot;diritto all&#39;oblio&quot;), nei casi previsti e fatti salvi gli obblighi legali di conservazione (art. 17);</li>
+<li>ottenere la <strong>limitazione</strong> del trattamento (art. 18);</li>
+<li><strong>opporsi</strong> al trattamento fondato sul legittimo interesse (art. 21), inclusi la sicurezza, l&#39;ottimizzazione delle consegne (OSRM/Google Maps) e il caricamento dei font;</li>
+<li>ottenere la <strong>portabilità</strong> dei dati da lui forniti e trattati con mezzi automatizzati sulla base del consenso o del contratto (art. 20). <em>La portabilità riguarda i soli dati trattati su base contrattuale o consenso con mezzi automatizzati; non si applica ai dati trattati per obbligo legale o legittimo interesse;</em></li>
+<li><strong>revocare il consenso</strong> prestato (es. per la geolocalizzazione) in qualsiasi momento, senza pregiudizio per la liceità del trattamento basato sul consenso prima della revoca (art. 7, par. 3).</li>
+</ul>
+<p>Poiché il Sito <strong>non prevede account, login o password lato cliente</strong>, l&#39;esercizio dei diritti avviene contattando direttamente il Titolare ai recapiti indicati nella Sezione 1, fornendo gli elementi utili a identificare l&#39;ordine di riferimento (es. nome, telefono, data dell&#39;ordine). In assenza di un account che consenta l&#39;identificazione automatica del richiedente, e qualora sussistano ragionevoli dubbi sull&#39;identità di chi esercita il diritto, il Titolare può richiedere ulteriori informazioni necessarie a confermarne l&#39;identità prima di dare seguito alla richiesta, al fine di evitare la comunicazione di dati a soggetti non legittimati (art. 12, par. 6, GDPR).</p>
+<p>L&#39;interessato ha inoltre il diritto di proporre <strong>reclamo a un&#39;Autorità di controllo</strong> (art. 77 GDPR), in particolare presso il <strong>Garante per la protezione dei dati personali</strong> — Piazza Venezia 11, 00187 Roma (<a href="http://www.garanteprivacy.it">www.garanteprivacy.it</a>) — ovvero presso l&#39;Autorità di controllo dello <strong>Stato membro in cui risiede abitualmente, lavora o nel quale si è verificata l&#39;asserita violazione</strong>, qualora ritenga che il trattamento violi la normativa applicabile, nonché di adire l&#39;<strong>autorità giudiziaria</strong> competente per la tutela dei propri diritti (art. 79 GDPR), fermo restando ogni altro rimedio amministrativo o giurisdizionale.</p>
+<hr>
+<h2>9. Cookie e archiviazione locale</h2>
+<blockquote>
+<p><strong>In breve.</strong> Il Sito non usa cookie di tracciamento, né analytics, né pixel pubblicitari: per questo non c&#39;è un banner cookie. Salviamo solo la tua preferenza di lingua nel browser.</p>
+</blockquote>
+<p>Il Sito <strong>non utilizza cookie di profilazione, analytics o di marketing e non effettua alcun tracciamento comportamentale degli utenti.</strong> Per questo motivo non è presente alcun banner di consenso ai cookie.</p>
+<p>Il Sito utilizza esclusivamente i seguenti strumenti di archiviazione <strong>tecnica/funzionale</strong>, che — non essendo finalizzati al tracciamento ma al solo funzionamento del servizio richiesto dall&#39;utente — sono <strong>esenti dall&#39;obbligo di consenso</strong> ai sensi dell&#39;art. 122 del D.lgs. 196/2003 (Codice Privacy, attuazione dell&#39;art. 5, par. 3, della Direttiva 2002/58/CE — ePrivacy) e rientrano espressamente tra gli strumenti tecnici esenti da consenso secondo il <strong>par. 4 delle Linee guida cookie del Garante del 10 giugno 2021</strong>:</p>
+<ul>
+<li><strong>localStorage</strong> (<code>gelato_lang</code>): memorizza, lato browser, la preferenza di lingua dell&#39;utente per il rendering del Sito nella lingua richiesta (dato distinto dal campo &quot;lingua&quot; eventualmente salvato insieme all&#39;ordine). Durata: persistente fino a cancellazione manuale dal browser.</li>
+<li><strong>sessionStorage:</strong> utilizzato unicamente per il pannello interno di gestione della gelateria, a cui i clienti del Sito non accedono e per il quale non esiste alcun account lato cliente; conserva lo stato applicativo della sessione amministrativa. Durata: termine della sessione.</li>
+</ul>
+<p>L&#39;utente può cancellare in qualsiasi momento i dati di archiviazione locale dalle impostazioni del proprio browser; ciò può comportare la perdita della preferenza di lingua memorizzata.</p>
+<p>L&#39;accesso alle informazioni di posizione del dispositivo (geolocalizzazione del browser, finalità f della Sez. 3) avviene <strong>previo consenso prestato tramite il browser</strong>, in coerenza con l&#39;art. 122 D.lgs. 196/2003.</p>
+<p><strong>Risorse di terze parti.</strong> Il caricamento di alcune risorse esterne può comportare l&#39;invio dell&#39;indirizzo IP dell&#39;utente (e, ove applicabile, l&#39;impostazione di identificatori tecnici <strong>lato dominio del fornitore</strong>, non riconducibili a cookie installati dal Titolare) ai relativi gestori:</p>
+<ul>
+<li><strong>Google Fonts</strong> (caricamento dei font): comporta la comunicazione dell&#39;indirizzo IP dell&#39;utente a Google LLC (USA) a ogni pagina del Sito — vedi Sezioni 3 lett. g), 5 e 6;</li>
+<li><strong>OpenStreetMap / Nominatim / Photon (Komoot GmbH)</strong> (mappa e ricerca indirizzo): il caricamento delle tile della mappa e le richieste di geocodifica comportano la comunicazione dell&#39;indirizzo IP dell&#39;utente, oltre all&#39;indirizzo/coordinate digitate, ai relativi gestori, <strong>solo quando</strong> l&#39;utente utilizza la mappa o la ricerca dell&#39;indirizzo (vedi Sezioni 5 e 6);</li>
+<li><strong>unpkg (Cloudflare) e jsDelivr</strong> (librerie tecniche): il caricamento delle librerie necessarie al funzionamento del Sito comporta la comunicazione dell&#39;indirizzo IP dell&#39;utente ai relativi CDN, per la sola erogazione tecnica (vedi Sezioni 5 e 6);</li>
+<li><strong>Stripe</strong> (fase di pagamento): nel proprio contesto di pagamento Stripe può impostare identificatori tecnici necessari all&#39;elaborazione della transazione e alla prevenzione delle frodi. Tali identificatori sono impostati <strong>da Stripe nel proprio contesto</strong> e <strong>non costituiscono cookie installati dal Titolare</strong>; la relativa attività antifrode rientra negli obblighi propri di Stripe come titolare autonomo (vedi Sezioni 3 lett. e, 5 e 6).</li>
+</ul>
+<p><strong>Log tecnici di hosting.</strong> Oltre alle risorse sopra elencate, l&#39;indirizzo IP dell&#39;utente è trattato anche dai fornitori di hosting e dei servizi di funzionamento (<strong>Netlify, Supabase, Stripe</strong>) nei rispettivi log tecnici di funzionamento e sicurezza, come precisato alla Sezione 2 lett. c).</p>
+<p>Tali risorse non sono utilizzate per finalità di profilazione. Per maggiori informazioni si rinvia alle rispettive privacy policy dei fornitori.</p>
+<hr>
+<h2>10. Assenza di processi decisionali automatizzati</h2>
+<p>Il Titolare <strong>non adotta processi decisionali automatizzati</strong>, compresa la profilazione, che producano effetti giuridici o incidano in modo analogamente significativo sull&#39;interessato, ai sensi dell&#39;art. 22 del GDPR.</p>
+<hr>
+<h2>11. Modifiche all&#39;informativa</h2>
+<p>Il Titolare si riserva di modificare o aggiornare la presente informativa, anche in conseguenza di variazioni normative o dei servizi utilizzati. La versione aggiornata è pubblicata sul Sito con indicazione della data di ultimo aggiornamento. Si invita l&#39;utente a consultare periodicamente questa pagina.</p>
+<p><strong>Ultimo aggiornamento:</strong> [[DATA_AGGIORNAMENTO]]</p>
+</article></section>
+    <footer class="footer">
+      La versione italiana di questo documento fa fede. ·
+      <a href="/informazioni.html">Informazioni clienti</a> ·
+      <a href="/index.html">Home</a>
+    </footer>
+  </main>
+</body>
+</html>

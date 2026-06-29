@@ -10,10 +10,8 @@ const BASE = (process.env.PUBLIC_BASE_URL || "https://www.gelateriamontepetrosu.
 const business = {
   base: BASE,
   logoUrl: BASE + "/img/logo-full.png",
-  // WIP: puntano ai .md versionati realmente serviti (raw markdown). Nel pass legale
-  // diventeranno pagine HTML a URL stabile (es. /legal/privacy-policy.html).
-  tcUrl: BASE + "/legal/condizioni-generali-vendita.v2026-06-26.md",
-  privacyUrl: BASE + "/legal/privacy-policy.v2026-06-26.md",
+  tcUrl: BASE + "/legal/condizioni-generali-vendita.html",
+  privacyUrl: BASE + "/legal/privacy-policy.html",
   whatsappUrl: process.env.BIZ_WHATSAPP || "https://wa.me/[[TELEFONO]]",
   ragioneSociale: process.env.BIZ_RAGIONE_SOCIALE || "[[RAGIONE_SOCIALE]]",
   piva: process.env.BIZ_PIVA || "[[PIVA]]",

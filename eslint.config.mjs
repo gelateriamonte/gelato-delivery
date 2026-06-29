@@ -40,4 +40,17 @@ export default [
       'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
+  {
+    // Tool di build locali (ESM, Node): es. generatore pagine legali
+    files: ['tools/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: { ...globals.node },
+    },
+    rules: {
+      'no-unused-vars': ['warn', { caughtErrors: 'none' }],
+      'no-undef': 'error',
+    },
+  },
 ];

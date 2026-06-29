@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="it" data-accent="terracotta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>INFORMAZIONI SUGLI ALLERGENI — Gelateria BM&amp;V</title>
+  <meta name="description" content="INFORMAZIONI SUGLI ALLERGENI — Gelateria BM&amp;V, Monte Petrosu (San Teodoro).">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <link rel="apple-touch-icon" href="/img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+  :root{
+    --cream:#fffdf8; --paper:oklch(0.993 0.006 84); --paper-2:oklch(0.960 0.013 82);
+    --ink:oklch(0.265 0.014 58); --ink-2:oklch(0.405 0.014 60); --muted:oklch(0.545 0.013 62);
+    --line:oklch(0.902 0.012 78); --line-2:oklch(0.845 0.015 76);
+    --accent:oklch(0.560 0.105 42); --accent-ink:oklch(0.470 0.100 42); --accent-soft:oklch(0.932 0.034 50);
+    --blue:#63819f; --green:#537f68;
+    --serif:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --sans:"Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --shadow-card:0 1px 2px rgba(60,40,30,.04), 0 14px 34px -20px rgba(70,45,30,.28);
+    --shadow-screen:0 2px 6px rgba(60,40,30,.05), 0 40px 80px -42px rgba(60,40,30,.42);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{ background:var(--paper); font-family:var(--sans); color:var(--ink); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  a{ color:var(--accent-ink); }
+  .page{ max-width:820px; margin:0 auto; min-height:100dvh; background:var(--cream); box-shadow:var(--shadow-screen); }
+  .top{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 26px; border-bottom:1px solid var(--line); position:sticky; top:0; background:rgba(255,253,248,.92); backdrop-filter:saturate(1.1) blur(6px); z-index:5; }
+  .brand{ display:flex; align-items:center; gap:12px; text-decoration:none; min-width:0; }
+  .brand img{ width:52px; height:auto; display:block; background:rgba(255,255,255,.7); border:1px solid rgba(168,85,47,.25); border-radius:11px; padding:6px; }
+  .brand span{ font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+  .back{ text-decoration:none; color:var(--accent-ink); font-size:13px; font-weight:700; white-space:nowrap; }
+  .hero{ padding:46px 30px 26px; border-bottom:1px solid var(--line); background:linear-gradient(180deg, var(--paper), var(--cream)); }
+  .eyebrow{ font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-ink); margin:0 0 12px; }
+  .hero h1{ font-family:var(--serif); font-size:40px; line-height:1.02; font-weight:600; margin:0; letter-spacing:0; color:var(--ink); }
+  .content{ padding:30px 30px 50px; }
+  .sheet{ max-width:680px; margin:0 auto; }
+  .sheet h2{ font-family:var(--serif); font-size:27px; line-height:1.12; font-weight:600; margin:34px 0 12px; color:var(--ink); }
+  .sheet h3{ font-size:12.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--accent-ink); margin:26px 0 10px; font-weight:700; }
+  .sheet h4{ font-size:15px; font-weight:700; margin:18px 0 8px; color:var(--ink); }
+  .sheet p{ font-size:15px; line-height:1.7; color:var(--ink-2); margin:0 0 14px; }
+  .sheet ul,.sheet ol{ margin:0 0 16px; padding-left:22px; color:var(--ink-2); }
+  .sheet li{ font-size:14.5px; line-height:1.6; margin:6px 0; }
+  .sheet strong{ color:var(--ink); font-weight:700; }
+  .sheet a{ color:var(--accent-ink); }
+  .sheet blockquote{ border-left:4px solid var(--green); background:color-mix(in oklch, var(--paper) 82%, #e5f1e8); padding:12px 16px; margin:18px 0; border-radius:0 8px 8px 0; }
+  .sheet blockquote p{ margin:0; font-size:14px; }
+  .sheet table{ width:100%; border-collapse:collapse; margin:16px 0; font-size:13.5px; }
+  .sheet th,.sheet td{ border:1px solid var(--line-2); padding:9px 11px; text-align:left; vertical-align:top; line-height:1.5; color:var(--ink-2); }
+  .sheet th{ background:var(--paper-2); color:var(--ink); font-weight:700; }
+  .sheet hr{ border:0; border-top:1px solid var(--line); margin:30px 0; }
+  .sheet code{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; background:var(--paper-2); padding:1px 5px; border-radius:5px; }
+  .footer{ padding:24px 30px 34px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; line-height:1.6; }
+  .footer a{ color:var(--muted); }
+  .top:focus-within, .back:focus-visible, .brand:focus-visible{ outline:2px solid var(--blue); outline-offset:3px; }
+  @media (max-width:680px){
+    .top{ padding:14px 18px; }
+    .hero{ padding:34px 20px 22px; }
+    .hero h1{ font-size:31px; }
+    .content{ padding:24px 20px 40px; }
+    .sheet table{ font-size:12.5px; }
+  }
+  @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+  <main class="page">
+    <header class="top">
+      <a class="brand" href="/index.html" aria-label="Torna alla home">
+        <img src="/img/logo-full.png" alt="Gelateria BM&amp;V">
+        <span>Monte Petrosu</span>
+      </a>
+      <a class="back" href="/informazioni.html">← Informazioni</a>
+    </header>
+    <section class="hero">
+      <p class="eyebrow">Informazioni alimentari</p>
+      <h1>INFORMAZIONI SUGLI ALLERGENI</h1>
+    </section>
+    <section class="content"><article class="sheet"><p>Ultimo aggiornamento: [[DATA_AGGIORNAMENTO]]</p>
+<p>La presente scheda informativa riassume le informazioni generali sugli allergeni relative ai prodotti di gelateria artigianale venduti tramite il sito <strong>gelato26.netlify.app</strong> da Gelateria BM&amp;V. La scheda integra, ma non sostituisce, le informazioni specifiche rese disponibili per ciascun gusto/prodotto prima dell&#39;acquisto e quelle fornite al momento della consegna.</p>
+<blockquote>
+<p><strong>In breve.</strong> Prima di ordinare consulta sempre gli allergeni indicati per ogni gusto/prodotto. Il laboratorio utilizza ingredienti contenenti allergeni e non puo&#39; escludere contaminazioni crociate. In caso di allergie gravi, contatta la Gelateria prima di completare l&#39;ordine e segnala l&#39;allergia nell&#39;apposito campo o casella del flusso d&#39;ordine.</p>
+</blockquote>
+<hr>
+<h2>1. Informazioni rese prima dell&#39;acquisto</h2>
+<p>In conformita&#39; al <strong>Regolamento (UE) 1169/2011</strong>, per la vendita a distanza di alimenti le informazioni obbligatorie sui prodotti, inclusi gli allergeni, sono rese disponibili al cliente prima della conclusione dell&#39;acquisto.</p>
+<p>Per ciascun gusto/prodotto, quando applicabile, il cliente puo&#39; consultare:</p>
+<ul>
+<li>denominazione del prodotto o del gusto;</li>
+<li>ingredienti principali o descrizione del gusto;</li>
+<li>allergeni presenti;</li>
+<li>eventuale indicazione &quot;puo&#39; contenere tracce di...&quot;;</li>
+<li>condizioni essenziali di conservazione e consumo.</li>
+</ul>
+<p>Le informazioni specifiche possono variare in funzione della produzione giornaliera artigianale e della disponibilita&#39; dei gusti.</p>
+<hr>
+<h2>2. I 14 allergeni alimentari</h2>
+<p>Sono evidenziati, nella misura in cui presenti nei prodotti, i <strong>14 allergeni</strong> indicati dall&#39;Allegato II del Regolamento (UE) 1169/2011:</p>
+<ol>
+<li>Cereali contenenti glutine.</li>
+<li>Crostacei.</li>
+<li>Uova.</li>
+<li>Pesce.</li>
+<li>Arachidi.</li>
+<li>Soia.</li>
+<li>Latte.</li>
+<li>Frutta a guscio.</li>
+<li>Sedano.</li>
+<li>Senape.</li>
+<li>Semi di sesamo.</li>
+<li>Anidride solforosa e solfiti.</li>
+<li>Lupini.</li>
+<li>Molluschi.</li>
+</ol>
+<p>Nel contesto della gelateria artigianale, gli allergeni piu&#39; frequentemente rilevanti possono includere, a titolo esemplificativo, <strong>latte</strong>, <strong>uova</strong>, <strong>soia</strong>, <strong>frutta a guscio</strong>, <strong>arachidi</strong> e <strong>cereali contenenti glutine</strong>. La lista concreta dipende pero&#39; dalla ricetta del singolo gusto/prodotto.</p>
+<hr>
+<h2>3. Contaminazione crociata</h2>
+<p>I prodotti sono preparati in un laboratorio artigianale in cui si lavorano ingredienti diversi e in cui possono essere presenti, tra gli altri, <strong>latte, frutta a guscio, uova, soia, arachidi e cereali contenenti glutine</strong>.</p>
+<p>Per questo motivo, anche quando un allergene non e&#39; intenzionalmente impiegato nella ricetta di un determinato gusto/prodotto, <strong>non e&#39; possibile escludere la presenza di tracce</strong> dovute a contaminazione crociata.</p>
+<p>Le indicazioni specifiche per singolo gusto/prodotto, incluse eventuali formule &quot;puo&#39; contenere tracce di...&quot;, costituiscono dettaglio aggiuntivo e non eliminano questa avvertenza generale.</p>
+<hr>
+<h2>4. Clienti con allergie o intolleranze</h2>
+<p>Il cliente con allergie o intolleranze deve consultare attentamente le informazioni disponibili prima dell&#39;ordine.</p>
+<p>In caso di <strong>allergie gravi</strong> o rischio di reazioni importanti:</p>
+<ul>
+<li>contatta la Gelateria prima di completare il pagamento;</li>
+<li>segnala l&#39;allergia nel flusso d&#39;ordine usando l&#39;apposita indicazione, se disponibile, e non soltanto il campo note libero;</li>
+<li>attendi conferma della compatibilita&#39; del prodotto prima della preparazione dell&#39;ordine.</li>
+</ul>
+<p>Se la compatibilita&#39; non puo&#39; essere garantita, l&#39;ordine non viene eseguito e l&#39;eventuale importo pagato viene rimborsato integralmente.</p>
+<hr>
+<h2>5. Informazioni alla consegna</h2>
+<p>Al momento della consegna o del ritiro, le informazioni sugli allergeni e le istruzioni essenziali di conservazione sono rese nuovamente disponibili tramite etichetta, scheda, riepilogo o altra informazione associata al prodotto consegnato.</p>
+<p>Il gelato e&#39; un prodotto alimentare fresco e deperibile: deve essere conservato in modo idoneo, non deve essere ricongelato dopo scongelamento e deve essere consumato secondo le istruzioni fornite.</p>
+<hr>
+<h2>6. Contatti</h2>
+<p>Per dubbi sugli ingredienti, sugli allergeni o sulla compatibilita&#39; di un ordine con allergie o intolleranze, contatta la Gelateria ai recapiti indicati nelle Condizioni Generali di Vendita e nell&#39;Informativa Privacy.</p>
+<p>In caso di allergie gravi, il contatto preventivo e&#39; fortemente raccomandato prima di completare l&#39;ordine.</p>
+</article></section>
+    <footer class="footer">
+      La versione italiana di questo documento fa fede. ·
+      <a href="/informazioni.html">Informazioni clienti</a> ·
+      <a href="/index.html">Home</a>
+    </footer>
+  </main>
+</body>
+</html>

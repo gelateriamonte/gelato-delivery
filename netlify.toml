@@ -17,6 +17,26 @@
 # (force=true → vincono sul file statico esistente) bloccano i sorgenti NON-asset: schema e
 # migration SQL, doc interni, file di build/config. Restano in git (storia) ma → 404 sul sito.
 # Fix "vero" futuro = publish in una sottocartella con soli asset (vedi F-DEPLOY).
+
+# Documenti legali: i .md versionati sono solo SORGENTE (rigenerati in legal/*.html da
+# tools/render-legal.mjs). Redirect → pagine HTML stilate, così il markdown grezzo non è
+# mai servito e i link vecchi continuano a funzionare.
+[[redirects]]
+  from = "/legal/allergeni.v2026-06-26.md"
+  to = "/legal/allergeni.html"
+  status = 301
+  force = true
+[[redirects]]
+  from = "/legal/privacy-policy.v2026-06-26.md"
+  to = "/legal/privacy-policy.html"
+  status = 301
+  force = true
+[[redirects]]
+  from = "/legal/condizioni-generali-vendita.v2026-06-26.md"
+  to = "/legal/condizioni-generali-vendita.html"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/supabase/*"
   to = "/404.html"
