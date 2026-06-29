@@ -105,6 +105,7 @@ function setMode(mode) {
   $("slot-field").style.display = del ? "" : "none";
   $("pickup-field").style.display = del ? "none" : "";
   const af = $("address-field"); if (af) af.style.display = del ? "" : "none";
+  const later = $("submit-later"); if (later) later.style.display = del ? "none" : "";   // "Paga dopo" solo per ritiro
   const dl = $("day-label"); if (dl) dl.textContent = del ? t("order.form.deliveryDay") : t("order.form.pickupDay");
   if (del) renderSlotSelect(); else { renderPickupTimes(); renderOpeningHours(); }
   renderCart();
@@ -542,6 +543,7 @@ function updateTotal() {
   } else { banner.style.display = "none"; }
   const ready = (pickup ? pickupOk : (hasSlot && IN_ZONE)) && !dayConflict;
   $("submit").disabled = !(CART.length && okMin && ready);
+  const later = $("submit-later"); if (later) later.disabled = $("submit").disabled;   // "Paga dopo" segue lo stesso gate
 }
 
 // ---------- giorno + fasce ----------
@@ -666,6 +668,42 @@ async function submitOrder() {
 }
 function resetSubmit() { $("submit").disabled = false; $("submit").textContent = t("order.submit.goToPayment"); }
 
+// "Paga dopo": ordine PICKUP con pagamento alla cassa al ritiro (nessuno Stripe).
+// L'ordine nasce subito lato server (create-order-unpaid), poi vai alla thank-you.
+async function submitOrderUnpaid() {
+  if (cartHasDaily() && !isToday()) { toast(t("order.toast.dailyTodayOnly")); updateTotal(); return; }
+  if (!isPickup()) return;
+  const name = $("name").value.trim();
+  const phone = $("phone").value.trim();
+  if (!name || !phone) { toast(t("order.toast.fillNamePhone")); return; }
+  const tval = $("pickup-time").value;
+  if (!tval) { toast(t("order.toast.choosePickupTime")); return; }
+  const sub = subtotal();
+  const payload = {
+    customer_name: name, customer_phone: phone,
+    email: $("email").value.trim() || null,
+    address: t("order.pickup.atShop"),
+    delivery_date: SELECTED_DAY, slot_label: "Ritiro " + tval,
+    fulfillment: "pickup",
+    items: CART, subtotal: sub, delivery_cost: 0, total: sub,
+    coupon_code: COUPON ? COUPON.code : null,
+    notes: $("notes").value.trim() || null,
+    lang: (window.I18N ? I18N.lang() : "it"),
+  };
+  const btn = $("submit-later");
+  btn.disabled = true; btn.textContent = t("order.submit.waiting");
+  try {
+    const res = await fetch("/.netlify/functions/create-order-unpaid", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) { toast(data.error || t("order.toast.paymentStartError")); btn.disabled = false; btn.textContent = t("order.submit.btnLater"); return; }
+    location.href = "grazie.html?pay=later";
+  } catch (e) {
+    console.error(e); toast(t("order.toast.networkUnavailable")); btn.disabled = false; btn.textContent = t("order.submit.btnLater");
+  }
+}
+
 // ---------- pagamento (Stripe Embedded Checkout) ----------
 let stripeObj = null, embeddedCheckout = null;
 async function openPayment(clientSecret) {
@@ -725,6 +763,7 @@ $("m-add").onclick = addToCart;
 $("m-qty-dec").onclick = () => { $("m-qty").value = Math.max(1, (parseInt($("m-qty").value || "1", 10) || 1) - 1); };
 $("m-qty-inc").onclick = () => { $("m-qty").value = (parseInt($("m-qty").value || "1", 10) || 1) + 1; };
 $("submit").onclick = submitOrder;
+$("submit-later").onclick = submitOrderUnpaid;
 $("pay-close").onclick = closePayment;
 $("coupon-apply").onclick = applyCoupon;
 $("coupon").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyCoupon(); } });

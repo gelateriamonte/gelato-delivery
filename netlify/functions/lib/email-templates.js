@@ -112,6 +112,7 @@ function layout({ lang, kicker, title, intro, blocksHtml, legal }) {
 
 function content(order, status, lang, opts) {
   const en = isEN(lang);
+  const paid = !!order.payment_id;   // ordini "paga al ritiro" non hanno pagamento → niente rimborso
   const name = esc(order.customer_name ? String(order.customer_name).split(" ")[0] : "");
   const tc = `<a href="${esc(opts.legal.tcUrl)}" style="color:#a8552f;">${en ? "Terms of sale" : "Condizioni di vendita"}</a>`;
   const recesso = noticeBlock(en
@@ -157,9 +158,11 @@ function content(order, status, lang, opts) {
         subject: en ? "About your order" : "Riguardo al tuo ordine",
         kicker: en ? "Order not fulfilled" : "Ordine non evaso",
         title: en ? `${name}, we couldn't fulfil your order` : `${name}, non possiamo evadere il tuo ordine`,
-        intro: en
-          ? "We're sorry: we can't fulfil this order. Any amount paid is <strong>fully refunded to the same payment method</strong> you used, within the technical times of each payment channel."
-          : "Ci dispiace: non possiamo evadere questo ordine. L'eventuale importo pagato è <strong>rimborsato integralmente sullo stesso metodo di pagamento</strong> usato, nei tempi tecnici di ciascun canale.",
+        intro: paid
+          ? (en ? "We're sorry: we can't fulfil this order. Any amount paid is <strong>fully refunded to the same payment method</strong> you used, within the technical times of each payment channel."
+                : "Ci dispiace: non possiamo evadere questo ordine. L'importo pagato è <strong>rimborsato integralmente sullo stesso metodo di pagamento</strong> usato, nei tempi tecnici di ciascun canale.")
+          : (en ? "We're sorry: we can't fulfil this order. No payment had been taken, so there is nothing to refund."
+                : "Ci dispiace: non possiamo evadere questo ordine. Non era previsto alcun pagamento anticipato, quindi non è dovuto alcun rimborso."),
         blocks: [summaryBlock(order, lang)],
       };
     case "annullato":
@@ -167,9 +170,11 @@ function content(order, status, lang, opts) {
         subject: en ? "Order cancelled" : "Ordine annullato",
         kicker: en ? "Cancellation confirmed" : "Annullamento confermato",
         title: en ? `${name}, your order is cancelled` : `${name}, il tuo ordine è annullato`,
-        intro: en
-          ? `Your order has been cancelled. <strong>${euro(order.total)}</strong> is refunded to the <strong>same payment method</strong> you used, within the technical times of each payment channel.`
-          : `Il tuo ordine è stato annullato. <strong>${euro(order.total)}</strong> viene rimborsato sullo <strong>stesso metodo di pagamento</strong> usato, nei tempi tecnici di ciascun canale.`,
+        intro: paid
+          ? (en ? `Your order has been cancelled. <strong>${euro(order.total)}</strong> is refunded to the <strong>same payment method</strong> you used, within the technical times of each payment channel.`
+                : `Il tuo ordine è stato annullato. <strong>${euro(order.total)}</strong> viene rimborsato sullo <strong>stesso metodo di pagamento</strong> usato, nei tempi tecnici di ciascun canale.`)
+          : (en ? "Your order has been cancelled. No payment had been taken, so there is nothing to refund."
+                : "Il tuo ordine è stato annullato. Non era previsto alcun pagamento anticipato: nessun importo è stato addebitato."),
         blocks: [summaryBlock(order, lang)],
       };
     default:

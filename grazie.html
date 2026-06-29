@@ -41,6 +41,17 @@
       </div>
     </section>
   </main>
+  <script>
+    // Pagamento alla cassa al ritiro (?pay=later): cambia i testi della conferma
+    // prima che i18n applichi, così resta corretto anche cambiando lingua.
+    (function () {
+      if (new URLSearchParams(location.search).get("pay") !== "later") return;
+      var h = document.querySelector("#done h2[data-i18n]");
+      var b = document.querySelector("#done p[data-i18n='grazie.body']");
+      if (h) h.setAttribute("data-i18n", "grazie.heading.later");
+      if (b) b.setAttribute("data-i18n", "grazie.body.later");
+    })();
+  </script>
   <script src="js/i18n.js"></script>
   <script src="js/quotes.js"></script>
 </body>

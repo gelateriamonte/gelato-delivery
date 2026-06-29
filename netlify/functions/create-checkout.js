@@ -6,6 +6,7 @@
 
 const Stripe = require("stripe");
 const { createClient } = require("@supabase/supabase-js");
+const { priceCart, applyCoupon } = require("./lib/order-pricing");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supa = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -45,27 +46,14 @@ exports.handler = async (event) => {
       }
     }
 
-    // 2) RICALCOLO importi dai prezzi reali in `formats` (ignora i prezzi del client).
-    const ids = [...new Set(items.map((i) => i.format_id).filter((x) => x != null))];
-    if (!ids.length) return json(400, { error: "Formati non validi." });
-    const { data: formats, error: fErr } = await supa.from("formats").select("id,name,price,available").in("id", ids);
-    if (fErr) return json(500, { error: "Errore lettura formati." });
-    const byId = Object.fromEntries((formats || []).map((f) => [f.id, f]));
-
-    const line_items = [];
-    let subtotalCents = 0;
-    for (const it of items) {
-      const f = byId[it.format_id];
-      if (!f || f.available === false) return json(400, { error: "Un formato selezionato non è più disponibile." });
-      const qty = Math.max(1, parseInt(it.qty, 10) || 1);
-      const unit = Math.round(Number(f.price) * 100);
-      subtotalCents += unit * qty;
-      const gusti = Array.isArray(it.gusti) ? it.gusti.join(", ") : "";
-      line_items.push({
-        quantity: qty,
-        price_data: { currency: "eur", unit_amount: unit, product_data: { name: f.name + (gusti ? " — " + gusti : "") } },
-      });
-    }
+    // 2) RICALCOLO importi dai prezzi reali in `formats` (pricing condiviso, ignora i prezzi del client).
+    const priced = await priceCart(supa, items);
+    if (priced.error) return json(400, { error: priced.error });
+    const subtotalCents = priced.subtotalCents;
+    const line_items = priced.lines.map((l) => ({
+      quantity: l.qty,
+      price_data: { currency: "eur", unit_amount: l.unitCents, product_data: { name: l.name } },
+    }));
 
     const { data: settings } = await supa.from("settings").select("delivery_cost").eq("id", 1).single();
     const deliveryCents = isPickup ? 0 : Math.round(Number((settings && settings.delivery_cost) || 0) * 100);
@@ -75,31 +63,11 @@ exports.handler = async (event) => {
     const amount = subtotalCents + deliveryCents;
     if (amount <= 0) return json(400, { error: "Totale non valido." });
 
-    // 2b) Codice sconto: validazione AUTOREVOLE lato server (sul totale prodotti+consegna).
-    let discountCents = 0, couponCode = null;
-    if (body.coupon_code) {
-      const code = String(body.coupon_code).trim();
-      const { data: dc } = await supa.from("discount_codes").select("*").ilike("code", code).maybeSingle();
-      if (!dc || !dc.active) return json(400, { error: "Codice sconto non valido." });
-      if (dc.kind === "oneoff" && (dc.burned || dc.used_count > 0)) return json(400, { error: "Codice sconto già utilizzato." });
-      // codici 'always' (riutilizzabili): una sola volta per cliente — stessa coppia codice + telefono/email.
-      // Conta solo gli ordini PAGATI (in `orders`); i tentativi abbandonati non bruciano il codice.
-      if (dc.kind !== "oneoff") {
-        const phoneDigits = String(customer_phone || "").replace(/\D/g, "");
-        const emailNorm = (email || "").trim().toLowerCase();
-        const { data: prev } = await supa.from("orders").select("customer_phone,email").ilike("coupon_code", dc.code);
-        const giaUsato = (prev || []).some((o) =>
-          (phoneDigits && o.customer_phone && String(o.customer_phone).replace(/\D/g, "") === phoneDigits) ||
-          (emailNorm && o.email && String(o.email).trim().toLowerCase() === emailNorm)
-        );
-        if (giaUsato) return json(409, { error: "Hai già usato questo codice: è valido una volta per cliente." });
-      }
-      discountCents = dc.discount_type === "percent"
-        ? Math.round(amount * Number(dc.value) / 100)
-        : Math.round(Number(dc.value) * 100);
-      discountCents = Math.max(0, Math.min(discountCents, amount));
-      couponCode = dc.code;
-    }
+    // 2b) Codice sconto: validazione AUTOREVOLE lato server (pricing condiviso, sul totale prodotti+consegna).
+    const coup = await applyCoupon(supa, body.coupon_code, amount, customer_phone, email);
+    if (coup.error) return json(400, { error: coup.error });
+    const discountCents = coup.discountCents;
+    const couponCode = coup.couponCode;
     const finalAmount = amount - discountCents;
     if (finalAmount <= 0) return json(400, { error: "Sconto troppo alto per questo ordine." });
 

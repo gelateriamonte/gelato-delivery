@@ -126,21 +126,31 @@ exports.handler = async (event) => {
     return html(200, notCancellablePage(order, lang, decision.reason, anticipoH));
   }
 
-  const r = await refundOrder(supa, stripe, order.id, "annullato");
-  if (!r.ok) {
-    return html(502, page(lang, { tone: "warn", title: en ? "Error" : "Errore",
-      bodyHtml: `<h1>${en ? "Something went wrong" : "Qualcosa è andato storto"}</h1><p>${en ? "We couldn't complete the cancellation. Please contact us on WhatsApp." : "Non siamo riusciti a completare l'annullamento. Contattaci su WhatsApp."}</p><p><a class="btn" href="${esc(waLink())}">WhatsApp</a></p>` }));
+  const paid = !!order.payment_id;
+  if (paid) {
+    const r = await refundOrder(supa, stripe, order.id, "annullato");
+    if (!r.ok) {
+      return html(502, page(lang, { tone: "warn", title: en ? "Error" : "Errore",
+        bodyHtml: `<h1>${en ? "Something went wrong" : "Qualcosa è andato storto"}</h1><p>${en ? "We couldn't complete the cancellation. Please contact us on WhatsApp." : "Non siamo riusciti a completare l'annullamento. Contattaci su WhatsApp."}</p><p><a class="btn" href="${esc(waLink())}">WhatsApp</a></p>` }));
+    }
+  } else {
+    // "paga al ritiro": nessun pagamento incassato → nessun rimborso, solo annullamento
+    await supa.from("orders").update({ status: "annullato" }).eq("id", order.id);
   }
 
   // email di conferma annullamento (best-effort)
   try { await sendOrderEmail(Object.assign({}, order, { status: "annullato" }), "annullato"); } catch (e) { /* best-effort */ }
 
+  const refundLine = paid
+    ? (en ? `<p><strong>${euro(order.total)}</strong> is refunded to the <strong>same payment method</strong> you used, within the technical times of each payment channel.</p>`
+          : `<p><strong>${euro(order.total)}</strong> viene rimborsato sullo <strong>stesso metodo di pagamento</strong> usato, nei tempi tecnici di ciascun canale.</p>`)
+    : (en ? `<p>No payment had been taken, so there is nothing to refund.</p>`
+          : `<p>Non era previsto alcun pagamento anticipato: nessun importo è stato addebitato.</p>`);
+
   return html(200, page(lang, { tone: "ok", title: en ? "Order cancelled" : "Ordine annullato",
     bodyHtml: `<p class="kick">${en ? "Cancellation confirmed" : "Annullamento confermato"}</p>
       <h1>${en ? "Your order is cancelled" : "Il tuo ordine è annullato"}</h1>
       ${summaryLine(order, lang)}
-      <p>${en
-        ? `<strong>${euro(order.total)}</strong> is refunded to the <strong>same payment method</strong> you used, within the technical times of each payment channel.${r.already ? "" : ""}`
-        : `<strong>${euro(order.total)}</strong> viene rimborsato sullo <strong>stesso metodo di pagamento</strong> usato, nei tempi tecnici di ciascun canale.`}</p>
+      ${refundLine}
       <p>${en ? "A confirmation email is on its way if you provided an address." : "Se hai lasciato un'email, ricevi a breve la conferma."}</p>` }));
 };

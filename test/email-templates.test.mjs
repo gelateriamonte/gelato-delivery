@@ -13,7 +13,7 @@ const baseOrder = {
   id: "abcd1234", customer_name: "Marco Rossi", email: "x@y.it", lang: "it",
   fulfillment: "delivery", address: "Via Mare 1", delivery_date: "2026-07-01", slot_label: "18:00 - 18:30",
   items: [{ format: "Vaschetta 500g", gusti: ["pistacchio", "<script>"], qty: 1, prezzo_unit: 9 }],
-  subtotal: 9, delivery_cost: 2, discount: 0, total: 11,
+  subtotal: 9, delivery_cost: 2, discount: 0, total: 11, payment_id: "cs_test_abc",
 };
 const opts = { legal, cancelUrl: "https://x/.netlify/functions/cancel-order?token=TKN" };
 
@@ -46,9 +46,18 @@ test("consegnato: ringraziamento, NIENTE pulsante annulla", () => {
   assert.ok(!m.html.includes("Annulla ordine"), "consegnato non deve avere il pulsante annulla");
 });
 
-test("rifiutato/annullato: nota rimborso stesso metodo", () => {
+test("rifiutato/annullato PAGATO: nota rimborso stesso metodo", () => {
   assert.match(renderEmail(baseOrder, "rifiutato", opts).html, /stesso metodo di pagamento/);
   assert.match(renderEmail(baseOrder, "annullato", opts).html, /stesso metodo di pagamento/);
+});
+
+test("rifiutato/annullato NON pagato (paga al ritiro): nessun rimborso", () => {
+  const unpaid = { ...baseOrder, payment_id: null, payment_method: "Alla cassa al ritiro" };
+  for (const st of ["rifiutato", "annullato"]) {
+    const html = renderEmail(unpaid, st, opts).html;
+    assert.doesNotMatch(html, /rimborsat\w*\s+(integralmente\s+)?sullo/i);
+    assert.match(html, /nessun (importo|rimborso|pagamento)|non era previsto alcun pagamento/i);
+  }
 });
 
 test("EN: lingua inglese sui testi", () => {

@@ -121,16 +121,16 @@ e) procede al pagamento.
 
 ## Articolo 6 — Modalità di pagamento
 
-6.1 Il pagamento avviene **contestualmente all'ordine**, in modalità sicura, tramite la piattaforma **Stripe** (Stripe Checkout integrato). I metodi di pagamento accettati sono:
+6.1 Per gli ordini con **consegna a domicilio** il pagamento avviene **contestualmente all'ordine**, in modalità sicura, tramite la piattaforma **Stripe** (Stripe Checkout integrato). I metodi di pagamento online accettati sono:
 - **carta** di credito/debito;
 - **PayPal**;
 - **Satispay**.
 
-6.2 **Non è accettato il pagamento in contanti**.
+6.2 **Pagamento al ritiro (solo ritiro in gelateria)**: per gli ordini con **ritiro presso la gelateria** il Cliente può, in alternativa al pagamento online, scegliere l'opzione «**Paga dopo**» e **pagare al momento del ritiro presso la cassa della gelateria**, con i mezzi di pagamento ivi accettati. In tal caso nessun importo è addebitato al momento dell'inoltro dell'ordine; conseguentemente, in caso di mancata accettazione o di annullamento dell'ordine, non è dovuto alcun rimborso, non essendo stato incassato alcun corrispettivo.
 
 6.3 I **dati di pagamento** (ad esempio il numero di carta o le credenziali del servizio di pagamento scelto) sono inseriti e trattati direttamente nell'ambiente sicuro di Stripe, conforme allo standard **PCI-DSS**. Tali dati **non transitano né sono conservati sui server del Venditore o dell'applicazione**. Al Venditore sono comunicati unicamente l'esito del pagamento, il metodo utilizzato e l'identificativo della transazione.
 
-6.4 L'inoltro della proposta d'ordine al Venditore è subordinato alla conferma del buon esito del pagamento; la conclusione del contratto resta tuttavia subordinata all'accettazione dell'ordine da parte del Venditore secondo quanto previsto all'Articolo 5.4.
+6.4 Per gli ordini con **pagamento online**, l'inoltro della proposta d'ordine al Venditore è subordinato alla conferma del buon esito del pagamento; per gli ordini con **pagamento al ritiro**, l'inoltro avviene al momento dell'invio dell'ordine. In entrambi i casi la conclusione del contratto resta subordinata all'accettazione dell'ordine da parte del Venditore secondo quanto previsto all'Articolo 5.4.
 
 ---
 
