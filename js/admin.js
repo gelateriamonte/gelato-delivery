@@ -1237,6 +1237,15 @@ $("prod-print").onclick = async () => {
   if (error) console.error("stampa print_jobs", error);
   toast(error ? "Errore stampa." : "Inviato in stampa…");
 };
+// Reset produzione: spegne tutti i gusti e riporta i kg a 3 (default).
+$("prod-reset").onclick = async () => {
+  if (!confirm("Reset produzione: spegne TUTTI i gusti e riporta i kg a 3. Procedere?")) return;
+  const { error } = await withAuthRetry(() => sb.from("flavors").update({ prod_on: false, prod_kg: 3 }).not("id", "is", null));
+  if (error) { console.error("reset produzione", error); toast("Errore reset."); return; }
+  FLAVORS_ALL.forEach((f) => { f.prod_on = false; f.prod_kg = 3; });
+  renderProduzione();
+  toast("Produzione resettata.");
+};
 
 // ========== PRODOTTI (ex Formati) — due categorie: Vaschette / Altri prodotti ==========
 const FORMAT_CATS = [
