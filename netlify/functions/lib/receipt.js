@@ -137,11 +137,12 @@ function buildProductionXml(list, createdAtIso) {
   if (when) line(when);
   line(sep);
 
-  for (const it of items) {
+  items.forEach((it, i) => {
     const nome = it && it.name != null ? String(it.name) : "?";
     const q = it && it.kg != null ? it.kg : "";
-    line(padLine("[ ] " + nome, q + " kg"));
-  }
+    line(padLine("[ ] " + nome, q + " kg"));   // padLine tronca la sinistra: nomi lunghi mai a capo
+    if (i < items.length - 1) line(sep);        // linea piena sottile tra i gusti
+  });
   line(seph);
 
   raw('<feed line="3"/><cut type="feed"/>');
