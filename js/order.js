@@ -777,6 +777,18 @@ $("m-qty-dec").onclick = () => { $("m-qty").value = Math.max(1, (parseInt($("m-q
 $("m-qty-inc").onclick = () => { $("m-qty").value = (parseInt($("m-qty").value || "1", 10) || 1) + 1; };
 $("submit").onclick = submitOrder;
 $("submit-later").onclick = submitOrderUnpaid;
+
+// Validazione visiva in tempo reale su cellulare + email (bordo rosso + messaggio).
+function markField(inp, err, valid) {
+  inp.style.borderColor = valid ? "" : "#c0392b";
+  if (err) err.style.display = valid ? "none" : "block";
+}
+function checkPhone() { const v = $("phone").value.trim(); markField($("phone"), $("phone-err"), !v || isMobileIT(v)); }
+function checkEmail() { const v = $("email").value.trim(); markField($("email"), $("email-err"), !v || isEmail(v)); }
+$("phone").addEventListener("blur", checkPhone);
+$("phone").addEventListener("input", () => { if ($("phone-err").style.display === "block") checkPhone(); });
+$("email").addEventListener("blur", checkEmail);
+$("email").addEventListener("input", () => { if ($("email-err").style.display === "block") checkEmail(); });
 $("pay-close").onclick = closePayment;
 $("coupon-apply").onclick = applyCoupon;
 $("coupon").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyCoupon(); } });
