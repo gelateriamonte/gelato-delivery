@@ -590,11 +590,22 @@ function renderSlotSelect() {
 }
 
 // ---------- invio ----------
+// Validazione recapiti: cellulare italiano (10 cifre, inizia con 3) + email.
+const isMobileIT = (p) => {
+  let d = String(p).replace(/\D/g, "");
+  if (d.startsWith("0039")) d = d.slice(4);
+  else if (d.length === 12 && d.startsWith("39")) d = d.slice(2);
+  return /^3\d{9}$/.test(d);
+};
+const isEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e));
+
 async function submitOrder() {
   if (cartHasDaily() && !isToday()) { toast(t("order.toast.dailyTodayOnly")); updateTotal(); return; }   // gusto del giorno solo per oggi
   const name = $("name").value.trim();
   const phone = $("phone").value.trim();
   if (!name || !phone) { toast(t("order.toast.fillNamePhone")); return; }
+  if (!isMobileIT(phone)) { toast(t("order.toast.invalidPhone")); return; }
+  { const em = $("email").value.trim(); if (em && !isEmail(em)) { toast(t("order.toast.invalidEmail")); return; } }
   const pickup = isPickup();
   let address, slotLabel, lat = null, lng = null;
   if (pickup) {
@@ -676,6 +687,8 @@ async function submitOrderUnpaid() {
   const name = $("name").value.trim();
   const phone = $("phone").value.trim();
   if (!name || !phone) { toast(t("order.toast.fillNamePhone")); return; }
+  if (!isMobileIT(phone)) { toast(t("order.toast.invalidPhone")); return; }
+  { const em = $("email").value.trim(); if (em && !isEmail(em)) { toast(t("order.toast.invalidEmail")); return; } }
   const tval = $("pickup-time").value;
   if (!tval) { toast(t("order.toast.choosePickupTime")); return; }
   const sub = subtotal();
