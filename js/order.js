@@ -195,7 +195,7 @@ function setDelivery(lat, lng, recenter, fillAddr) {
   } else delivMarker.setLatLng([lat, lng]);
   checkZone();
   if (recenter && map) map.fitBounds(L.latLngBounds([[lat, lng], [GELATERIA.lat, GELATERIA.lng]]), { padding: [40, 40], maxZoom: 15 });
-  if (fillAddr && !$("address").value.trim()) reverseFill(lat, lng);
+  if (fillAddr) reverseFill(lat, lng);   // tap/drag: aggiorna sempre l'indirizzo al punto scelto
 }
 function checkZone() {
   IN_ZONE = (DELIV_LAT != null) && inDeliveryZone(DELIV_LAT, DELIV_LNG);
