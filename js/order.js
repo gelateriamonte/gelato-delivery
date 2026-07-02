@@ -141,6 +141,11 @@ function drawDeliveryZone() {
   const rings = deliveryRings();
   if (rings.length) zoneLayer = L.polygon(rings, { color: "#a8552f", weight: 2, fillColor: "#a8552f", fillOpacity: .06, interactive: false }).addTo(map);
 }
+// inquadra l'intera zona di consegna (fallback bbox comune)
+function fitZone() {
+  if (!map) return;
+  map.fitBounds(zoneLayer ? zoneLayer.getBounds() : ST_BBOX, { padding: [20, 20] });
+}
 function pinIcon(color) {
   return L.divIcon({ className: "", iconSize: [28, 38], iconAnchor: [14, 37], popupAnchor: [0, -32],
     html: `<svg width="28" height="38" viewBox="0 0 24 34"><path d="M12 0C5.4 0 0 5.4 0 12c0 8.5 12 22 12 22s12-13.5 12-22C24 5.4 18.6 0 12 0z" fill="${color}"/><circle cx="12" cy="12" r="4.6" fill="#fff"/></svg>` });
@@ -154,7 +159,6 @@ async function initMap() {
   delIcon = pinIcon("#a8552f");   // terracotta = punto consegna
   L.marker([GELATERIA.lat, GELATERIA.lng], { icon: pinIcon("#2b2620") }).addTo(map)
     .bindPopup("<b>" + esc(GELATERIA.name) + "</b><br>" + t("order.map.departurePoint"));
-  map.fitBounds(ST_BBOX, { padding: [12, 12] });
   map.on("click", (e) => setDelivery(e.latlng.lat, e.latlng.lng, false, true));
   // pulsante "crocino" → posizione GPS dell'utente
   const Locate = L.Control.extend({ options: { position: "topleft" }, onAdd() {
@@ -174,10 +178,11 @@ async function initMap() {
     return a;
   } });
   map.addControl(new Reset());
-  setTimeout(() => map.invalidateSize(), 250);
-  drawDeliveryZone();   // mappa+Leaflet pronti: disegna la zona (initMap ora è async)
+  drawDeliveryZone();   // disegna la zona di consegna
+  fitZone();            // inquadra tutta la zona all'apertura
+  setTimeout(() => { map.invalidateSize(); fitZone(); }, 250);   // ri-fit dopo il sizing del container
 }
-function resetView() { if (map) map.fitBounds(ST_BBOX, { padding: [12, 12] }); }
+function resetView() { fitZone(); }
 function locateMe() {
   if (!navigator.geolocation) { toast(t("order.toast.geolocationUnavailable")); return; }
   toast(t("order.toast.locating"));
