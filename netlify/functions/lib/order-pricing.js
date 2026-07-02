@@ -29,6 +29,15 @@ async function priceCart(supa, items) {
 // Valida un codice sconto e calcola lo sconto in centesimi sul `baseCents` dato.
 // Replica la regola di create-checkout: 'oneoff' usa-e-getta, 'always' una volta
 // per cliente (stesso telefono/email su ordini PAGATI). Ritorna { error } se non valido.
+// Normalizza a cellulare locale (cifre, senza prefisso 39/0039).
+// DEVE combaciare con la SQL public.norm_mobile usata da rpc_coupon_precheck.
+const normMobile = (p) => {
+  let d = String(p || "").replace(/\D/g, "");
+  if (d.startsWith("0039")) d = d.slice(4);
+  else if (d.length === 12 && d.startsWith("39")) d = d.slice(2);
+  return d;
+};
+
 async function applyCoupon(supa, code, baseCents, phone, email) {
   if (!code) return { discountCents: 0, couponCode: null };
   const c = String(code).trim();
@@ -36,12 +45,14 @@ async function applyCoupon(supa, code, baseCents, phone, email) {
   if (!dc || !dc.active) return { error: "Codice sconto non valido." };
   if (dc.kind === "oneoff" && (dc.burned || dc.used_count > 0)) return { error: "Codice sconto già utilizzato." };
   if (dc.kind !== "oneoff") {
-    const phoneDigits = String(phone || "").replace(/\D/g, "");
+    const phoneN = normMobile(phone);
     const emailNorm = (email || "").trim().toLowerCase();
-    const { data: prev } = await supa.from("orders").select("customer_phone,email").ilike("coupon_code", dc.code);
-    const giaUsato = (prev || []).some((o) =>
-      (phoneDigits && o.customer_phone && String(o.customer_phone).replace(/\D/g, "") === phoneDigits) ||
-      (emailNorm && o.email && String(o.email).trim().toLowerCase() === emailNorm));
+    const { data: prev } = await supa.from("orders").select("customer_phone,email,status").ilike("coupon_code", dc.code);
+    const giaUsato = (prev || [])
+      .filter((o) => o.status !== "annullato" && o.status !== "rifiutato")   // ordini annullati/rifiutati liberano il codice
+      .some((o) =>
+        (phoneN && normMobile(o.customer_phone) === phoneN) ||
+        (emailNorm && o.email && String(o.email).trim().toLowerCase() === emailNorm));
     if (giaUsato) return { error: "Hai già usato questo codice: è valido una volta per cliente." };
   }
   let discountCents = dc.discount_type === "percent"
