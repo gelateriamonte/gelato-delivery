@@ -440,11 +440,14 @@
       var cfg = window.SUPABASE_CONFIG;
       if (!cfg || !cfg.url) return;
       var LAST_OH = null;
-      // anti-XSS: i campi resi via innerHTML (data-i18n-html) ammettono solo <br> e <em>.
+      // anti-XSS: i campi resi via innerHTML (data-i18n-html) ammettono solo <br>, <em>, <strong>
+      // e <a href> con href sicuro (tel:, https://, http://, /percorso — serve al footer NAP).
       var HTML_KEYS = { "home.hero.title": 1, "home.story.lede": 1, "home.delivery.body": 1, "footer.nap": 1 };
       function sanitizeHtml(v) {
         var e = String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        return e.replace(/&lt;(\/?)(br|em)\s*\/?&gt;/gi, "<$1$2>");
+        e = e.replace(/&lt;(\/?)(br|em|strong)\s*\/?&gt;/gi, "<$1$2>");
+        e = e.replace(/&lt;a href="((?:tel:|https?:\/\/|\/)[^"]*)"&gt;/gi, '<a href="$1">').replace(/&lt;\/a&gt;/gi, "</a>");
+        return e;
       }
       function sanitizeOverrides(obj) {
         if (!obj) return obj;

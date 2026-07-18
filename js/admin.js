@@ -1527,6 +1527,10 @@ const HOME_FIELDS = [
   { key: "home.story.eyebrow", label: "Storia — sopratitolo", type: "text" },
   { key: "home.story.lede", label: "Storia — frase principale (HTML: <em>)", type: "area", manualEn: true },
   { key: "home.story.body", label: "Storia — testo", type: "area", manualEn: true },
+  { key: "home.delivery.eyebrow", label: "Consegna — sopratitolo", type: "text" },
+  { key: "home.delivery.title", label: "Consegna — titolo", type: "text" },
+  { key: "home.delivery.body", label: "Consegna — testo (HTML: <strong>)", type: "area", manualEn: true },
+  { key: "home.delivery.link", label: "Consegna — link zone", type: "text" },
   { key: "home.carousel.title", label: "Carosello — titolo", type: "text" },
   { key: "home.carousel.slide1.title", label: "Slide 1 — titolo", type: "text" },
   { key: "home.carousel.slide1.caption", label: "Slide 1 — didascalia", type: "text" },
@@ -1539,6 +1543,7 @@ const HOME_FIELDS = [
   { key: "home.daily.intro", label: "Gusti del giorno — intro", type: "text" },
   { key: "home.cta.button", label: "CTA — bottone", type: "text" },
   { key: "home.cta.note", label: "CTA — nota", type: "text" },
+  { key: "footer.nap", label: "Footer — testo su tutte le pagine (HTML: <strong> <a href>)", type: "area", manualEn: true },
 ];
 const HOME_OPS = [
   { key: "location", label: "Luogo (card \"Dove siamo\")", ph: "Monte Petrosu" },
