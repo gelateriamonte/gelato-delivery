@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="it" data-accent="terracotta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <link rel="apple-touch-icon" href="/img/favicon.png">
+  <title data-i18n="delivery.meta.title">Gelato a domicilio a San Teodoro — consegna a Puntaldia, Lu Impostu, Monte Petrosu | BM&amp;V</title>
+  <meta name="description" data-i18n-attr="content:delivery.meta.description" content="Consegna di gelato artigianale a domicilio nel comune di San Teodoro: Monte Petrosu, Puntaldia, Giardini di Aldia, Lu Impostu, Lu Fraili. Vaschette appena mantecate, ordina online.">
+  <link rel="canonical" href="https://www.gelateriamontepetrosu.it/consegna-a-domicilio">
+  <meta property="og:type" content="business.business">
+  <meta property="og:site_name" content="Gelateria BM&amp;V Monte Petrosu">
+  <meta property="og:title" content="Gelato a domicilio a San Teodoro | Gelateria BM&amp;V Monte Petrosu">
+  <meta property="og:description" content="Consegna di gelato artigianale a domicilio nel comune di San Teodoro: Monte Petrosu, Puntaldia, Giardini di Aldia, Lu Impostu, Lu Fraili. Vaschette appena mantecate, ordina online.">
+  <meta property="og:url" content="https://www.gelateriamontepetrosu.it/consegna-a-domicilio">
+  <meta property="og:image" content="https://www.gelateriamontepetrosu.it/img/og-cover.jpg">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:locale:alternate" content="en_US">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --cream: #fffdf8; --paper: oklch(0.993 0.006 84); --paper-2: oklch(0.960 0.013 82);
+      --ink: oklch(0.265 0.014 58); --ink-2: oklch(0.405 0.014 60); --muted: oklch(0.545 0.013 62);
+      --faint: oklch(0.660 0.011 70); --line: oklch(0.902 0.012 78); --line-2: oklch(0.845 0.015 76);
+      --board: #fffdf8;
+      --accent: oklch(0.560 0.105 42); --accent-ink: oklch(0.470 0.100 42);
+      --accent-soft: oklch(0.932 0.034 50); --accent-line: oklch(0.860 0.050 50);
+      --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+      --sans: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+      --r-md: 13px;
+      --shadow-card: 0 1px 2px rgba(60,40,30,.04), 0 14px 34px -20px rgba(70,45,30,.28);
+      --shadow-screen: 0 2px 6px rgba(60,40,30,.05), 0 40px 80px -42px rgba(60,40,30,.42);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; }
+    body{ background:var(--board); font-family:var(--sans); color:var(--ink);
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+    .page{ max-width:480px; margin:0 auto; background:var(--cream); min-height:100dvh;
+      position:relative; display:flex; flex-direction:column; box-shadow:var(--shadow-screen); }
+    .top{ display:flex; align-items:center; justify-content:space-between; gap:14px;
+      padding:calc(14px + env(safe-area-inset-top)) 22px 14px; border-bottom:1px solid var(--line); }
+    .top .brand{ display:flex; align-items:center; gap:11px; text-decoration:none; min-width:0; }
+    .top .brand img{ display:block; width:64px; height:auto; background:rgba(255,255,255,.7);
+      border:1px solid rgba(168,85,47,.25); border-radius:12px; padding:5px; }
+    .top .brand span{ font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); }
+    .lang-switch{ display:flex; gap:2px; background:rgba(253,251,247,.9);
+      border:1px solid rgba(168,85,47,.28); border-radius:999px; padding:3px; box-shadow:0 4px 14px -10px rgba(60,40,30,.5); flex:none; }
+    .lang-switch button{ appearance:none; border:0; background:transparent; cursor:pointer; font-family:var(--sans);
+      font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--muted); padding:4px 9px; border-radius:999px; transition:background .15s,color .15s; }
+    .lang-switch button.on{ background:#63819f; color:#fff; }
+    .eyebrow{ font-size:11px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-ink); margin:0 0 10px; }
+    .sec{ padding:30px 22px; }
+    .sec + .sec{ padding-top:4px; }
+    h1.lede{ font-family:var(--serif); font-size:34px; line-height:1.05; font-weight:500; color:var(--ink);
+      margin:0; letter-spacing:-.01em; }
+    .lede-sub{ font-family:var(--serif); font-size:20px; line-height:1.35; color:var(--ink-2); margin:14px 0 0; }
+    h2{ font-family:var(--serif); font-weight:500; font-size:26px; margin:0 0 4px; color:var(--ink); letter-spacing:-.01em; }
+    h3{ font-family:var(--serif); font-weight:600; font-size:19px; margin:20px 0 4px; color:var(--ink); }
+    .body-copy{ font-size:14px; line-height:1.6; color:var(--ink-2); margin:10px 0 0; }
+    .steps{ margin:14px 0 0; padding-left:0; list-style:none; counter-reset:step; }
+    .steps li{ counter-increment:step; position:relative; padding:0 0 14px 40px; font-size:14px; line-height:1.55; color:var(--ink-2); }
+    .steps li::before{ content:counter(step); position:absolute; left:0; top:0; width:27px; height:27px;
+      display:grid; place-items:center; border-radius:50%; background:var(--accent-soft); color:var(--accent-ink);
+      font-family:var(--serif); font-size:15px; font-weight:600; }
+    .svc{ margin:12px 0 0; padding-left:0; list-style:none; }
+    .svc li{ position:relative; padding:6px 0 6px 22px; font-size:14px; line-height:1.55; color:var(--ink-2); border-bottom:1px solid var(--line); }
+    .svc li:last-child{ border-bottom:0; }
+    .svc li::before{ content:"·"; position:absolute; left:4px; top:4px; color:var(--accent-ink); font-size:20px; line-height:1; }
+    .faq dt{ font-weight:600; font-size:14.5px; color:var(--ink); margin:16px 0 4px; }
+    .faq dd{ margin:0; font-size:14px; line-height:1.6; color:var(--ink-2); }
+    .btn-order{ display:flex; align-items:center; justify-content:center; gap:10px; text-decoration:none;
+      margin-top:18px; padding:16px; border-radius:14px; background:#63819f; color:var(--cream);
+      font-weight:600; font-size:16px; letter-spacing:.01em; transition:filter .18s; }
+    .btn-order:hover{ filter:brightness(1.06); }
+    a{ color:var(--accent-ink); }
+    @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "serviceType": "Consegna di gelato a domicilio",
+    "provider": { "@id": "https://www.gelateriamontepetrosu.it/#sede" },
+    "areaServed": [
+      { "@type": "Place", "name": "Monte Petrosu" },
+      { "@type": "Place", "name": "Puntaldia" },
+      { "@type": "Place", "name": "Giardini di Aldia" },
+      { "@type": "Place", "name": "Lu Impostu" },
+      { "@type": "Place", "name": "Lu Fraili" },
+      { "@type": "Place", "name": "San Teodoro" }
+    ],
+    "url": "https://www.gelateriamontepetrosu.it/consegna-a-domicilio"
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "In quali zone consegnate il gelato?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Consegniamo in tutto il comune di San Teodoro: Monte Petrosu, Puntaldia, Giardini di Aldia (Giardini d'Aldia), Lu Impostu, Lu Fraili e il paese. L'indirizzo esatto si verifica sulla mappa al checkout." }
+      },
+      {
+        "@type": "Question",
+        "name": "C'è un ordine minimo? Quanto costa la consegna?",
+        "acceptedAnswer": { "@type": "Answer", "text": "La consegna è gratuita. L'importo minimo dell'ordine è indicato al checkout, prima del pagamento." }
+      },
+      {
+        "@type": "Question",
+        "name": "Il gelato arriva freddo?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Sì: la vaschetta viene preparata e confezionata poco prima della partenza e consegnata nella fascia oraria che scegli al checkout." }
+      },
+      {
+        "@type": "Question",
+        "name": "Posso pagare online?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Sì, con carta al checkout, su circuito sicuro Stripe. Per il ritiro in gelateria puoi anche pagare alla cassa." }
+      },
+      {
+        "@type": "Question",
+        "name": "Fate anche take away?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Sì: puoi ritirare il tuo ordine direttamente in gelateria a Monte Petrosu, in Piazza Tavolara." }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <div class="page">
+    <header class="top">
+      <a class="brand" href="/" data-i18n-attr="aria-label:header.backToHome" aria-label="Torna alla home">
+        <img src="img/logo-full.png" data-i18n-attr="alt:home.hero.logoAlt" alt="Gelateria BM&amp;V Monte Petrosu">
+        <span data-i18n="home.hero.eyebrow">Monte Petrosu · San Teodoro</span>
+      </a>
+      <div class="lang-switch" aria-label="Lingua">
+        <button type="button" data-lang-btn="it">IT</button>
+        <button type="button" data-lang-btn="en">EN</button>
+      </div>
+    </header>
+
+    <section class="sec">
+      <p class="eyebrow" data-i18n="delivery.eyebrow">Consegna a domicilio</p>
+      <h1 class="lede" data-i18n="delivery.h1">Gelato a domicilio a San Teodoro</h1>
+      <p class="lede-sub" data-i18n="delivery.lede">Mantechiamo ogni giorno a Monte Petrosu e consegniamo nelle ore più calde in tutto il comune di San Teodoro. La vaschetta arriva fredda, tu pensi solo al cucchiaino.</p>
+    </section>
+
+    <section class="sec" aria-labelledby="how-title">
+      <h2 id="how-title" data-i18n="delivery.how.title">Come funziona</h2>
+      <ol class="steps">
+        <li data-i18n="delivery.how.step1">Componi la vaschetta online: fino a 6 gusti, da 600 g a 1,7 kg.</li>
+        <li data-i18n="delivery.how.step2">Scegli giorno e fascia oraria di consegna.</li>
+        <li data-i18n="delivery.how.step3">Paghi online in sicurezza e te la portiamo noi.</li>
+      </ol>
+      <a class="btn-order" href="/ordina"><span data-i18n="delivery.how.cta">Ordina ora</span><span aria-hidden="true">→</span></a>
+    </section>
+
+    <section class="sec" aria-labelledby="where-title">
+      <h2 id="where-title" data-i18n="delivery.where.title">Dove consegniamo</h2>
+      <h3 data-i18n="delivery.where.montepetrosu.title">Monte Petrosu</h3>
+      <p class="body-copy" data-i18n="delivery.where.montepetrosu.body">La gelateria è qui, in Piazza Tavolara: a Monte Petrosu la consegna è questione di minuti. Oppure passa al banco e scegli il take away.</p>
+      <h3 data-i18n="delivery.where.puntaldia.title">Puntaldia e Giardini di Aldia</h3>
+      <p class="body-copy" data-i18n="delivery.where.puntaldia.body">In villa a Puntaldia o ai Giardini d'Aldia? Portiamo la vaschetta direttamente al residence, perfetta per il dopocena in veranda.</p>
+      <h3 data-i18n="delivery.where.luimpostu.title">Lu Impostu</h3>
+      <p class="body-copy" data-i18n="delivery.where.luimpostu.body">Giornata alla spiaggia di Lu Impostu? Il gelato arriva a casa quando torni, appena mantecato.</p>
+      <h3 data-i18n="delivery.where.lufraili.title">Lu Fraili</h3>
+      <p class="body-copy" data-i18n="delivery.where.lufraili.body">Consegniamo anche a Lu Fraili e nelle borgate vicine, negli stessi orari del paese.</p>
+      <h3 data-i18n="delivery.where.paese.title">San Teodoro paese</h3>
+      <p class="body-copy" data-i18n="delivery.where.paese.body">Nel centro di San Teodoro e nelle zone residenziali intorno: fascia oraria a scelta al checkout.</p>
+    </section>
+
+    <section class="sec" aria-labelledby="svc-title">
+      <h2 id="svc-title" data-i18n="delivery.service.title">Dettagli del servizio</h2>
+      <!-- TODO(seo-dati): dettagli reali trasporto (borsa termica? tempi max?) da confermare col titolare -->
+      <ul class="svc">
+        <li data-i18n="delivery.service.item1">Consegna gratuita in tutto il comune di San Teodoro.</li>
+        <li data-i18n="delivery.service.item2">Vaschette da 600 g a 1,7 kg, fino a 6 gusti.</li>
+        <li data-i18n="delivery.service.item3">Pagamento online sicuro con carta.</li>
+        <li data-i18n="delivery.service.item4">Consegna nei giorni e nelle fasce orarie disponibili al checkout.</li>
+        <li data-i18n="delivery.service.item5">Ordine minimo indicato al checkout.</li>
+      </ul>
+    </section>
+
+    <section class="sec" aria-labelledby="faq-title">
+      <h2 id="faq-title" data-i18n="delivery.faq.title">Domande frequenti</h2>
+      <dl class="faq">
+        <dt data-i18n="delivery.faq.q1">In quali zone consegnate il gelato?</dt>
+        <dd data-i18n="delivery.faq.a1">Consegniamo in tutto il comune di San Teodoro: Monte Petrosu, Puntaldia, Giardini di Aldia (Giardini d'Aldia), Lu Impostu, Lu Fraili e il paese. L'indirizzo esatto si verifica sulla mappa al checkout.</dd>
+        <dt data-i18n="delivery.faq.q2">C'è un ordine minimo? Quanto costa la consegna?</dt>
+        <dd data-i18n="delivery.faq.a2">La consegna è gratuita. L'importo minimo dell'ordine è indicato al checkout, prima del pagamento.</dd>
+        <dt data-i18n="delivery.faq.q3">Il gelato arriva freddo?</dt>
+        <dd data-i18n="delivery.faq.a3">Sì: la vaschetta viene preparata e confezionata poco prima della partenza e consegnata nella fascia oraria che scegli al checkout.</dd>
+        <dt data-i18n="delivery.faq.q4">Posso pagare online?</dt>
+        <dd data-i18n="delivery.faq.a4">Sì, con carta al checkout, su circuito sicuro Stripe. Per il ritiro in gelateria puoi anche pagare alla cassa.</dd>
+        <dt data-i18n="delivery.faq.q5">Fate anche take away?</dt>
+        <dd data-i18n="delivery.faq.a5">Sì: puoi ritirare il tuo ordine direttamente in gelateria a Monte Petrosu, in Piazza Tavolara.</dd>
+      </dl>
+      <a class="btn-order" href="/ordina"><span data-i18n="delivery.cta.button">Ordina il tuo gelato</span><span aria-hidden="true">→</span></a>
+    </section>
+
+    <div style="height:16px"></div>
+  </div>
+
+  <script src="js/i18n.js"></script>
+</body>
+</html>
