@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /grazie
+Disallow: /grazie.html
+
+Sitemap: https://www.gelateriamontepetrosu.it/sitemap.xml
