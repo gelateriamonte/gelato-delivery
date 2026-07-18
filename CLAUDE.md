@@ -58,8 +58,10 @@ build di produzione in automatico. Verificato: codice live su prod **~15s** dopo
 
 > **Migrazione stack (2026-06-25):** repo spostato `vla-sys` → **`gelateriamonte/gelato-delivery`** (Netlify ricollegato, resta di Vla); Supabase migrato a **nuovo progetto `rlrsyqmwtjfyuqkgzqso`** (region eu-west-1; url/anon in `config.js`, service_role in env Netlify). Vecchi `vla-sys` + Supabase `hsnikgbwsggusqlanwmt` (eu-central-1) tenuti come backup, da dismettere. Se il `git remote origin` locale punta ancora a `vla-sys`, ripuntalo al nuovo repo per i deploy.
 
-- **NON serve** `netlify deploy --prod` (e in questo ambiente la CLI Netlify **non è installata/autenticata** →
-  non tentarla, `netlify login` richiede browser). Lo step CLI nel vecchio runbook era ridondante.
+- **NON serve** `netlify deploy --prod`. Aggiornamento 2026-07-18: la CLI Netlify ora **è installata e
+  autenticata** (utente vla@habenas.it, progetto linkato `gelato26`) — utile per leggere env (`netlify env:list`),
+  ma il deploy resta solo `git push`. Per il DB: **MCP Supabase autorizzato** (OAuth) → `apply_migration` /
+  `execute_sql` sul progetto `rlrsyqmwtjfyuqkgzqso`, niente più SQL da far incollare al titolare.
 - **Cosa viene pubblicato:** `publish="."` serve la **checkout CI del repo** → vanno online **solo i file
   git-tracked**. Quindi `.gitignore` controlla cosa è pubblico (esclusi: `*.zip`, `Loghi/`, `.netlify`,
   `node_modules`, `.env`, `.DS_Store`). I file **untracked** (jpg sciolti in root, `docs/AUDIT-*.md`) **non**
