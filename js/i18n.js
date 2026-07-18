@@ -45,7 +45,7 @@
   "home.delivery.body": "Consegniamo il gelato appena mantecato in tutto il comune di San Teodoro: <strong>Monte Petrosu</strong>, <strong>Puntaldia</strong>, <strong>Giardini di Aldia</strong>, <strong>Lu Impostu</strong>, <strong>Lu Fraili</strong> e il paese. Vaschette da 600 g a 1,7 kg, consegna gratuita, pagamento online sicuro.",
   "home.delivery.link": "Zone e orari di consegna →",
   "home.cta.button": "Ordina ora",
-  "home.cta.note": "Consegna a domicilio o take away · ordine minimo € 25",
+  "home.cta.note": "Consegna a domicilio o take away · ordine minimo € 30",
   "common.brandTagline": "gelato<br>artigianale",
   "header.backToHome": "Torna alla home",
   "order.meta.title": "Gelato a domicilio a San Teodoro — Ordina online | BM&V Monte Petrosu",
@@ -265,7 +265,7 @@
   "home.delivery.body": "We deliver freshly churned gelato across San Teodoro: <strong>Monte Petrosu</strong>, <strong>Puntaldia</strong>, <strong>Giardini di Aldia</strong>, <strong>Lu Impostu</strong>, <strong>Lu Fraili</strong> and the town centre. Tubs from 600 g to 1.7 kg, free delivery, secure online payment.",
   "home.delivery.link": "Delivery areas and hours →",
   "home.cta.button": "Order now",
-  "home.cta.note": "Home delivery or take away · minimum order € 25",
+  "home.cta.note": "Home delivery or take away · minimum order € 30",
   "common.brandTagline": "artisan<br>gelato",
   "header.backToHome": "Back to home",
   "order.meta.title": "Gelato home delivery in San Teodoro — Order online | BM&V Monte Petrosu",
@@ -452,8 +452,9 @@
   var current = DEFAULT, listeners = [];
   function detect() {
     try { var s = localStorage.getItem("gelato_lang"); if (s && LANGS.indexOf(s) >= 0) return s; } catch (e) {}
-    var n = (navigator.language || "it").slice(0, 2).toLowerCase();
-    return n === "it" ? "it" : "en";   // browser IT -> IT; qualsiasi altra lingua -> EN
+    // prima visita sempre IT (SEO: Googlebot renderizza con locale en-US e indicizzerebbe la
+    // versione inglese di title/H1/FAQ); EN solo su scelta esplicita, che viene ricordata.
+    return DEFAULT;
   }
   function raw(key, lang) {
     var d = DICT[lang] || DICT[DEFAULT];

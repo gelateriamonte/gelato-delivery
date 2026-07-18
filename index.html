@@ -309,7 +309,7 @@
     </section>
 
     <section class="sec legal-strip" data-i18n-attr="aria-label:home.legal.aria" aria-label="Informazioni clienti">
-      <a class="legal-link" href="informazioni.html">
+      <a class="legal-link" href="/informazioni">
         <span class="legal-kicker" data-i18n="home.legal.eyebrow">Info clienti</span>
         <span class="legal-title" data-i18n="home.legal.title">Allergeni, Privacy e Condizioni</span>
         <span class="legal-copy" data-i18n="home.legal.copy">Scheda allergeni e documenti del servizio</span>
@@ -321,7 +321,7 @@
     <div style="height:10px"></div>
 
     <div class="cta">
-      <a href="ordina.html"><span data-i18n="home.cta.button">Ordina ora</span><span class="arr">→</span></a>
+      <a href="/ordina"><span data-i18n="home.cta.button">Ordina ora</span><span class="arr">→</span></a>
       <p class="note" data-i18n="home.cta.note">Consegna a domicilio o take away · ordine minimo € 25</p>
     </div>
 
@@ -440,8 +440,8 @@
       var cfg = window.SUPABASE_CONFIG;
       if (!cfg || !cfg.url) return;
       var LAST_OH = null;
-      // anti-XSS: i due campi resi via innerHTML (data-i18n-html) ammettono solo <br> e <em>.
-      var HTML_KEYS = { "home.hero.title": 1, "home.story.lede": 1 };
+      // anti-XSS: i campi resi via innerHTML (data-i18n-html) ammettono solo <br> e <em>.
+      var HTML_KEYS = { "home.hero.title": 1, "home.story.lede": 1, "home.delivery.body": 1, "footer.nap": 1 };
       function sanitizeHtml(v) {
         var e = String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         return e.replace(/&lt;(\/?)(br|em)\s*\/?&gt;/gi, "<$1$2>");
