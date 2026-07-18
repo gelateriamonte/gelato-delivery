@@ -7,6 +7,11 @@
   <link rel="apple-touch-icon" href="/img/favicon.png">
   <title>Informazioni clienti - Gelateria BM&amp;V</title>
   <meta name="description" content="Informazioni su allergeni, privacy e condizioni di vendita della Gelateria BM&amp;V.">
+  <link rel="canonical" href="https://www.gelateriamontepetrosu.it/informazioni">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Informazioni clienti - Gelateria BM&amp;V">
+  <meta property="og:description" content="Informazioni su allergeni, privacy e condizioni di vendita della Gelateria BM&amp;V.">
+  <meta property="og:url" content="https://www.gelateriamontepetrosu.it/informazioni">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -38,7 +43,7 @@
     .back{ text-decoration:none; color:var(--accent-ink); font-size:13px; font-weight:700; white-space:nowrap; }
     .hero{ padding:42px 22px 28px; border-bottom:1px solid var(--line); background:linear-gradient(180deg, var(--paper), var(--cream)); }
     .eyebrow{ font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-ink); margin:0 0 10px; }
-    h1{ font-family:var(--serif); font-size:42px; line-height:.98; font-weight:500; margin:0; letter-spacing:0; color:var(--ink); }
+    h1, .h1{ font-family:var(--serif); font-size:42px; line-height:.98; font-weight:500; margin:0; letter-spacing:0; color:var(--ink); }
     .lede{ max-width:620px; font-size:15px; line-height:1.65; color:var(--ink-2); margin:18px 0 0; }
     .docs{ display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; padding:22px; border-bottom:1px solid var(--line); }
     .doc-card{ display:block; min-height:132px; text-decoration:none; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:16px; box-shadow:var(--shadow-card); transition:border-color .15s, transform .15s; }
@@ -63,7 +68,7 @@
       .top{ align-items:flex-start; gap:12px; }
       .top-actions{ flex-direction:column; align-items:flex-end; gap:8px; }
       .docs{ grid-template-columns:1fr; }
-      h1{ font-size:36px; }
+      h1, .h1{ font-size:36px; }
       .allergen-list{ columns:1; }
     }
     @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
@@ -157,7 +162,7 @@
     <article class="lang-panel" data-lang-panel="en" lang="en" hidden>
       <section class="hero">
         <p class="eyebrow">Customer info</p>
-        <h1>Allergens, Privacy and Terms</h1>
+        <p class="h1">Allergens, Privacy and Terms</p>
         <p class="lede">Here you can find the main online ordering documents and a quick allergen sheet. The Italian version of the documents is the reference version.</p>
       </section>
 
