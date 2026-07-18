@@ -890,3 +890,8 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
   .prodlist .prow{ gap:10px; padding:9px 10px; }
   .prow .kgstep button{ width:34px; height:34px; }   /* tap target */
 }
+
+/* ---------- footer NAP (SEO local) — comune a ordina/grazie ---------- */
+.site-footer{ margin-top:34px; padding:18px 0 8px; border-top:1px solid var(--line);
+  font-size:12px; line-height:1.7; color:var(--muted); }
+.site-footer a{ color:var(--accent-ink); }

@@ -224,7 +224,8 @@
   "delivery.faq.a4": "Sì, con carta al checkout, su circuito sicuro Stripe. Per il ritiro in gelateria puoi anche pagare alla cassa.",
   "delivery.faq.q5": "Fate anche take away?",
   "delivery.faq.a5": "Sì: puoi ritirare il tuo ordine direttamente in gelateria a Monte Petrosu, in Piazza Tavolara.",
-  "delivery.cta.button": "Ordina il tuo gelato"
+  "delivery.cta.button": "Ordina il tuo gelato",
+  "footer.nap": "<strong>Gelateria BM&V Monte Petrosu</strong> — Piazza Tavolara, Monte Petrosu, 07052 San Teodoro (SS) · Tel <a href=\"tel:+393793732437\">+39 379 373 2437</a> · Consegna a domicilio a Monte Petrosu, Puntaldia, Giardini di Aldia, Lu Impostu, Lu Fraili e in tutto il comune di San Teodoro. · <a href=\"/ordina\">Ordina online</a> · <a href=\"/consegna-a-domicilio\">Zone di consegna</a> · <a href=\"/informazioni\">Allergeni, privacy e condizioni</a>"
 },
   "en": {
   "home.meta.title": "BM&V Gelateria Monte Petrosu — San Teodoro | Gelato home delivery",
@@ -443,7 +444,8 @@
   "delivery.faq.a4": "Yes, by card at checkout, on Stripe's secure network. For pickup at the shop you can also pay at the counter.",
   "delivery.faq.q5": "Do you also do take away?",
   "delivery.faq.a5": "Yes: you can collect your order directly at the gelateria in Monte Petrosu, Piazza Tavolara.",
-  "delivery.cta.button": "Order your gelato"
+  "delivery.cta.button": "Order your gelato",
+  "footer.nap": "<strong>Gelateria BM&V Monte Petrosu</strong> — Piazza Tavolara, Monte Petrosu, 07052 San Teodoro (SS) · Tel <a href=\"tel:+393793732437\">+39 379 373 2437</a> · Home delivery in Monte Petrosu, Puntaldia, Giardini di Aldia, Lu Impostu, Lu Fraili and across the San Teodoro area. · <a href=\"/ordina\">Order online</a> · <a href=\"/consegna-a-domicilio\">Delivery areas</a> · <a href=\"/informazioni\">Allergens, privacy and terms</a>"
 }
 };
   var LANGS = ["it", "en"], DEFAULT = "it";
