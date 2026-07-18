@@ -1470,7 +1470,10 @@ async function loadSettings() {
   SETTINGS = data || {};
   $("set-delivery").value = data.delivery_cost;
   $("set-min").value = data.min_order;
-  $("set-lead").value = data.slot_lead_hours != null ? data.slot_lead_hours : 2;
+  const leadMin = data.slot_lead_minutes != null ? Number(data.slot_lead_minutes)
+    : (data.slot_lead_hours != null ? Number(data.slot_lead_hours) * 60 : 120);
+  $("set-lead-h").value = Math.floor(leadMin / 60);
+  $("set-lead-m").value = leadMin % 60;
   $("set-maxdays").value = data.max_advance_days != null ? data.max_advance_days : 6;
   $("set-cancel-lead").value = data.cancel_lead_hours != null ? data.cancel_lead_hours : 2;
   const t = waTemplates();
@@ -1495,16 +1498,29 @@ $("set-save").onclick = async () => {
   SETTINGS.cancel_lead_hours = cl;
   toast("Parametri salvati.");
 };
-// Tempo di anticipo da inizio fascia (ore, 1..6): auto-save
-$("set-lead").onchange = async () => {
-  let h = parseInt($("set-lead").value || "2", 10);
-  if (!(h >= 1)) h = 1; if (h > 6) h = 6;
-  $("set-lead").value = h;
-  const { error } = await sb.from("settings").update({ slot_lead_hours: h }).eq("id", 1);
+// Tempo di anticipo da inizio fascia (ore + minuti → slot_lead_minutes): auto-save.
+// slot_lead_hours resta allineata a ceil(minuti/60): i client col JS vecchio in cache
+// la leggono ancora e così restano al più PIÙ restrittivi, mai meno.
+async function saveSlotLead() {
+  let h = parseInt($("set-lead-h").value || "0", 10);
+  let m = parseInt($("set-lead-m").value || "0", 10);
+  if (!(h >= 0)) h = 0; if (h > 12) h = 12;
+  if (!(m >= 0)) m = 0; if (m > 59) m = 59;
+  let total = h * 60 + m;
+  if (total < 5) total = 5;   // minimo 5 minuti
+  h = Math.floor(total / 60); m = total % 60;
+  $("set-lead-h").value = h; $("set-lead-m").value = m;
+  const { error } = await sb.from("settings").update({
+    slot_lead_minutes: total,
+    slot_lead_hours: Math.max(1, Math.ceil(total / 60)),
+  }).eq("id", 1);
   if (error) { console.error(error); toast("Errore salvataggio."); return; }
-  SETTINGS.slot_lead_hours = h;
+  SETTINGS.slot_lead_minutes = total;
+  SETTINGS.slot_lead_hours = Math.max(1, Math.ceil(total / 60));
   toast("Tempo di anticipo salvato.");
-};
+}
+$("set-lead-h").onchange = saveSlotLead;
+$("set-lead-m").onchange = saveSlotLead;
 // Giorni max prenotabili in futuro (1..15): auto-save + rigenera i calendari
 $("set-maxdays").onchange = async () => {
   let n = parseInt($("set-maxdays").value || "6", 10);

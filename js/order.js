@@ -49,16 +49,22 @@ const slotFull = (s) => {
   if (!max || max <= 0) return false;            // null / 0 = illimitato
   return (DAY_COUNTS[s.label] || 0) >= max;
 };
-// tempo di anticipo da inizio fascia (ore): globale, default 2
-const slotLeadHours = () => { const h = Number(DATA.settings && DATA.settings.slot_lead_hours); return h > 0 ? h : 2; };
+// tempo di anticipo da inizio fascia (minuti): globale, default 120.
+// slot_lead_minutes (nuova) vince; fallback legacy slot_lead_hours (ore intere) per DB non migrato.
+const slotLeadMinutes = () => {
+  const st = DATA.settings || {};
+  if (st.slot_lead_minutes != null && Number(st.slot_lead_minutes) >= 0) return Number(st.slot_lead_minutes);
+  const h = Number(st.slot_lead_hours);
+  return h > 0 ? h * 60 : 120;
+};
 // fascia ancora ordinabile rispetto al tempo di anticipo. Solo per OGGI: una
-// fascia sparisce quando mancano meno di N ore al suo inizio. Giorni futuri: sempre ok.
+// fascia sparisce quando mancano meno di N minuti al suo inizio. Giorni futuri: sempre ok.
 function slotWithinLead(s) {
   if (SELECTED_DAY !== ymd(DAYS[0])) return true;
   const startMin = hmToMin(s.label);               // inizio fascia (es. "18:00 - 18:30" -> 1080)
   const n = new Date();
   const nowMin = n.getHours() * 60 + n.getMinutes();
-  return nowMin < startMin - slotLeadHours() * 60; // visibile fino a N ore prima dell'inizio
+  return nowMin < startMin - slotLeadMinutes();    // visibile fino a N minuti prima dell'inizio
 }
 // fasce effettivamente offribili nel giorno scelto: accese (override/catalogo), non piene, entro l'anticipo
 const effectiveSlots = () => DATA.slots.filter((s) => {

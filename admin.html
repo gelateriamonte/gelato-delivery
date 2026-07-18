@@ -153,9 +153,12 @@
       <div class="admin-head"><h2>Fasce orarie</h2></div>
       <p class="muted small">Scegli un giorno, poi accendi/spegni le fasce. Rinomina, aggiungi ed elimina valgono per tutti i giorni.</p>
       <div class="panel" style="margin:0 0 14px">
-        <div class="field" style="margin:0"><label>Tempo di anticipo da inizio fascia (ore)</label>
-          <input id="set-lead" type="number" min="1" max="6" step="1" style="width:120px">
-          <p class="muted small" style="margin:8px 0 0">Il cliente vede una fascia solo fino a N ore prima del suo inizio (es. 2h → la fascia 18:00 sparisce alle 16:00).</p>
+        <div class="field" style="margin:0"><label>Tempo di anticipo da inizio fascia</label>
+          <div class="row" style="gap:14px">
+            <span class="row" style="gap:6px"><input id="set-lead-h" type="number" min="0" max="12" step="1" style="width:80px"> <span class="muted small">ore</span></span>
+            <span class="row" style="gap:6px"><input id="set-lead-m" type="number" min="0" max="55" step="5" style="width:80px"> <span class="muted small">min</span></span>
+          </div>
+          <p class="muted small" style="margin:8px 0 0">Il cliente vede una fascia solo fino a questo anticipo prima del suo inizio (es. 30 min → la fascia 18:00 sparisce alle 17:30). Minimo 5 minuti.</p>
         </div>
         <div class="field" style="margin:14px 0 0"><label>Giorni max prenotabili in futuro (1–15)</label>
           <input id="set-maxdays" type="number" min="1" max="15" step="1" style="width:120px">
