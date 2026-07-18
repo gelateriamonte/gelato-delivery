@@ -5,8 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <link rel="icon" type="image/png" href="/img/favicon.png">
   <link rel="apple-touch-icon" href="/img/favicon.png">
-  <title data-i18n="home.meta.title">Gelateria BM&amp;V Monte Petrosu — San Teodoro</title>
-  <meta name="description" data-i18n-attr="content:home.meta.description" content="Gelateria BM&amp;V, Monte Petrosu (San Teodoro). Gelato artigianale mantecato ogni giorno. Ordina online: consegna a domicilio o take away.">
+  <title data-i18n="home.meta.title">Gelateria BM&amp;V Monte Petrosu — San Teodoro | Gelato a domicilio</title>
+  <meta name="description" data-i18n-attr="content:home.meta.description" content="Gelato artigianale a Monte Petrosu (San Teodoro), mantecato ogni giorno. Consegna a domicilio a Puntaldia, Lu Impostu, Giardini di Aldia, Lu Fraili — o take away. Ordina online.">
+  <link rel="canonical" href="https://www.gelateriamontepetrosu.it/">
+  <meta property="og:type" content="business.business">
+  <meta property="og:site_name" content="Gelateria BM&amp;V Monte Petrosu">
+  <meta property="og:title" content="Gelateria BM&amp;V Monte Petrosu — San Teodoro">
+  <meta property="og:description" content="Gelato artigianale mantecato ogni giorno. Consegna a domicilio a San Teodoro: Monte Petrosu, Puntaldia, Lu Impostu, Giardini di Aldia, Lu Fraili.">
+  <meta property="og:url" content="https://www.gelateriamontepetrosu.it/">
+  <meta property="og:image" content="https://www.gelateriamontepetrosu.it/img/og-cover.jpg">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:locale:alternate" content="en_US">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -56,15 +65,16 @@
       background:linear-gradient(180deg, rgba(40,28,20,.42) 0%, rgba(40,28,20,0) 30%, rgba(40,28,20,0) 50%, rgba(40,28,20,.7) 100%); }
     .cap{ position:absolute; left:22px; right:22px; bottom:24px; z-index:2; }
     .cap .eyebrow{ color:rgba(255,255,255,.92); margin-bottom:9px; text-shadow:0 1px 8px rgba(40,28,20,.5); }
-    .cap h1{ font-family:var(--serif); font-weight:500; font-size:38px; line-height:1.02; letter-spacing:-.01em;
+    .cap h1, .cap .hero-claim{ font-family:var(--serif); font-weight:500; font-size:38px; line-height:1.02; letter-spacing:-.01em;
       color:var(--cream); margin:0; text-shadow:0 2px 18px rgba(40,28,20,.5); }
-    .cap h1 em{ font-style:italic; }
+    .cap h1 em, .cap .hero-claim em{ font-style:italic; }
 
     /* sezioni */
     .sec{ padding:30px 22px; }
     .sec + .sec{ padding-top:4px; }
     .sec .eyebrow{ margin-bottom:10px; color:var(--muted); }
     .lede{ font-family:var(--serif); font-size:21px; line-height:1.34; color:var(--ink); margin:0; letter-spacing:.005em; }
+    h1.lede{ font-size:21px; font-weight:inherit; }
     .lede em{ font-style:italic; color:var(--accent-ink); }
     .body-copy{ font-size:14px; line-height:1.6; color:var(--ink-2); margin:14px 0 0; }
     .sec-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:16px; }
@@ -157,6 +167,57 @@
 
     @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
   </style>
+  <!-- TODO(seo-dati): aggiungere a sameAs gli URL esatti di Facebook e Tripadvisor quando disponibili -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "IceCreamShop",
+    "@id": "https://www.gelateriamontepetrosu.it/#sede",
+    "name": "Gelateria BM&V Monte Petrosu",
+    "alternateName": "BM&V Gelateria Artigianale — Monte Petrosu",
+    "url": "https://www.gelateriamontepetrosu.it/",
+    "telephone": "+393793732437",
+    "priceRange": "€€",
+    "servesCuisine": "Gelato artigianale",
+    "image": "https://www.gelateriamontepetrosu.it/img/og-cover.jpg",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Piazza Tavolara, loc. Monte Petrosu",
+      "addressLocality": "San Teodoro",
+      "postalCode": "07052",
+      "addressRegion": "SS",
+      "addressCountry": "IT"
+    },
+    "geo": { "@type": "GeoCoordinates", "latitude": 40.8410901, "longitude": 9.6538693 },
+    "openingHoursSpecification": [{
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+      "opens": "13:00", "closes": "23:30"
+    }],
+    "areaServed": [
+      { "@type": "Place", "name": "Monte Petrosu" },
+      { "@type": "Place", "name": "Puntaldia" },
+      { "@type": "Place", "name": "Giardini di Aldia" },
+      { "@type": "Place", "name": "Lu Impostu" },
+      { "@type": "Place", "name": "Lu Fraili" },
+      { "@type": "Place", "name": "San Teodoro" }
+    ],
+    "potentialAction": {
+      "@type": "OrderAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://www.gelateriamontepetrosu.it/ordina",
+        "inLanguage": "it",
+        "actionPlatform": ["https://schema.org/DesktopWebPlatform","https://schema.org/MobileWebPlatform"]
+      },
+      "deliveryMethod": ["http://purl.org/goodrelations/v1#DeliveryModeOwnFleet","http://purl.org/goodrelations/v1#DeliveryModePickUp"]
+    },
+    "sameAs": [
+      "https://instagram.com/bmevgelateriartigianale",
+      "https://bmvgelaterie.it"
+    ]
+  }
+  </script>
 </head>
 <body>
   <div class="page">
@@ -171,14 +232,14 @@
       <div class="hero-logo"><img src="img/logo-full.png" data-i18n-attr="alt:home.hero.logoAlt" alt="Gelateria BM&amp;V Monte Petrosu"></div>
       <div class="cap">
         <p class="eyebrow" data-i18n="home.hero.eyebrow">Monte Petrosu · San Teodoro</p>
-        <h1 data-i18n-html="home.hero.title">Il gelato come<br>si faceva <em>una volta</em>.</h1>
+        <p class="hero-claim" data-i18n-html="home.hero.title">Il gelato come<br>si faceva <em>una volta</em>.</p>
       </div>
     </section>
 
     <section class="sec">
       <p class="eyebrow" data-i18n="home.story.eyebrow">La nostra storia</p>
-      <p class="lede" data-i18n-html="home.story.lede">Mantechiamo ogni giorno, con <em>latte fresco</em> e frutta di stagione, a due passi dal mare di Monte Petrosu.</p>
-      <p class="body-copy" data-i18n="home.story.body">Niente coloranti, niente fretta. Solo il gelato che ami — in gelateria o consegnato a casa nelle ore più calde, a San Teodoro e dintorni.</p>
+      <h1 class="lede" data-i18n-html="home.story.lede">Gelateria artigianale a <em>Monte Petrosu</em>, San Teodoro: mantechiamo ogni giorno con latte fresco e frutta di stagione, a due passi dal mare.</h1>
+      <p class="body-copy" data-i18n="home.story.body">Niente coloranti, niente fretta. Solo il gelato che ami — in gelateria o consegnato a domicilio nelle ore più calde, a San Teodoro, Puntaldia, Lu Impostu e in tutte le frazioni.</p>
     </section>
 
     <section class="sec" style="padding-top:8px;padding-bottom:14px">
@@ -233,6 +294,13 @@
       <span class="wa-ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.157 5.335 5.495 0 12.05 0a11.82 11.82 0 0 1 8.413 3.488 11.82 11.82 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.728-.957zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg></span>
       <span class="wa-txt"><b data-i18n="home.wa.title">Scrivici</b><small data-i18n="home.wa.subtitle">su WhatsApp</small></span>
       </a>
+    </section>
+
+    <section class="sec" aria-labelledby="delivery-title">
+      <p class="eyebrow" data-i18n="home.delivery.eyebrow">Consegna a domicilio</p>
+      <h2 id="delivery-title" data-i18n="home.delivery.title" style="font-family:var(--serif);font-weight:500;font-size:26px;margin:0 0 4px;color:var(--ink);letter-spacing:-.01em">Il gelato arriva a casa, in vacanza</h2>
+      <p class="body-copy" data-i18n-html="home.delivery.body">Consegniamo il gelato appena mantecato in tutto il comune di San Teodoro: <strong>Monte Petrosu</strong>, <strong>Puntaldia</strong>, <strong>Giardini di Aldia</strong>, <strong>Lu Impostu</strong>, <strong>Lu Fraili</strong> e il paese. Vaschette da 600 g a 1,7 kg, consegna gratuita, pagamento online sicuro.</p>
+      <p class="body-copy"><a href="/consegna-a-domicilio" style="color:var(--accent-ink);font-weight:600" data-i18n="home.delivery.link">Zone e orari di consegna →</a></p>
     </section>
 
     <section class="sec legal-strip" data-i18n-attr="aria-label:home.legal.aria" aria-label="Informazioni clienti">
