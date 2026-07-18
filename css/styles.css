@@ -86,7 +86,7 @@ body{
   color:var(--accent-ink); margin:0 0 9px;
 }
 .eyebrow.muted{ color:var(--muted); }
-h3.s-title{
+h3.s-title, h1.s-title{
   font-family:var(--serif); font-weight:500; font-size:26px; line-height:1.1;
   margin:0 0 4px; color:var(--ink); letter-spacing:-.01em;
 }
