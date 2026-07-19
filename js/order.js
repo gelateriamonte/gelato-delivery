@@ -601,12 +601,13 @@ function renderSlotSelect() {
 }
 
 // ---------- invio ----------
-// Validazione recapiti: cellulare italiano (10 cifre, inizia con 3) + email.
+// Validazione recapiti: cellulare italiano (9-10 cifre, inizia con 3) + email.
+// I numeri storici (330/335/337/360…) hanno 9 cifre totali: prefisso 3xx + 6.
 const isMobileIT = (p) => {
   let d = String(p).replace(/\D/g, "");
   if (d.startsWith("0039")) d = d.slice(4);
-  else if (d.length === 12 && d.startsWith("39")) d = d.slice(2);
-  return /^3\d{9}$/.test(d);
+  else if ((d.length === 11 || d.length === 12) && d.startsWith("39")) d = d.slice(2);
+  return /^3\d{8,9}$/.test(d);
 };
 const isEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e));
 
