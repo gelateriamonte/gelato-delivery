@@ -19,18 +19,54 @@ npm i -D playwright && npx playwright install webkit
 ```
 Script tipo:
 ```js
-const { webkit } = require('playwright');
+import { webkit } from 'playwright';
 const browser = await webkit.launch();
 const ctx = await browser.newContext({ viewport:{width:393,height:852}, deviceScaleFactor:3, isMobile:true });
-await ctx.addInitScript(() => { try{ sessionStorage.setItem('gelato_admin','1'); }catch(e){} }); // login admin
+await ctx.route(/supabase\.(co|com)/, r => r.abort());   // MAI toccare il DB di produzione da un test
 const page = await ctx.newPage();
-await page.goto('http://localhost:8080/admin.html', { waitUntil:'networkidle' });
-await page.click('.tab[data-tab="slots"]');
-// overflow orizzontale = bug:
-await page.evaluate(() => ({ over: document.scrollingElement.scrollWidth - innerWidth }));
-// e per trovare il colpevole: elementi con getBoundingClientRect().right > innerWidth
+await page.goto('http://localhost:8099/admin.html', { waitUntil:'domcontentloaded' });
+await page.evaluate(() => {
+  // il login e' Supabase Auth reale: senza password si mostra solo la app.
+  // #gate-wrap si nasconde via style, #app e' nascosto da una CLASSE (non dall'attributo hidden).
+  document.getElementById('gate-wrap').style.display = 'none';
+  document.getElementById('app').classList.remove('hidden');
+  // cambiare tab a mano: il pannello resta .hidden finche' non si toglie la classe
+  document.querySelectorAll('.tabpane').forEach(p => p.classList.add('hidden'));
+  document.getElementById('tab-produzione').classList.remove('hidden');
+});
 ```
+⚠️ **`sessionStorage.setItem('gelato_admin','1')` non bypassa piu' niente** (obsoleto dal lockdown del
+2026-06-25: `admin.js` usa `signInWithPassword`).
+
+⚠️ **Le variabili di stato di `admin.js` non sono iniettabili**: `FLAVORS_ALL`, `SETTINGS` ecc. sono dichiarate
+con `let` a livello di script, quindi **non** sono proprieta' di `window` e `window.FLAVORS_ALL = [...]` crea
+un'altra variabile che nessuno legge. Le *function declaration* invece finiscono su `window`: per avere righe
+vere si chiama direttamente il builder, es. `document.getElementById('prod-list').appendChild(buildProdRow({...}))`.
+Conseguenza: cio' che dipende dallo stato globale (i totali di `updateProdStats`) **non** si puo' esercitare
+da fuori — va provato a mano nel back office.
+
 Larghezze da testare: **360 / 375 / 393 / 430**. Il binario WebKit resta in `~/Library/Caches/ms-playwright`.
+
+### Misurare l'overflow: il check classico non basta
+```js
+document.scrollingElement.scrollWidth - innerWidth      // > 0 = overflow di PAGINA
+```
+Intercetta solo l'overflow che allarga il documento. **Non vede** il testo che sborda *dentro* una riga e
+finisce sopra un altro elemento: li' `scrollWidth - innerWidth` resta **0** mentre il difetto c'e'.
+Successo il 2026-08-01 con `.pname` nella tab Produzione.
+
+Per quel caso servono le geometrie degli elementi, ma attenzione al tranello inverso:
+`Range.getBoundingClientRect()` sul nodo di testo restituisce l'estensione del testo **come se non fosse
+ritagliato**, quindi con `overflow:hidden` segnala una sovrapposizione che a schermo non esiste (falso positivo,
+preso anche questo il 2026-08-01).
+
+Regola pratica: confrontare i **box** (`el.getBoundingClientRect()`) degli elementi adiacenti, e **chiudere
+sempre con uno screenshot** (`locator.screenshot()`) da guardare davvero. Su questa classe di difetti solo
+l'immagine e' decisiva.
+
+⚠️ Un harness che misura **zero elementi** stampa "nessun problema": far **fallire** lo script se il numero di
+elementi misurati e' 0 o se i rettangoli sono tutti a 0 (elemento non renderizzato). Tre falsi verdi di fila
+il 2026-08-01 sono nati cosi'.
 
 ### Gotcha WebKit noti
 - **Input (`type=number`/`text`) dentro un flex**: hanno una larghezza intrinseca (max-content) grande (~200px)
@@ -41,6 +77,13 @@ Larghezze da testare: **360 / 375 / 393 / 430**. Il binario WebKit resta in `~/L
   serve un cap esplicito (`max-width`/`width`).
 
 ---
+
+## ⚠️ `flavors` è stato di lavoro vivo, non configurazione
+`prod_on` / `prod_kg` / `prod_order` sono i gusti che la gelateria **sta producendo oggi** e per quanti kg.
+Non scriverci mai per provare qualcosa, e non eseguire il Reset produzione: cancella una decisione operativa
+che non si ricostruisce dal codice, e Postgres non tiene storico delle righe. Prima di lavorare sulla tab
+Produzione, salvarsi uno snapshot in sola lettura. Per provare comportamenti di scrittura: dati sintetici in
+locale, oppure `begin … rollback` con verifica che il valore sia tornato indietro.
 
 ## Convenzioni layout mobile back office (`@media (max-width:560px)`)
 - Righe di gestione (`.mrow`): tutto su **una sola riga**, niente wrap. Campo orario/"fascia" a **larghezza
@@ -60,8 +103,19 @@ build di produzione in automatico. Verificato: codice live su prod **~15s** dopo
 
 - **NON serve** `netlify deploy --prod`. Aggiornamento 2026-07-18: la CLI Netlify ora **è installata e
   autenticata** (utente vla@habenas.it, progetto linkato `gelato26`) — utile per leggere env (`netlify env:list`),
-  ma il deploy resta solo `git push`. Per il DB: **MCP Supabase autorizzato** (OAuth) → `apply_migration` /
-  `execute_sql` sul progetto `rlrsyqmwtjfyuqkgzqso`, niente più SQL da far incollare al titolare.
+  ma il deploy resta solo `git push`.
+- ⚠️ **MCP Supabase: non usarlo, è cieco su questo progetto** (verificato 2026-08-01). Il progetto di produzione
+  `rlrsyqmwtjfyuqkgzqso` sta sull'account **`admin@gelateriamontepetrosu.it`** (org `zyhtpxtsxddkjioyggya`), mentre
+  il connettore è autorizzato sull'account **Habenas** (org `tcpeyxbptgbwabehlffk`, che contiene solo il vecchio
+  progetto `hsnikgbwsggusqlanwmt`). `list_projects` non vede affatto la produzione e ogni chiamata dà
+  `-32600 permission denied`; `/mcp` → reconnect **non** risolve, riconnette alla stessa autorizzazione.
+  Percorso che funziona: `supabase login --token <PAT>` (il flusso interattivo fallisce sotto Claude Code perché
+  non-TTY) e poi SQL via Management API:
+  ```bash
+  curl -s -X POST "https://api.supabase.com/v1/projects/rlrsyqmwtjfyuqkgzqso/database/query" \
+    -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+    -d '{"query":"select 1;"}'
+  ```
 - **Cosa viene pubblicato:** `publish="."` serve la **checkout CI del repo** → vanno online **solo i file
   git-tracked**. Quindi `.gitignore` controlla cosa è pubblico (esclusi: `*.zip`, `Loghi/`, `.netlify`,
   `node_modules`, `.env`, `.DS_Store`). I file **untracked** (jpg sciolti in root, `docs/AUDIT-*.md`) **non**
@@ -89,6 +143,25 @@ RLS Supabase ora **ristretta** (prima era `using(true)` permissiva = anon leggev
 - ⚠️ **`authenticated` ≡ admin regge SOLO con signup pubblico DISABILITATO** (Supabase → Auth). Non riattivare la registrazione pubblica, o chiunque si registra ottiene accesso admin.
 - Verifica: `node test/security-assert.mjs` (o curl con anon key) → `orders`/`discount_codes` devono dare **401**; catalogo + RPC restano ok; login admin ok.
 
+### Grant per COLONNA sul catalogo (2026-08-01) — regola da rispettare sempre
+Fino ad allora `anon` aveva `grant select` di **tabella** su `settings`/`flavors`/`formats`/`time_slots`/
+`slot_day_state`, e `js/order.js` faceva `select("*")`: **ogni colonna nuova nasceva pubblica**. È già costato due
+fughe reali — `production_note` (nota interna del titolare) e i campi del piano di produzione
+`prod_on`/`prod_kg`/`prod_order`/`prod_base_ratio`, leggibili con la sola anon key.
+
+Ora il default è invertito (`migration-2026-08-01c` e `-01d`): `anon` ha `grant select (colonne)` solo su quelle
+pubbliche. **Una colonna nuova nasce privata**: per esporla serve un `grant select (colonna)` esplicito.
+
+Conseguenze operative, non negoziabili:
+- **Mai `select("*")` dal codice pubblico** su queste tabelle: elencare le colonne. Un `select=*` da `anon` ora
+  risponde `42501 permission denied`.
+- PostgreSQL pretende il SELECT di colonna anche per le colonne usate **solo** in `WHERE`/`ORDER BY`: `available`
+  e `sort_order` stanno nel grant pur non essendo nella select list. Se aggiungi un filtro, controlla il grant.
+- **Ordine di deploy obbligatorio**: prima va online il JS con le colonne esplicite, **poi** si applica il grant.
+  Invertendo, il codice live continua a chiedere `select("*")` e la pagina d'ordine smette di caricare.
+- Le Netlify Functions non sono toccate (service_role bypassa grant e RLS); il back office opera come
+  `authenticated` e mantiene accesso pieno.
+
 ## Stampa ordini — Epson TM-m30III (Server Direct Print)
 La stampante (in gelateria, su rete) polla `/.netlify/functions/epson-sdp` ogni ~15s e stampa lo scontrino di
 ogni ordine pagato. Niente browser nel percorso: funziona anche a back office chiuso.
@@ -98,8 +171,16 @@ ogni ordine pagato. Niente browser nel percorso: funziona anche a back office ch
   senza `printjobid`), reclaim 5min con cap, alert Telegram dopo 3 retry falliti. Migration
   `supabase/migration-2026-06-21-print-jobs.sql`.
 - **Trigger auto**: `stripe-webhook.js` accoda un `print_jobs` dopo l'insert ordine (best-effort, come Telegram).
-- **Ristampa manuale**: bottone 🖨️ in `admin.js` (`renderActions`) → `sb.from('print_jobs').insert({order_id})`
-  (RLS: anon solo INSERT).
+- **Ristampa manuale**: bottone 🖨️ in `admin.js` (`renderActions`) → `sb.from('print_jobs').insert({order_id})`.
+- **Tre `kind`**, tutti sullo stesso binario: `order` (dall'ordine, via `order_id`), `production` (checklist gusti)
+  e `note` (nota libera del back office, dal 2026-08-01) — gli ultimi due senza `order_id`, con il testo in
+  `payload` e un builder dedicato in `lib/receipt.js` (`buildProductionXml`, `buildNoteXml`).
+- ⚠️ In `lib/receipt.js` si lavora su stringhe **raw** e si fa l'escape XML **una volta sola all'emissione**:
+  padding e troncamento contano i caratteri visibili. Chi mette una trasformazione dentro `esc()` falsa
+  l'allineamento a 48 colonne. I caratteri di controllo C0 (vietati da XML 1.0, arrivano incollando da PDF)
+  si tolgono **all'ingresso** dei builder, prima del layout.
+- ⚠️ `wrap()` **tronca** le parole più lunghe della riga, non le spezza (per gli scontrini ordine è voluto). Per
+  la nota si passa da `splitLongWords()`, altrimenti un URL o un IBAN esce mozzato e sembra completo.
 - **Endpoint** `netlify/functions/epson-sdp.js`: `GetRequest`→ePOS-Print XML (builder `lib/receipt.js`, 80mm/48col,
   escape-at-emit); `SetResponse`→esito. Auth **fail-closed** via `EPSON_SDP_ID`. **Risponde sempre 200** alla
   stampante (un non-200 la fa ri-POSTare all'infinito).
@@ -113,6 +194,21 @@ ogni ordine pagato. Niente browser nel percorso: funziona anche a back office ch
   **Aggiornamento firmware RIMANDATO** (scelta owner): non serve, flash POS = rischio/downtime per zero guadagno.
   Se in futuro si aggiorna: annotare i campi SDP, re-inserirli, test-print di verifica subito dopo.
 - Spec completo (locale, untracked, 404 sul sito): `docs/superpowers/specs/2026-06-21-epson-tm30iii-server-direct-print-design.md`.
+
+## Test
+
+```bash
+node --test "test/*.test.mjs"     # con le VIRGOLETTE: node --test test/ su Node v25 risolve
+                                  # la directory come modulo e muore con MODULE_NOT_FOUND
+```
+In `package.json` **non** esiste uno script `test`.
+
+⚠️ **Un rosso è preesistente e non correlato**: `test/legal-info-page.test.mjs:11` pretende
+`href="informazioni.html"` mentre `index.html` usa il clean URL `/informazioni`. Baseline attesa: **38/39**.
+Da decidere se allineare il test o il link — non è una regressione.
+
+`test/security-assert.mjs` **interroga il database di produzione** e non fa parte del glob (non finisce in
+`.test.mjs`): eseguirlo solo di proposito.
 
 ## Loop protocol
 
