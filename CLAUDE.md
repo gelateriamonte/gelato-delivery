@@ -141,6 +141,15 @@ RLS Supabase ora **ristretta** (prima era `using(true)` permissiva = anon leggev
 - Pre-check pubblici via 2 RPC `SECURITY DEFINER` (no PII, girano come owner → bypassano RLS): `rpc_slot_availability(date)`, `rpc_coupon_precheck(code,phone,email)` (specchio di `create-checkout.js`). Migration: `supabase/migration-2026-06-25a-auth-rpc-additive.sql` (policy+RPC) + `-25b-rls-lockdown.sql` (+ `-25b-rollback.sql`).
 - **Back office = Supabase Auth reale**: `ADMIN_PASSWORD` client-side **rimosso**, `admin.js` usa `signInWithPassword`. Utente unico `admin@gelateriamontepetrosu.it`.
 - ⚠️ **`authenticated` ≡ admin regge SOLO con signup pubblico DISABILITATO** (Supabase → Auth). Non riattivare la registrazione pubblica, o chiunque si registra ottiene accesso admin.
+- **Utente di prova** `prova@gelateriamontepetrosu.it` (creato 2026-08-01) per collaudare il back office da
+  agente. Ha accesso **pieno** come ogni utente autenticato: non esiste un ruolo di sola lettura. Credenziali
+  in `~/.config/gelato-admin/env` (chmod 600, fuori dal repo). Revoca: Supabase → Authentication → Users.
+- ⚠️ **Creare un utente auth via SQL**: `auth.users` accetta l'insert, ma GoTrue rifiuta il login con
+  `Database error querying schema` finché `confirmation_token`, `recovery_token`, `email_change`,
+  `email_change_token_new` (e simili) restano **NULL** invece di stringa vuota — il driver Go non sa
+  scansionare NULL in una stringa. Serve anche la riga corrispondente in `auth.identities`
+  (`provider='email'`, `provider_id=email`, `identity_data` con `sub` ed `email`). La via supportata resta
+  il pannello (Authentication → Add user → Auto Confirm).
 - Verifica: `node test/security-assert.mjs` (o curl con anon key) → `orders`/`discount_codes` devono dare **401**; catalogo + RPC restano ok; login admin ok.
 
 ### Grant per COLONNA sul catalogo (2026-08-01) — regola da rispettare sempre
