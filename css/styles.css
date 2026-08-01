@@ -920,6 +920,218 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
   .prow .base-unit{ font-size:9px; letter-spacing:.03em; }
 }
 
+/* ============================================================
+   TORTE (catalogo · ordini · storico) + CLIENTI — solo back office
+   ============================================================ */
+
+/* selettore di vista Catalogo/Ordini/Storico: i tre .btn.sm sarebbero identici
+   (tutti pieni di terracotta) — l'attivo si legge come .tab.active */
+#torte-views .btn.sm{ background:transparent; color:var(--muted); border:1.4px solid var(--line-2); }
+#torte-views .btn.sm:hover{ background:var(--paper-2); color:var(--ink); filter:none; }
+#torte-views .btn.sm.sel{ background:var(--ink); color:var(--cream); border-color:var(--ink); }
+
+/* ---------- riga del catalogo torte (stessa impostazione di .prow/.mrow) ---------- */
+.cakerow{
+  display:flex; align-items:flex-start; gap:12px;
+  background:var(--paper); border:1px solid var(--line); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:13px 15px;
+}
+.cakerow.dragging{ box-shadow:0 12px 30px rgba(60,40,30,.22); opacity:.97; }
+.cakerow .drag-handle{ padding-top:11px; }
+.cakerow > .switch{ flex:none; padding-top:9px; }
+.cakerow > .btn.icon{ flex:none; margin-top:5px; }
+/* colonna centrale: nome · varianti · campo foto */
+.cakerow .c-body{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:9px; }
+/* nome: input, non deve mai spingere gli elementi accanto fuori dalla riga */
+.cakerow input.c-name{ width:100%; max-width:100%; min-width:0; font-weight:600; }
+.cakerow input.c-file{
+  width:100%; max-width:100%; min-width:0; padding:0; border:0; border-radius:0;
+  background:none; font-size:11.5px; color:var(--muted);
+}
+
+/* miniatura 56×56 — la foto arriva da JS come background-image; il segnaposto è
+   lo sfondo definito qui. Longhand apposta: così background-image da solo la
+   sostituisce senza perdere position/size/repeat (e stringa vuota = torna il segnaposto). */
+.cakethumb{
+  width:56px; height:56px; flex:none; display:block; overflow:hidden;
+  border-radius:10px; border:1px solid var(--line-2);
+  background-color:var(--paper-2);
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2056%2056'%3E%3Cg%20fill='none'%20stroke='%23c9b9a6'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M17%2027h22v11a2%202%200%200%201-2%202H19a2%202%200%200%201-2-2z'/%3E%3Cpath%20d='M17%2031c1.8%201.8%203.7%201.8%205.5%200s3.7-1.8%205.5%200%203.7%201.8%205.5%200%203.7-1.8%205.5%200'/%3E%3Cpath%20d='M28%2022v-4'/%3E%3Ccircle%20cx='28'%20cy='16'%20r='1.5'/%3E%3C/g%3E%3C/svg%3E");
+  background-position:center; background-size:cover; background-repeat:no-repeat;
+}
+
+/* varianti: "esiste sì/no" e "quanto costa" restano due concetti separati.
+   Le due coppie stanno IMPILATE, non affiancate: incolonnate, i due prezzi si
+   confrontano a colpo d'occhio e l'etichetta resta sempre attaccata al suo campo. */
+.cakerow .c-vars{ display:flex; flex-direction:column; align-items:flex-start; gap:6px; min-width:0; }
+.cakerow .c-varshead{
+  font-size:10px; font-weight:600; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:1px;
+}
+.cakerow .c-pair{ display:flex; align-items:center; gap:10px; min-width:0; }
+/* larghezza fissa: i due gruppi prezzo restano incolonnati sotto */
+.cakerow .c-var{
+  display:inline-flex; align-items:center; gap:7px; margin:0; flex:0 0 96px; cursor:pointer;
+  font-size:12.5px; font-weight:600; letter-spacing:normal; text-transform:none;
+  white-space:nowrap; color:var(--ink-2);
+}
+.cakerow .c-var.off{ color:var(--faint); }
+.cakerow .c-has{ width:auto; flex:none; margin:0; cursor:pointer; accent-color:var(--accent); }
+/* il simbolo € sta fuori dal campo, dentro il bordo: rende evidente che è un prezzo
+   senza rubare spazio a ciò che si digita, e non finisce nel valore da parsare. */
+.cakerow .c-money{
+  display:inline-flex; align-items:center; flex:none;
+  border:1px solid var(--line-2); border-radius:9px; background:var(--paper);
+  overflow:hidden; transition:border-color .15s;
+}
+.cakerow .c-money:focus-within{ border-color:var(--accent-line); }
+.cakerow .c-money.off{ background:var(--paper-2); border-color:var(--line); }
+.cakerow .c-cur{ padding:0 2px 0 10px; font-size:13px; color:var(--muted); }
+.cakerow .c-money.off .c-cur{ color:var(--faint); }
+/* prezzo: type=text + inputmode=decimal (un type=number scarta la virgola).
+   Cap esplicito: dentro un flex il max-content di un input risale al wrapper su WebKit. */
+.cakerow input.c-price{
+  flex:0 0 66px; width:66px; max-width:66px; min-width:0; text-align:right;
+  padding:9px 10px 9px 2px; font-size:14px; font-variant-numeric:tabular-nums;
+  border:0; background:transparent; border-radius:0;
+}
+.cakerow input.c-price:focus{ outline:none; box-shadow:none; }
+.cakerow input.c-price:disabled{ color:var(--faint); cursor:not-allowed; }
+
+/* ---------- riga ordine torta (viste Ordini e Storico) ---------- */
+.corow{
+  display:flex; align-items:flex-start; gap:12px;
+  background:var(--paper); border:1px solid var(--line); border-left:3px solid var(--accent-line);
+  border-radius:var(--r-md); box-shadow:var(--shadow-card); padding:13px 15px;
+}
+.corow.urgent{ border-left-color:var(--rosso); }      /* ritiro oggi */
+.corow.done{ border-left-color:var(--pistachio); }    /* storico */
+/* il ritiro è il dato che, se sbagliato, manda a monte il lavoro: in evidenza e staccato */
+.corow .co-when{
+  flex:none; min-width:96px; max-width:134px; display:flex; flex-direction:column;
+  align-items:center; gap:2px; padding:7px 11px; border-radius:10px; text-align:center;
+  background:var(--accent-soft); border:1px solid var(--accent-line);
+}
+.corow .co-day{
+  font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--accent-ink); line-height:1.3;
+}
+.corow .co-time{
+  font-family:var(--serif); font-size:19px; font-weight:600; line-height:1;
+  color:var(--accent-ink); font-variant-numeric:tabular-nums; white-space:nowrap;
+}
+.corow.urgent .co-when{ background:var(--rosso-soft); border-color:color-mix(in oklch,var(--rosso) 30%,transparent); }
+.corow.urgent .co-day, .corow.urgent .co-time{ color:var(--rosso); }
+.corow.done .co-when{ background:var(--paper-2); border-color:var(--line-2); }
+.corow.done .co-day, .corow.done .co-time{ color:var(--muted); }
+
+.corow .co-main{ flex:1 1 auto; min-width:0; }
+/* nome torta e cliente: troncati con ellissi, mai disegnati sopra il prezzo */
+.corow .co-what{
+  font-size:15px; font-weight:600; color:var(--ink);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.corow .co-var{ font-weight:500; color:var(--muted); }
+.corow .co-who{
+  font-size:13px; color:var(--ink-2); margin-top:3px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+/* scritta/extra/note: qui il testo serve intero e va a capo, ma una parola
+   lunghissima non deve sfondare la scheda */
+.corow .co-note{ font-size:12.5px; color:var(--muted); line-height:1.5; margin-top:5px; overflow-wrap:anywhere; }
+.corow .co-note b{ color:var(--ink-2); font-weight:600; }
+.corow .co-amt{
+  flex:none; font-family:var(--serif); font-size:19px; font-weight:600;
+  color:var(--ink); white-space:nowrap; padding-top:3px;
+}
+.corow .co-acts{ flex:none; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+
+/* ---------- anagrafica clienti (usa .frow/.mrow esistenti) ---------- */
+.cli-phone{ font-variant-numeric:tabular-nums; }
+#clienti-list .mrow .count{ flex:none; }
+
+/* ============================================================
+   MODALE back office (nuovo ordine torta)
+   Attenzione: .modal del cliente è il foglio in basso di index/ordina.
+   Qui .modal è la sovrapposizione scura → regole scoped a .admin.
+   ============================================================ */
+.admin .modal{
+  position:fixed; inset:0; z-index:70; display:flex;
+  align-items:flex-start; justify-content:center;
+  padding:5vh 16px calc(24px + env(safe-area-inset-bottom));
+  background:rgba(40,30,24,.45);
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  width:auto; max-width:none; max-height:none; border:0; border-radius:0; box-shadow:none;
+}
+.modal-box{
+  width:100%; max-width:520px; min-width:0;
+  background:var(--paper); border:1px solid var(--line); border-radius:var(--r-lg);
+  box-shadow:0 18px 40px -18px rgba(40,30,24,.45);
+  padding:20px 20px 22px;
+}
+.modal-box .admin-head{ margin-bottom:16px; }
+.modal-box > .row:last-child{ margin-top:20px; }
+.modal-box > .row:last-child .btn{ flex:none; }
+
+/* campo della modale: cap esplicito sui controlli — su WebKit un input dentro
+   un flex tiene la larghezza intrinseca (max-content) e sfonda il riquadro */
+.co-field{ margin-bottom:13px; }
+.co-field:last-of-type{ margin-bottom:0; }
+.co-field input, .co-field select, .co-field textarea, .co-field .select-wrap{
+  width:100%; max-width:100%; min-width:0;
+}
+.co-field .muted.small{ display:block; }
+.co-field .err{ border-color:var(--rosso); }
+
+/* ---- soglia 980 (non 560): fino a 560px il rail dei tab resta affiancato e si
+   porta via 190px, quindi la colonna utile è da telefono anche su schermo largo.
+   Con i tre pulsanti in riga il nome della torta si troncava a metà. ---- */
+@media (max-width:980px){
+  .corow{ flex-wrap:wrap; }
+  .corow .co-when{ max-width:none; }
+  .corow .co-amt{ margin-left:auto; }
+  .corow .co-main{ flex:1 1 100%; order:3; }
+  .corow .co-acts{ order:4; flex:1 1 100%; }
+}
+
+/* ---- mobile: righe compatte, modale a schermo pieno ---- */
+@media (max-width:560px){
+  .cakerow{ flex-wrap:wrap; gap:10px; padding:12px; }
+  .cakerow .drag-handle{ padding:4px 1px; font-size:16px; }
+  .cakethumb{ width:44px; height:44px; border-radius:9px; }
+  /* il corpo va sotto: in riga restano maniglia · miniatura · toggle · ✕ */
+  .cakerow .c-body{ flex:1 1 100%; order:3; }
+  /* nome: si tronca con ellissi — senza nowrap+hidden il testo esce dal box
+     compresso e viene disegnato sopra gli altri elementi */
+  .cakerow input.c-name{
+    font-size:14px; padding:11px 10px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .cakerow > .switch{ margin-left:auto; gap:0; padding-top:0; }
+  .cakerow > .switch .switch-lbl{ display:none; }   /* toggle senza testo: lo stato è il colore */
+  .cakerow > .btn.icon{ margin-top:0; padding:8px 9px; }
+  .cakerow .c-vars{ gap:8px 12px; }
+  .cakerow .c-var{ font-size:12px; }
+  .cakerow input.c-price{ flex:0 0 72px; width:72px; max-width:72px; padding:9px 4px; }
+
+  .corow{ gap:9px 10px; padding:12px; }
+  .corow .co-when{ min-width:0; padding:6px 10px; }
+  .corow .co-time{ font-size:17px; }
+  .corow .co-amt{ font-size:18px; padding-top:6px; }
+  .corow .co-what{ font-size:14.5px; }
+  .corow .co-acts{ gap:8px; }
+  .corow .co-acts .btn{ flex:1 1 0; min-width:0; padding:9px 8px; }
+
+  .admin .modal{ padding:0; align-items:stretch; }
+  .modal-box{
+    max-width:none; border:0; border-radius:0; box-shadow:none;
+    min-height:100vh; min-height:100dvh;
+    padding:calc(16px + env(safe-area-inset-top)) 14px calc(22px + env(safe-area-inset-bottom));
+  }
+  .modal-box .admin-head h2{ font-size:23px; }
+  .modal-box > .row:last-child .btn{ flex:1 1 0; min-width:0; }
+}
+
 /* ---------- footer NAP (SEO local) — comune a ordina/grazie ---------- */
 .site-footer{ margin-top:34px; padding:18px 0 8px; border-top:1px solid var(--line);
   font-size:12px; line-height:1.7; color:var(--muted); }

@@ -73,6 +73,21 @@ await probe('time_slots.select(*)',     '01d', 'denied', sb.from('time_slots').s
 // (slot_id, day, active), quindi dopo la 01d il grant per colonna le copre tutte e `*`
 // resterebbe leggibile: non discrimina i due stati. Il grant di tabella li' si revoca
 // per la regola, non per un dato da nascondere adesso.
+// customers/cake_items/cake_orders (migration-2026-08-02-torte-anagrafica.sql): back
+// office puro, come `orders` — nessuna policy e nessun grant per anon. customers e'
+// l'unica tabella del progetto fatta solo di PII (nome, telefono, email, note), quindi
+// qui "leggibile da anon" significherebbe rubrica clienti pubblica.
+// Le migration sono applicate in produzione e le tre tabelle ESISTONO: la RLS da sola
+// non le protegge, perche' Supabase ha una default privilege sullo schema public
+// (`alter default privileges in schema public grant all on tables to anon`) che
+// concede ALL ad anon su ogni tabella NUOVA. Ogni tabella di back office va quindi
+// accompagnata da un revoke esplicito — gia' fatto qui, vedi
+// supabase/migration-2026-08-02d-revoke-anon.sql. L'attesa e' definitiva, non un TODO:
+// se una delle tre torna con righe invece di DENIED e' una regressione vera (grant
+// dimenticato o rollback), e il test deve fallire senza ambiguita'.
+await probe('customers.select',   'ora', 'denied', sb.from('customers').select('id').limit(1))
+await probe('cake_items.select',  'ora', 'denied', sb.from('cake_items').select('id').limit(1))
+await probe('cake_orders.select', 'ora', 'denied', sb.from('cake_orders').select('id').limit(1))
 
 console.log('--- scritture (Fase B: DENIED) ---')
 await probe('flavors.insert',           'ora', 'denied', sb.from('flavors').insert({ name: '__probe__', sort_order: 999 }).select())

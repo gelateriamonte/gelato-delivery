@@ -5,7 +5,7 @@
 // Risponde SEMPRE 200 alla stampante (un non-200 la fa ri-POSTare all'infinito).
 
 const { createClient } = require("@supabase/supabase-js");
-const { buildReceiptXml, buildProductionXml, buildNoteXml } = require("./lib/receipt");
+const { buildReceiptXml, buildProductionXml, buildNoteXml, buildCakeOrderXml } = require("./lib/receipt");
 const { sendTelegram } = require("./lib/telegram");
 
 const supa = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -20,6 +20,14 @@ function wrapPrintRequest(printjobid, receiptXml) {
     "<Parameter><devid>local_printer</devid><timeout>10000</timeout>" +
     (printjobid ? "<printjobid>" + printjobid + "</printjobid>" : "") +
     "</Parameter><PrintData>" + receiptXml + "</PrintData></ePOSPrint></PrintRequestInfo>";
+}
+
+// builder dei job che non hanno un ordine dietro: lo scontrino esce dal payload. null = job da `orders`.
+function payloadBuilder(kind) {
+  if (kind === "production") return buildProductionXml;
+  if (kind === "note") return buildNoteXml;
+  if (kind === "cake_order") return buildCakeOrderXml;
+  return null;
 }
 
 exports.handler = async (event) => {
@@ -42,8 +50,8 @@ exports.handler = async (event) => {
     if (!job) return xml("");   // niente in coda
 
     // job senza ordine: lo scontrino esce dal payload, il builder dipende dal kind
-    if (job.kind === "production" || job.kind === "note") {
-      const build = job.kind === "note" ? buildNoteXml : buildProductionXml;
+    const build = payloadBuilder(job.kind);
+    if (build) {
       try {
         return xml(wrapPrintRequest(job.printjobid, build(job.payload, job.created_at)));
       } catch (e) {
@@ -105,6 +113,13 @@ async function failJob(job, code) {
   await markErrorAndAlert(job.id, job.order_id, job.kind, (job.attempts || 0) + 1, code);
 }
 
+// etichetta del job senza ordine nell'alert Telegram: dice a colpo d'occhio cosa non e' uscito
+function kindLabel(kind) {
+  if (kind === "note") return "NOTA";
+  if (kind === "cake_order") return "TORTA";
+  return "PRODUZIONE";
+}
+
 // porta a 'error' con guardia di transizione (neq error) -> alert Telegram una sola volta
 async function markErrorAndAlert(id, orderId, kind, attempts, code) {
   const { data } = await supa.from("print_jobs")
@@ -113,7 +128,7 @@ async function markErrorAndAlert(id, orderId, kind, attempts, code) {
   if (data && data.length) {
     const ref = orderId
       ? "ordine #" + String(orderId).replace(/-/g, "").slice(0, 8).toUpperCase()
-      : (kind === "note" ? "NOTA" : "PRODUZIONE");
+      : kindLabel(kind);
     try { await sendTelegram("⚠️ Stampa fallita " + ref + " — " + code); }
     catch (e) { console.error("epson-sdp alert:", e && e.message); }
   }

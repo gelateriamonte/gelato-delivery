@@ -56,6 +56,8 @@
       <button class="tab" data-tab="formats">Prodotti</button>
       <button class="tab" data-tab="slots">Fasce orarie</button>
       <button class="tab" data-tab="settings">Parametri</button>
+      <button class="tab" data-tab="torte">Torte</button>
+      <button class="tab" data-tab="clienti">Clienti</button>
     </div>
 
     <div class="tabcontent">
@@ -256,8 +258,107 @@
       <div class="panel" id="home-editor"></div>
       <button class="btn" id="home-save" style="margin-top:12px">Salva homepage</button>
     </section>
+
+    <section id="tab-torte" class="tabpane hidden">
+      <div class="admin-head">
+        <h2>Torte</h2>
+        <span class="count" id="torte-stats">0 in catalogo · 0 da consegnare</span>
+        <button class="btn sm" id="cake-new-order" style="margin-left:auto">+ Nuovo ordine</button>
+      </div>
+      <div class="row" id="torte-views" style="gap:8px;margin:0 0 14px">
+        <button class="btn sm sel" type="button" data-view="catalogo">Catalogo</button>
+        <button class="btn sm" type="button" data-view="ordini">Ordini</button>
+        <button class="btn sm" type="button" data-view="storico">Storico</button>
+      </div>
+
+      <div id="torte-catalogo">
+        <p class="muted small">Le torte in listino. Per ogni formato: la spunta dice se esiste, il prezzo resta vuoto finché non lo decidi. Trascina ⠿ per ordinare.</p>
+        <div class="addrow">
+          <input id="nc-name" class="grow" placeholder="Nuova torta (es. Sacher)">
+          <button class="btn sm" id="nc-add">Aggiungi</button>
+        </div>
+        <div id="cake-list" class="stack"></div>
+      </div>
+
+      <div id="torte-ordini" class="hidden">
+        <p class="muted small">Ordini <b>da consegnare</b>, dal ritiro più vicino. 🖨️ manda il foglio alla termica in gelateria.</p>
+        <div id="cake-orders-list" class="stack"></div>
+      </div>
+
+      <div id="torte-storico" class="hidden">
+        <p class="muted small">Torte già consegnate, dalla più recente.</p>
+        <div id="cake-history-list" class="stack"></div>
+      </div>
+    </section>
+
+    <section id="tab-clienti" class="tabpane hidden">
+      <div class="admin-head">
+        <h2>Clienti</h2>
+        <span class="count" id="cli-stats">0 clienti</span>
+      </div>
+      <p class="muted small">Anagrafica unica, alimentata dagli ordini gelato e dagli ordini torta. Il telefono è la chiave: lo stesso numero non può entrare due volte.</p>
+      <div class="addrow">
+        <input id="cli-search" class="grow" type="search" autocomplete="off" placeholder="Cerca per nome o telefono">
+      </div>
+      <div id="clienti-list" class="stack"></div>
+    </section>
     </div>
   </main>
+
+  <!-- MODALE NUOVO ORDINE TORTA — campi nell'ordine in cui si compilano davvero -->
+  <div class="modal hidden" id="cake-modal">
+    <div class="modal-box">
+      <div class="admin-head"><h2>Nuovo ordine torta</h2></div>
+
+      <div class="field co-field">
+        <label for="co-phone">Telefono</label>
+        <input id="co-phone" type="tel" inputmode="tel" autocomplete="off" placeholder="335 1234567">
+        <p class="muted small" id="co-found" style="margin:6px 0 0"></p>
+      </div>
+      <div class="field co-field">
+        <label for="co-name">Nome cliente</label>
+        <input id="co-name" type="text" autocomplete="off" placeholder="Rossi Mario">
+      </div>
+      <div class="field co-field">
+        <label for="co-email">Email</label>
+        <input id="co-email" type="email" autocomplete="off" placeholder="facoltativa">
+      </div>
+      <div class="field co-field">
+        <label for="co-item">Torta</label>
+        <div class="select-wrap"><select id="co-item"></select></div>
+      </div>
+      <div class="field co-field">
+        <label for="co-variant">Formato</label>
+        <div class="select-wrap"><select id="co-variant"></select></div>
+      </div>
+      <div class="field co-field">
+        <!-- NON type="number": scarterebbe la virgola prima che il codice la veda -->
+        <label for="co-price">Prezzo €</label>
+        <input id="co-price" type="text" inputmode="decimal" autocomplete="off" maxlength="7" placeholder="es. 40,00">
+      </div>
+      <div class="field co-field">
+        <label for="co-pickup">Data e ora di ritiro</label>
+        <input id="co-pickup" type="datetime-local">
+      </div>
+      <div class="field co-field">
+        <label for="co-inscription">Scritta sulla torta</label>
+        <input id="co-inscription" type="text" autocomplete="off" maxlength="120" placeholder="es. Buon compleanno Anna">
+      </div>
+      <div class="field co-field">
+        <label for="co-extras">Extra</label>
+        <input id="co-extras" type="text" autocomplete="off" maxlength="120" placeholder="es. 6 candeline">
+      </div>
+      <div class="field co-field">
+        <label for="co-notes">Note</label>
+        <textarea id="co-notes" rows="3" maxlength="500"></textarea>
+      </div>
+
+      <div class="row" style="gap:8px">
+        <button class="btn ghost sm" id="co-cancel" type="button">Annulla</button>
+        <button class="btn" id="co-save" type="button">Salva ordine</button>
+      </div>
+    </div>
+  </div>
 
   <div class="toast" id="toast"></div>
 
@@ -269,5 +370,9 @@
   <script src="js/santeodoro-boundary.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/admin.js"></script>
+  <!-- dopo admin.js: usano sb, toast, updateRow, mkBtn... dallo scope globale.
+       clienti prima di torte: la modale ordine cerca il cliente con findCustomerByPhone(). -->
+  <script src="js/admin-clienti.js"></script>
+  <script src="js/admin-torte.js"></script>
 </body>
 </html>

@@ -221,4 +221,64 @@ function buildNoteXml(payload, createdAtIso) {
   return '<epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">' + out.join("") + "</epos-print>";
 }
 
-module.exports = { buildReceiptXml, buildProductionXml, buildNoteXml };
+// Scontrino di un ordine torta (Epson 80mm/48col). `payload` = la fotografia dell'ordine al momento
+// del click; `createdAtIso` = quando e' stata chiesta la stampa.
+// In alto cio' che serve in laboratorio (quando si ritira, cosa c'e' scritto sopra): se sbagliato
+// manda a monte il lavoro. In fondo il riferimento per ritrovare l'ordine nel back office.
+const CAKE_LABEL_W = 9;   // "Cliente: " — la colonna del valore parte sempre da qui
+
+function buildCakeOrderXml(payload, createdAtIso) {
+  const p = payload || {};
+  const sep = "-".repeat(WIDTH);
+  const out = [];
+  const line = (s) => out.push("<text>" + esc(s) + "&#10;</text>");
+  const raw = (xml) => out.push(xml);
+
+  // campo etichettato: l'etichetta occupa una colonna fissa e le righe successive rientrano sotto
+  // il valore. splitLongWords e wrap alla larghezza RESIDUA, se no un URL sfora o viene troncato.
+  const campo = (etichetta, valore) => {
+    const v = cleanText(valore == null ? "" : String(valore)).trim();
+    if (!v) return;
+    const lab = etichetta.padEnd(CAKE_LABEL_W);
+    const w = WIDTH - lab.length;
+    wrap(splitLongWords(v, w), w).forEach((l, i) => line((i ? " ".repeat(lab.length) : lab) + l));
+  };
+
+  raw('<text align="center"/>');
+  line(sep);
+  raw('<text width="2" height="2"/>');
+  line("TORTA");
+  raw('<text width="1" height="1"/>');
+  line(sep);
+  raw('<text align="left"/>');
+
+  const ritiro = fmtDateTime(p.pickup_at);
+  line(ritiro ? padLine("RITIRO", ritiro) : "RITIRO");
+  line(sep);
+
+  line(padLine(cleanField(p.item_name || "-"), cleanField(p.variant || "")));
+  campo("Scritta:", p.inscription);
+  campo("Extra:", p.extras);
+  line(sep);
+
+  campo("Cliente:", p.customer_name);
+  // il telefono su una riga sua: spezzato a meta' riga sarebbe inutile a chi deve chiamare
+  campo("Tel:", p.customer_phone);
+  campo("Note:", p.notes);
+  line(sep);
+
+  line(padLine("Prezzo", euro(p.price)));
+  line(sep);
+
+  // `createdAtIso` e' la data del JOB DI STAMPA: per "preso" vale la data dell'ORDINE, altrimenti
+  // una ristampa di domani direbbe che l'ordine e' di domani.
+  const rif = cleanField(p.id || "").replace(/-/g, "").slice(0, 8).toUpperCase();
+  const preso = fmtDateTime(p.created_at || createdAtIso);
+  const sinistra = rif ? "Ordine #" + rif : "Ordine";
+  line(preso ? padLine(sinistra, "preso " + preso) : sinistra);
+
+  raw('<feed line="3"/><cut type="feed"/>');
+  return '<epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">' + out.join("") + "</epos-print>";
+}
+
+module.exports = { buildReceiptXml, buildProductionXml, buildNoteXml, buildCakeOrderXml };
