@@ -286,10 +286,21 @@ function renderAddrSuggest(feats) {
 
 // ---------- caricamento dati ----------
 async function loadData() {
-  const pSettings = sb.from("settings").select("*").eq("id", 1).single();
-  const pFlavors  = sb.from("flavors").select("*").eq("available", true).order("sort_order");
-  const pFormats  = sb.from("formats").select("*").eq("available", true).order("sort_order");
-  const pSlots    = sb.from("time_slots").select("*").order("sort_order");
+  // settings: MAI select("*") — la riga singleton contiene anche campi interni del back office
+  // (production_note, wa_templates, cancel_lead_hours) che finirebbero nel payload di ogni visitatore.
+  // Colonne esplicite = ogni colonna nuova nasce privata. Tenere allineato al grant per colonna del
+  // ruolo anon: supabase/migration-2026-08-01c-settings-column-grants.sql.
+  const pSettings = sb.from("settings").select("id,delivery_cost,min_order,max_advance_days,slot_lead_minutes,slot_lead_hours,opening_hours,delivery_area").eq("id", 1).single();
+  // flavors: stessa regola di settings — MAI select("*"). La tabella contiene i campi del piano di
+  // produzione (prod_on, prod_kg, prod_order, prod_base_ratio: ricetta e costo, roba del back office)
+  // che con select("*") finivano nel payload di ogni visitatore. Tenere allineato al grant per colonna
+  // del ruolo anon: supabase/migration-2026-08-01d-flavors-column-grants.sql.
+  const pFlavors  = sb.from("flavors").select("name,daily").eq("available", true).order("sort_order");
+  // formats / time_slots: stessa regola, applicata prima che qualcuno ci aggiunga un campo interno.
+  // Le colonne di filtro (available) e di ordinamento (sort_order) non stanno nella select list: al
+  // ruolo anon serve comunque il grant su di esse, vedi migration-2026-08-01d-flavors-column-grants.sql.
+  const pFormats  = sb.from("formats").select("id,name,price,max_flavors,category,weight_kg").eq("available", true).order("sort_order");
+  const pSlots    = sb.from("time_slots").select("id,label,active,max_deliveries").order("sort_order");
   // prodotti ordinabili: render appena risolve la query formati, senza aspettare le altre tre
   pFormats.then((r) => { if (!r.error && r.data) { DATA.formats = r.data; renderFormats(); } });
   const [settings, flavors, formats, slots] = await Promise.all([pSettings, pFlavors, pFormats, pSlots]);

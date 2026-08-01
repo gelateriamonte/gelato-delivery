@@ -876,7 +876,10 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
   padding:10px 12px; border:1px solid var(--line-2); border-radius:12px; background:#fff;
 }
 .prodlist .prow + .prow{ margin-top:8px; }
-.prow .pname{ flex:1 1 auto; min-width:0; font-weight:600; color:var(--ink); }
+/* riga singola: il nome si tronca con ellissi, mai a capo (senza nowrap+hidden il testo
+   deborda dal box compresso e finisce sopra il toggle) */
+.prow .pname{ flex:1 1 auto; min-width:0; font-weight:600; color:var(--ink);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .prow .kgstep{ display:inline-flex; align-items:center; gap:8px; flex:none; }
 .prow .kgstep button{
   width:30px; height:30px; border-radius:8px; border:1px solid var(--line-2);
@@ -885,10 +888,36 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
 .prow .kgstep button:hover{ border-color:var(--ink-2); }
 .prow .kg-val{ min-width:18px; text-align:center; font-weight:600; font-variant-numeric:tabular-nums; }
 .prow .kg-unit{ color:var(--muted); font-size:13px; }
+/* base per kg — cap esplicito sull'input: senza max-width il max-content risale al wrapper (overflow WebKit) */
+.prow .baseratio{ display:inline-flex; align-items:center; gap:6px; flex:none; min-width:0; margin:0; cursor:default;
+  text-transform:none; letter-spacing:normal; }
+.prow .baseratio input{
+  flex:0 0 62px; width:62px; max-width:62px; min-width:0; text-align:center; padding:8px 6px;
+  font-variant-numeric:tabular-nums; -moz-appearance:textfield;
+}
+.prow .baseratio input::-webkit-outer-spin-button,
+.prow .baseratio input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+.prow .base-unit{ color:var(--muted); font-size:13px; white-space:nowrap; }
 .prow.dragging{ box-shadow:0 8px 24px rgba(0,0,0,.14); }
-@media (max-width:560px){
-  .prodlist .prow{ gap:10px; padding:9px 10px; }
+/* Soglia 760 (non 560): fino a 760px il rail dei tab resta affiancato (.admin #app è flex
+   e diventa block solo ≤560), quindi la riga ha ~295-434px utili — larghezza da telefono.
+   Verificato WebKit 320→1200px: nome mai sovrapposto al toggle, riga mai fuori dal contenitore. */
+@media (max-width:760px){
+  .prodlist .prow{ gap:8px; padding:9px 10px; }
+  .prow .kgstep{ gap:6px; }
   .prow .kgstep button{ width:34px; height:34px; }   /* tap target */
+  .prow .kg-unit{ display:none; }                    /* i +/− e il totale in testata bastano: quei ~20px vanno al nome */
+  .prow .drag-handle{ padding:4px 1px; font-size:16px; }
+  .prow .pname{ font-size:14px; }                    /* più caratteri leggibili nello spazio residuo */
+  /* la riga resta su una linea sola: toggle senza testo A SCHERMO, ma il nome
+     accessibile resta (display:none lo toglierebbe anche allo screen reader) */
+  .prow .switch{ gap:0; }
+  .prow .switch-lbl{ width:1px; height:1px; flex:none; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  /* base per kg: etichetta minuscola SOTTO l'input — identifica il campo (accanto ai kg)
+     senza rubare larghezza al nome; wrapper a larghezza fissa = niente max-content WebKit */
+  .prow .baseratio{ flex-direction:column; gap:2px; width:46px; }
+  .prow .baseratio input{ -webkit-appearance:none; appearance:none; flex:none; width:100%; max-width:100%; padding:9px 2px; }
+  .prow .base-unit{ font-size:9px; letter-spacing:.03em; }
 }
 
 /* ---------- footer NAP (SEO local) — comune a ordina/grazie ---------- */

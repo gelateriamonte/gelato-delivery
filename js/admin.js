@@ -1182,10 +1182,17 @@ $("nf-add").onclick = async () => {
 };
 
 // ========== PRODUZIONE ==========
+// kg di base per 1 kg di gelato di quel gusto (1 = default quando manca).
+function baseRatio(f) {
+  const n = Number(f.prod_base_ratio);
+  return (f.prod_base_ratio == null || !Number.isFinite(n)) ? 1 : n;
+}
 function updateProdStats() {
   const on = FLAVORS_ALL.filter((f) => f.prod_on);
   const tot = on.reduce((s, f) => s + (Number(f.prod_kg) || 0), 0);
+  const base = on.reduce((s, f) => s + (Number(f.prod_kg) || 0) * baseRatio(f), 0);
   const el = $("prod-stats"); if (el) el.textContent = on.length + " accesi · " + tot + " kg";
+  const elBase = $("prod-base"); if (elBase) elBase.textContent = base.toFixed(2).replace(".", ",") + " kg base";
   const btn = $("prod-print"); if (btn) btn.disabled = on.length === 0;
 }
 function buildProdRow(f) {
@@ -1200,19 +1207,33 @@ function buildProdRow(f) {
       `<span class="kg-val">${Number(f.prod_kg) || 3}</span>` +
       `<button type="button" class="kg-inc" aria-label="più">+</button>` +
       `<span class="kg-unit">kg</span>` +
-    `</div>`;
+    `</div>` +
+    `<label class="baseratio" title="Kg di base per 1 kg di gelato">` +
+      `<input class="base-val" type="number" step="0.01" min="0" max="9.99" inputmode="decimal" ` +
+        `aria-label="Base per kg" value="${baseRatio(f).toFixed(2)}">` +
+      `<span class="base-unit">base/kg</span>` +
+    `</label>`;
   // toggle prod_on
   wireAvailRadios(el, (on) => { f.prod_on = on; updateRow("flavors", f.id, { prod_on: on }); updateProdStats(); });
-  // stepper kg (clamp 1..8)
+  // stepper kg (clamp 1..16)
   const valEl = el.querySelector(".kg-val");
   const setKg = (n) => {
-    const v = Math.min(8, Math.max(1, n));
+    const v = Math.min(16, Math.max(1, n));
     f.prod_kg = v; valEl.textContent = String(v);
     updateRow("flavors", f.id, { prod_kg: v });
     updateProdStats();
   };
   el.querySelector(".kg-dec").onclick = () => setKg((Number(f.prod_kg) || 3) - 1);
   el.querySelector(".kg-inc").onclick = () => setKg((Number(f.prod_kg) || 3) + 1);
+  // base per kg (clamp 0..9.99, 2 decimali); campo vuoto/non numerico → resta il valore attuale
+  const baseEl = el.querySelector(".base-val");
+  baseEl.onchange = () => {
+    const n = parseFloat(baseEl.value.replace(",", "."));
+    const v = Number.isFinite(n) ? Math.round(Math.min(9.99, Math.max(0, n)) * 100) / 100 : baseRatio(f);
+    f.prod_base_ratio = v; baseEl.value = v.toFixed(2);
+    updateRow("flavors", f.id, { prod_base_ratio: v });
+    updateProdStats();
+  };
   return el;
 }
 function renderProduzione() {
@@ -1245,6 +1266,30 @@ $("prod-reset").onclick = async () => {
   FLAVORS_ALL.forEach((f) => { f.prod_on = false; f.prod_kg = 3; });
   renderProduzione();
   toast("Produzione resettata.");
+};
+// Nota di produzione: testo libero persistente (settings.production_note).
+// Stampa e Pulisci lavorano sul contenuto attuale del campo, non su quello salvato.
+function updateNoteButtons() {
+  const empty = $("note-text").value.trim() === "";
+  $("note-print").disabled = empty;
+  $("note-clear").disabled = empty;
+}
+$("note-text").addEventListener("input", updateNoteButtons);
+$("note-save").onclick = async () => {
+  const text = $("note-text").value;
+  const { error } = await withAuthRetry(() => sb.from("settings").update({ production_note: text }).eq("id", 1));
+  if (error) { console.error(error); toast("Errore salvataggio nota."); return; }
+  SETTINGS.production_note = text;
+  toast("Nota salvata.");
+};
+// Pulisci svuota solo il campo: il database cambia soltanto con Salva.
+$("note-clear").onclick = () => { $("note-text").value = ""; updateNoteButtons(); };
+$("note-print").onclick = async () => {
+  const text = $("note-text").value;
+  if (!text.trim()) { toast("Nota vuota."); return; }
+  const { error } = await withAuthRetry(() => sb.from("print_jobs").insert({ kind: "note", payload: { text } }));
+  if (error) console.error("stampa nota print_jobs", error);
+  toast(error ? "Errore stampa." : "Inviato in stampa…");
 };
 
 // ========== PRODOTTI (ex Formati) — due categorie: Vaschette / Altri prodotti ==========
@@ -1478,6 +1523,8 @@ async function loadSettings() {
   $("set-cancel-lead").value = data.cancel_lead_hours != null ? data.cancel_lead_hours : 2;
   const t = waTemplates();
   WA_STATUSES.forEach((s) => { const el = $("wa-" + STATUS_META[s].slug); if (el) el.value = t[s] || ""; });
+  $("note-text").value = SETTINGS.production_note || "";
+  updateNoteButtons();
   renderOpeningHoursEditor();
   // applica i giorni max prenotabili ai calendari (Fasce + barra giorni Ordini)
   SLOT_DAYS = next7();

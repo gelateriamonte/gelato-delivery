@@ -4,6 +4,24 @@
 // XML UNA volta all'emissione (line()), così l'allineamento colonne non viene falsato da &amp; ecc.
 
 const WIDTH = 48;
+const MAX_NOTE_LINES = 60;   // tetto righe stampate del corpo nota (~20 cm di carta)
+
+// i controlli C0 non sono ammessi da XML 1.0 (tranne TAB/LF/CR): la stampante rifiuterebbe il documento
+// (testo incollato da PDF/terminale) → si eliminano all'INGRESSO dei builder, prima del layout.
+// NON dentro esc(): sparirebbero dopo il calcolo delle colonne e padLine/wrap emetterebbero righe corte.
+// (filtro per code-point e non regex: una classe di caratteri di controllo violerebbe no-control-regex)
+const stripCtl = (s) => Array.from(String(s == null ? "" : s)).filter((c) => {
+  const n = c.codePointAt(0);
+  return n > 31 || n === 10;   // solo il LF: TAB e CR li normalizzano cleanField/cleanText qui sotto
+}).join("");
+
+// campo di UNA riga: TAB/CR/LF diventano uno spazio invece di sparire, così la larghezza misurata da
+// padLine/clip è quella stampata (un a-capo manderebbe la colonna destra a capo dopo il calcolo).
+const cleanField = (s) => stripCtl(String(s == null ? "" : s).replace(/[\t\r\n]/g, " "));
+
+// testo MULTIRIGA (nota): gli a-capo dell'utente sono significativi → CRLF/CR normalizzati a LF
+// (un incollaggio da Windows deve dare a-capo veri, non CR appesi); il TAB resta una spaziatura.
+const cleanText = (s) => stripCtl(String(s == null ? "" : s).replace(/\r\n?/g, "\n").replace(/\t/g, " "));
 
 const esc = (s) => String(s == null ? "" : s)
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -24,7 +42,7 @@ function padLine(left, right, w = WIDTH) {
   return l + " ".repeat(Math.max(1, gap)) + r;
 }
 
-// a capo morbido a w colonne (parole; spezza la parola se piu' lunga di w)
+// a capo morbido a w colonne (parole; TRONCA la parola piu' lunga di w: per spezzarla vedi splitLongWords)
 function wrap(s, w = WIDTH) {
   const words = String(s).split(/\s+/).filter(Boolean);
   const out = [];
@@ -36,6 +54,17 @@ function wrap(s, w = WIDTH) {
   }
   if (cur) out.push(cur);
   return out.length ? out : [""];
+}
+
+// spezza in blocchi da w i token piu' lunghi di w, cosi' wrap() non li tronca (URL, IBAN, codici)
+function splitLongWords(s, w = WIDTH) {
+  return String(s).split(/\s+/).map((word) => {
+    if (len(word) <= w) return word;
+    const a = cp(word);
+    const parts = [];
+    for (let i = 0; i < a.length; i += w) parts.push(a.slice(i, i + w).join(""));
+    return parts.join(" ");
+  }).join(" ");
 }
 
 const fmtDate = (d) => {
@@ -74,7 +103,7 @@ function buildReceiptXml(order) {
   line(seph);
 
   // ordine + data/ora
-  const shortId = String(o.id || "").replace(/-/g, "").slice(0, 8).toUpperCase();
+  const shortId = cleanField(o.id || "").replace(/-/g, "").slice(0, 8).toUpperCase();
   line(padLine("Ordine #" + shortId, fmtDateTime(o.created_at)));
   line(sep);
 
@@ -82,20 +111,20 @@ function buildReceiptXml(order) {
   raw('<text em="true"/>');
   line(isPickup ? "*** RITIRO ***" : "*** CONSEGNA ***");
   raw('<text em="false"/>');
-  const quando = [o.delivery_date ? fmtDate(o.delivery_date) : "", o.slot_label || ""].filter(Boolean).join("   ");
+  const quando = cleanField([o.delivery_date ? fmtDate(o.delivery_date) : "", o.slot_label || ""].filter(Boolean).join("   "));
   if (quando) line((isPickup ? "Ritiro: " : "Consegna: ") + quando);
   line(sep);
 
   // cliente
-  line(padLine(o.customer_name || "-", o.customer_phone || ""));
-  if (!isPickup && o.address) wrap(o.address).forEach(line);
+  line(padLine(cleanField(o.customer_name || "-"), cleanField(o.customer_phone || "")));
+  if (!isPickup && o.address) wrap(cleanField(o.address)).forEach(line);
   line(sep);
 
   // righe prodotto
   for (const it of items) {
     const qty = Math.max(1, parseInt(it.qty, 10) || 1);
-    line(padLine(qty + "x " + (it.format || "?"), euro((Number(it.prezzo_unit) || 0) * qty)));
-    const gusti = Array.isArray(it.gusti) ? it.gusti.filter(Boolean) : [];
+    line(padLine(qty + "x " + cleanField(it.format || "?"), euro((Number(it.prezzo_unit) || 0) * qty)));
+    const gusti = Array.isArray(it.gusti) ? it.gusti.filter(Boolean).map((g) => cleanField(g)) : [];
     if (gusti.length) wrap(gusti.join(", "), WIDTH - 3).forEach((l) => line("   " + l));
   }
   line(sep);
@@ -103,15 +132,15 @@ function buildReceiptXml(order) {
   // totali
   line(padLine("Subtotale", euro(o.subtotal)));
   if (Number(o.delivery_cost) > 0) line(padLine("Consegna", euro(o.delivery_cost)));
-  if (Number(o.discount) > 0) line(padLine("Sconto " + (o.coupon_code || ""), "-" + euro(o.discount)));
+  if (Number(o.discount) > 0) line(padLine("Sconto " + cleanField(o.coupon_code || ""), "-" + euro(o.discount)));
   raw('<text em="true"/><text height="2"/>');   // doppia ALTEZZA (non larghezza): padding a 48 resta valido
   line(padLine("TOTALE", euro(o.total)));
   raw('<text height="1"/><text em="false"/>');
   line(sep);
 
   // pagamento + note
-  if (o.payment_method) line("Pagato: " + String(o.payment_method).toUpperCase());
-  if (o.notes) wrap("Note: " + o.notes).forEach(line);
+  if (o.payment_method) line("Pagato: " + cleanField(o.payment_method).toUpperCase());
+  if (o.notes) wrap("Note: " + cleanField(o.notes)).forEach(line);
   line(seph);
 
   raw('<feed line="3"/><cut type="feed"/>');
@@ -138,8 +167,8 @@ function buildProductionXml(list, createdAtIso) {
   line(sep);
 
   items.forEach((it, i) => {
-    const nome = it && it.name != null ? String(it.name) : "?";
-    const q = it && it.kg != null ? it.kg : "";
+    const nome = it && it.name != null ? cleanField(it.name) : "?";
+    const q = it && it.kg != null ? cleanField(it.kg) : "";
     line(padLine("[ ] " + nome, q + " kg"));   // padLine tronca la sinistra: nomi lunghi mai a capo
     if (i < items.length - 1) line(sep);        // linea piena sottile tra i gusti
   });
@@ -149,4 +178,47 @@ function buildProductionXml(list, createdAtIso) {
   return '<epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">' + out.join("") + "</epos-print>";
 }
 
-module.exports = { buildReceiptXml, buildProductionXml };
+// Nota libera scritta dal back office (Epson 80mm/48col). `payload` = {text}; `createdAtIso` = quando è stata richiesta.
+// Gli a-capo dell'utente sono significativi: si spezza su \n e ogni riga passa per wrap() a 48 colonne.
+// Tetto di righe stampate del corpo: i 2000 char del campo non limitano la carta (1998 a-capo = ~7 metri).
+function buildNoteXml(payload, createdAtIso) {
+  // pulizia all'ingresso: C0 via e CRLF/CR → \n, prima di misurare e impaginare
+  const text = cleanText(payload && payload.text != null ? payload.text : "");
+  const sep = "-".repeat(WIDTH);
+  const out = [];
+  const line = (s) => out.push("<text>" + esc(s) + "&#10;</text>");
+  const raw = (xml) => out.push(xml);
+
+  line(sep);
+  raw('<text align="center"/><text width="2" height="2"/>');
+  line("NOTA");
+  raw('<text width="1" height="1"/>');
+  const when = fmtDateTime(createdAtIso);
+  if (when) line(when);
+  raw('<text align="left"/>');
+  line(sep);
+
+  if (text.trim()) {
+    const body = [];
+    for (const l of text.split("\n")) {
+      for (const w of wrap(splitLongWords(l))) {
+        // wrap("") → [""]: le righe vuote restano, ma al massimo una consecutiva
+        if (w === "" && body[body.length - 1] === "") continue;
+        body.push(w);
+      }
+    }
+    if (body.length > MAX_NOTE_LINES) {
+      body.length = MAX_NOTE_LINES - 1;
+      body.push("... nota troncata");
+    }
+    line("");
+    body.forEach(line);
+    line("");
+    line(sep);
+  }
+
+  raw('<feed line="3"/><cut type="feed"/>');
+  return '<epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">' + out.join("") + "</epos-print>";
+}
+
+module.exports = { buildReceiptXml, buildProductionXml, buildNoteXml };

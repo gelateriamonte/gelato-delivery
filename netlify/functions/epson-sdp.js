@@ -5,7 +5,7 @@
 // Risponde SEMPRE 200 alla stampante (un non-200 la fa ri-POSTare all'infinito).
 
 const { createClient } = require("@supabase/supabase-js");
-const { buildReceiptXml, buildProductionXml } = require("./lib/receipt");
+const { buildReceiptXml, buildProductionXml, buildNoteXml } = require("./lib/receipt");
 const { sendTelegram } = require("./lib/telegram");
 
 const supa = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -41,11 +41,13 @@ exports.handler = async (event) => {
     const job = Array.isArray(data) ? data[0] : data;
     if (!job) return xml("");   // niente in coda
 
-    if (job.kind === "production") {
+    // job senza ordine: lo scontrino esce dal payload, il builder dipende dal kind
+    if (job.kind === "production" || job.kind === "note") {
+      const build = job.kind === "note" ? buildNoteXml : buildProductionXml;
       try {
-        return xml(wrapPrintRequest(job.printjobid, buildProductionXml(job.payload, job.created_at)));
+        return xml(wrapPrintRequest(job.printjobid, build(job.payload, job.created_at)));
       } catch (e) {
-        console.error("epson-sdp build prod:", e && e.message);
+        console.error("epson-sdp build " + job.kind + ":", e && e.message);
         await failJob(job, "build_error");
         return xml("");
       }
@@ -95,23 +97,23 @@ async function handleResult(responseXml) {
   if (attempts < 3) {
     await supa.from("print_jobs").update({ status: "pending", attempts, last_error: code }).eq("id", job.id);
   } else {
-    await markErrorAndAlert(job.id, job.order_id, attempts, code);
+    await markErrorAndAlert(job.id, job.order_id, job.kind, attempts, code);
   }
 }
 
 async function failJob(job, code) {
-  await markErrorAndAlert(job.id, job.order_id, (job.attempts || 0) + 1, code);
+  await markErrorAndAlert(job.id, job.order_id, job.kind, (job.attempts || 0) + 1, code);
 }
 
 // porta a 'error' con guardia di transizione (neq error) -> alert Telegram una sola volta
-async function markErrorAndAlert(id, orderId, attempts, code) {
+async function markErrorAndAlert(id, orderId, kind, attempts, code) {
   const { data } = await supa.from("print_jobs")
     .update({ status: "error", attempts, last_error: code })
     .eq("id", id).neq("status", "error").select("id");
   if (data && data.length) {
     const ref = orderId
       ? "ordine #" + String(orderId).replace(/-/g, "").slice(0, 8).toUpperCase()
-      : "PRODUZIONE";
+      : (kind === "note" ? "NOTA" : "PRODUZIONE");
     try { await sendTelegram("⚠️ Stampa fallita " + ref + " — " + code); }
     catch (e) { console.error("epson-sdp alert:", e && e.message); }
   }

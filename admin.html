@@ -84,11 +84,23 @@
       <div class="admin-head">
         <h2>Produzione</h2>
         <span class="count" id="prod-stats">0 accesi · 0 kg</span>
+        <span class="count" id="prod-base">0,00 kg base</span>
         <button class="btn sm" id="prod-reset" style="margin-left:auto">↺ Reset</button>
         <button class="btn sm" id="prod-print" style="margin-left:8px" disabled>🖨️ Stampa</button>
       </div>
       <p class="muted small">Accendi i gusti da produrre, imposta i kg, trascina ⠿ per l'ordine di stampa. <b>Stampa</b> manda la checklist alla termica in gelateria.</p>
       <div id="prod-list" class="stack prodlist"></div>
+
+      <div class="admin-head" style="margin-top:30px">
+        <h2>Note</h2>
+        <button class="btn sm" id="note-print" style="margin-left:auto" disabled>🖨️ Stampa nota</button>
+        <button class="btn ghost sm" id="note-clear" style="margin-left:8px" disabled>✕ Pulisci</button>
+      </div>
+      <p class="muted small">Testo libero da mandare alla termica in gelateria. Resta salvato.</p>
+      <div class="panel stack">
+        <div class="field" style="margin:0"><textarea id="note-text" rows="10" maxlength="2000"></textarea></div>
+        <button class="btn" id="note-save">Salva nota</button>
+      </div>
     </section>
 
     <section id="tab-consegne" class="tabpane hidden">
