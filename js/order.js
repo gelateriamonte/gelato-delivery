@@ -111,6 +111,7 @@ function setMode(mode) {
   $("slot-field").style.display = del ? "" : "none";
   $("pickup-field").style.display = del ? "none" : "";
   const af = $("address-field"); if (af) af.style.display = del ? "" : "none";
+  const mz = $("mode-zones"); if (mz) mz.style.display = del ? "" : "none";
   const later = $("submit-later"); if (later) later.style.display = del ? "none" : "";   // "Paga dopo" solo per ritiro
   const dl = $("day-label"); if (dl) dl.textContent = del ? t("order.form.deliveryDay") : t("order.form.pickupDay");
   if (del) renderSlotSelect(); else { renderPickupTimes(); renderOpeningHours(); }
