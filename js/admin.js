@@ -1187,12 +1187,14 @@ function baseRatio(f) {
   const n = Number(f.prod_base_ratio);
   return (f.prod_base_ratio == null || !Number.isFinite(n)) ? 1 : n;
 }
+// due decimali con la virgola, come si scrivono i numeri qui
+const fmtBase = (n) => Number(n).toFixed(2).replace(".", ",");
 function updateProdStats() {
   const on = FLAVORS_ALL.filter((f) => f.prod_on);
   const tot = on.reduce((s, f) => s + (Number(f.prod_kg) || 0), 0);
   const base = on.reduce((s, f) => s + (Number(f.prod_kg) || 0) * baseRatio(f), 0);
-  const el = $("prod-stats"); if (el) el.textContent = on.length + " accesi · " + tot + " kg";
-  const elBase = $("prod-base"); if (elBase) elBase.textContent = base.toFixed(2).replace(".", ",") + " kg base";
+  const el = $("prod-stats"); if (el) el.textContent = on.length + " gusti · " + tot + " kg";
+  const elBase = $("prod-base"); if (elBase) elBase.textContent = fmtBase(base) + " kg base";
   const btn = $("prod-print"); if (btn) btn.disabled = on.length === 0;
 }
 function buildProdRow(f) {
@@ -1209,8 +1211,8 @@ function buildProdRow(f) {
       `<span class="kg-unit">kg</span>` +
     `</div>` +
     `<label class="baseratio" title="Kg di base per 1 kg di gelato">` +
-      `<input class="base-val" type="number" step="0.01" min="0" max="9.99" inputmode="decimal" ` +
-        `aria-label="Base per kg" value="${baseRatio(f).toFixed(2)}">` +
+      `<input class="base-val" type="text" inputmode="decimal" maxlength="5" ` +
+        `aria-label="Base per kg" value="${fmtBase(baseRatio(f))}">` +
       `<span class="base-unit">base/kg</span>` +
     `</label>`;
   // toggle prod_on
@@ -1225,12 +1227,13 @@ function buildProdRow(f) {
   };
   el.querySelector(".kg-dec").onclick = () => setKg((Number(f.prod_kg) || 3) - 1);
   el.querySelector(".kg-inc").onclick = () => setKg((Number(f.prod_kg) || 3) + 1);
-  // base per kg (clamp 0..9.99, 2 decimali); campo vuoto/non numerico → resta il valore attuale
+  // base per kg (clamp 0..9.99, 2 decimali); campo vuoto/non numerico → resta il valore attuale.
+  // Il campo è type="text" apposta: un type="number" scarta la virgola prima che il codice la veda.
   const baseEl = el.querySelector(".base-val");
   baseEl.onchange = () => {
-    const n = parseFloat(baseEl.value.replace(",", "."));
+    const n = parseFloat(baseEl.value.replace(",", ".").replace(/[^\d.]/g, ""));
     const v = Number.isFinite(n) ? Math.round(Math.min(9.99, Math.max(0, n)) * 100) / 100 : baseRatio(f);
-    f.prod_base_ratio = v; baseEl.value = v.toFixed(2);
+    f.prod_base_ratio = v; baseEl.value = fmtBase(v);
     updateRow("flavors", f.id, { prod_base_ratio: v });
     updateProdStats();
   };
