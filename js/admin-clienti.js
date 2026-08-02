@@ -2,12 +2,15 @@
 // Tab "Clienti": elenco unico dei clienti (gelato + torte), ricerca per nome o
 // telefono, modifica in linea. Solo uso interno, tutto in italiano.
 // Si aggancia da solo ad admin.html: js/admin.js non va toccato.
-/* global $, esc, toast, updateRow */
+/* global $, esc, euro, toast, updateRow, cakeFmtKg */
 /* exported CUSTOMERS_ALL, cliNormPhone, findCustomerByPhone, loadCustomers, renderCustomers, customersReady */
 
 let CUSTOMERS_ALL = [];
 let CUSTOMERS_LOADED = false;   // il caricamento avviene alla prima apertura della tab
 let CUSTOMERS_LOADING = null;   // promise del caricamento in corso (vedi customersReady)
+// telefono normalizzato → { gelato:[], torte:[] } dei soli ordini CONCLUSI, per la
+// scheda che si apre dalla riga cliente. Chiave uguale a quella dei conteggi.
+let CUSTOMER_ORDERS = new Map();
 
 // Copia lato client di public.norm_mobile() (migration 2026-07-19): stessa identica
 // logica, altrimenti la ricerca per numero non ritroverebbe cio' che il database ha
@@ -52,31 +55,50 @@ function findCustomerByPhone(p) {
   return CUSTOMERS_ALL.find((c) => (c.phone_norm || cliNormPhone(c.phone)) === d) || null;
 }
 
-// Quanti ordini ha fatto ogni cliente. Una sola query di appoggio per tabella al
-// caricamento: PostgREST non raggruppa, ma sono poche righe e il conteggio si fa qui.
-async function customerOrderCounts() {
+// "Concluso" = consegnato, in entrambe le tabelle. Restano fuori gli ordini ancora in
+// corso e quelli annullati o rifiutati: la scheda risponde a "quanto ha comprato
+// davvero questo cliente", e un ordine annullato non e' mai stato una vendita.
+const CLI_DONE = "consegnato";
+
+// Un passaggio solo sulle due tabelle: da li' escono sia il conteggio di TUTTI gli
+// ordini (l'etichetta sulla riga, come prima) sia l'elenco dei soli conclusi che si
+// apre sotto. PostgREST non raggruppa: si raggruppa qui, sono poche righe.
+async function customerOrders() {
   const counts = new Map();
-  const tally = (rows) => (rows || []).forEach((r) => {
+  const details = new Map();
+  const bucket = (k) => {
+    if (!details.has(k)) details.set(k, { gelato: [], torte: [] });
+    return details.get(k);
+  };
+  const tally = (rows, tipo) => (rows || []).forEach((r) => {
     const k = cliNormPhone(r.customer_phone);
-    if (k) counts.set(k, (counts.get(k) || 0) + 1);
+    if (!k) return;
+    counts.set(k, (counts.get(k) || 0) + 1);
+    if (r.status === CLI_DONE) bucket(k)[tipo].push(r);
   });
   const [gelato, torte] = await Promise.all([
-    sb.from("orders").select("customer_phone"),
-    sb.from("cake_orders").select("customer_phone"),
+    sb.from("orders").select("id,customer_phone,delivery_date,slot_label,fulfillment,total,status,created_at"),
+    sb.from("cake_orders").select("id,customer_phone,item_name,variant,weight_kg,price,pickup_at,delivered_at,status"),
   ]);
-  if (gelato.error) console.error("conteggio ordini gelato", gelato.error); else tally(gelato.data);
-  if (torte.error) console.error("conteggio ordini torte", torte.error); else tally(torte.data);
-  return counts;
+  if (gelato.error) console.error("ordini gelato del cliente", gelato.error); else tally(gelato.data, "gelato");
+  if (torte.error) console.error("ordini torta del cliente", torte.error); else tally(torte.data, "torte");
+  // il piu' recente in cima, in entrambi gli elenchi
+  details.forEach((d) => {
+    d.gelato.sort((a, b) => cliTime(b.delivery_date || b.created_at) - cliTime(a.delivery_date || a.created_at));
+    d.torte.sort((a, b) => cliTime(b.delivered_at || b.pickup_at) - cliTime(a.delivered_at || a.pickup_at));
+  });
+  return { counts, details };
 }
 
 async function loadCustomers() {
-  const [res, counts] = await Promise.all([
+  const [res, ord] = await Promise.all([
     sb.from("customers").select("id,name,phone,phone_norm,email,notes").order("name"),
-    customerOrderCounts(),
+    customerOrders(),
   ]);
   if (res.error) { console.error(res.error); toast("Errore caricamento clienti."); return; }
   CUSTOMERS_ALL = res.data || [];
-  CUSTOMERS_ALL.forEach((c) => { c.orders_count = counts.get(c.phone_norm || cliNormPhone(c.phone)) || 0; });
+  CUSTOMER_ORDERS = ord.details;
+  CUSTOMERS_ALL.forEach((c) => { c.orders_count = ord.counts.get(c.phone_norm || cliNormPhone(c.phone)) || 0; });
   CUSTOMERS_LOADED = true;
   renderCustomers();
 }
@@ -107,6 +129,66 @@ function filterCustomers(q) {
 function ordersLabel(n) {
   if (!n) return "nessun ordine";
   return n === 1 ? "1 ordine" : n + " ordini";
+}
+
+// ---------- ordini conclusi del cliente (scheda che si apre dalla riga) ----------
+// Data non valida = 0: finisce in fondo all'ordinamento invece di far saltare il confronto.
+function cliTime(v) {
+  const d = new Date(v);
+  return isNaN(d) ? 0 : d.getTime();
+}
+function cliDay(v) {
+  const d = new Date(v);
+  if (!v || isNaN(d)) return "—";
+  return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") +
+    "/" + d.getFullYear();
+}
+
+function cliOrdersOf(c) {
+  return CUSTOMER_ORDERS.get(c.phone_norm || cliNormPhone(c.phone)) || { gelato: [], torte: [] };
+}
+
+// una riga = data · cosa era · quanto. Il totale del gruppo sta nell'intestazione.
+function cliOrderLine(quando, cosa, importo) {
+  return `<div class="cli-ord">` +
+      `<span class="cli-ord-d">${esc(quando)}</span>` +
+      `<span class="cli-ord-x">${esc(cosa)}</span>` +
+      `<span class="cli-ord-e">${esc(euro(importo))}</span>` +
+    `</div>`;
+}
+
+function cliGroupHtml(titolo, righe, totale) {
+  if (!righe.length) return "";
+  return `<div class="cli-grp">` +
+      `<div class="cli-grp-h"><b>${esc(titolo)}</b>` +
+        `<span>${righe.length === 1 ? "1 concluso" : righe.length + " conclusi"}</span>` +
+        `<span class="cli-grp-tot">${esc(euro(totale))}</span></div>` +
+      righe.join("") +
+    `</div>`;
+}
+
+// La scheda si costruisce una volta sola, alla prima apertura: finche' resta chiusa non
+// c'e' motivo di disegnare le righe di chi non le guarda.
+function cliOrdersHtml(c) {
+  const { gelato, torte } = cliOrdersOf(c);
+  if (!gelato.length && !torte.length) return "";
+  const somma = (rows, campo) => rows.reduce((t, r) => t + Number(r[campo] || 0), 0);
+  const totGelato = somma(gelato, "total");
+  const totTorte = somma(torte, "price");
+
+  const rGelato = gelato.map((o) => cliOrderLine(
+    cliDay(o.delivery_date || o.created_at),
+    [o.fulfillment === "pickup" ? "ritiro" : "consegna", o.slot_label].filter(Boolean).join(" · "),
+    o.total));
+  // il peso c'e' dagli ordini a kg in poi; prima al suo posto c'era il formato
+  const rTorte = torte.map((o) => cliOrderLine(
+    cliDay(o.delivered_at || o.pickup_at),
+    [o.item_name, o.weight_kg != null ? cakeFmtKg(o.weight_kg) : o.variant].filter(Boolean).join(" · "),
+    o.price));
+
+  return cliGroupHtml("Gelato", rGelato, totGelato) +
+    cliGroupHtml("Torte", rTorte, totTorte) +
+    `<div class="cli-tot">Totale speso <b>${esc(euro(totGelato + totTorte))}</b></div>`;
 }
 
 function renderCustomers() {
@@ -144,11 +226,19 @@ function buildCustomerRow(c) {
   el.className = "mrow";
   // il telefono ha un max-width esplicito: su WebKit un input dentro un flex tiene
   // la larghezza intrinseca (max-content) e sfonda la riga.
+  const done = cliOrdersOf(c);
+  const apribile = !!(done.gelato.length || done.torte.length);
+  // L'etichetta conta TUTTI gli ordini (come prima); la scheda mostra solo i conclusi.
+  // Diventa un bottone solo se c'e' qualcosa da aprire: un affordance che non apre niente
+  // e' peggio di nessun affordance.
   el.innerHTML =
     `<input class="cli-name grow" value="${esc(c.name)}" placeholder="Nome e cognome">` +
     `<input class="cli-phone" type="tel" inputmode="tel" value="${esc(c.phone)}" placeholder="Telefono"` +
     ` style="flex:0 0 152px;max-width:152px;min-width:0">` +
-    `<span class="count">${esc(ordersLabel(c.orders_count))}</span>`;
+    (apribile
+      ? `<button type="button" class="count cli-toggle" aria-expanded="false">` +
+          `${esc(ordersLabel(c.orders_count))} <span class="cli-caret" aria-hidden="true">▾</span></button>`
+      : `<span class="count">${esc(ordersLabel(c.orders_count))}</span>`);
   frow.appendChild(el);
 
   // email e note su righe proprie: a schermo stretto quattro campi in fila sono illeggibili
@@ -161,6 +251,24 @@ function buildCustomerRow(c) {
   notes.className = "g-desc"; notes.placeholder = "Note (es. senza glutine, cliente storico)";
   notes.value = c.notes || "";
   frow.appendChild(notes);
+
+  // scheda ordini: in fondo alla card, sotto i campi modificabili. Si disegna alla prima
+  // apertura — con l'anagrafica intera a schermo, disegnarle tutte sarebbe lavoro buttato.
+  if (apribile) {
+    const panel = document.createElement("div");
+    panel.className = "cli-orders hidden";
+    frow.appendChild(panel);
+    const btn = el.querySelector(".cli-toggle");
+    btn.onclick = () => {
+      const aperto = !panel.classList.toggle("hidden");
+      if (aperto && !panel.dataset.pronto) {
+        panel.innerHTML = cliOrdersHtml(c);
+        panel.dataset.pronto = "1";
+      }
+      btn.setAttribute("aria-expanded", String(aperto));
+      btn.classList.toggle("open", aperto);
+    };
+  }
 
   const name = el.querySelector(".cli-name");
   name.onchange = () => {
