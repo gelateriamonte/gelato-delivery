@@ -30,7 +30,7 @@ const cakeFmtPrice = (n) => (n == null || n === "" ? "" : Number(n).toFixed(2).r
 //   ""         → null        "40"        → 40         "40,00"  → 40
 //   "40.50"    → 40.5        "1.234,50"  → 1234.5     "1.200"  → 1200
 //   "-5"       → undefined   "abc"       → undefined  "1,234.50" → undefined (due separatori: non si indovina)
-function cakeParsePrice(v) {
+function cakeParsePrice(v, max = 9999.99) {
   const s = String(v == null ? "" : v).trim();
   if (!s) return null;
   if (s.includes("-")) return undefined;                 // il segno si guarda ORA: la pulizia sotto lo toglie
@@ -39,8 +39,20 @@ function cakeParsePrice(v) {
   if ((cleaned.match(/[.,]/g) || []).length > 1) return undefined;   // piu' di un separatore decimale: ambiguo
   const n = parseFloat(cleaned.replace(",", "."));
   if (!Number.isFinite(n)) return undefined;
-  return Math.round(Math.min(9999.99, n) * 100) / 100;
+  return Math.round(Math.min(max, n) * 100) / 100;
 }
+
+// Peso: stesso lettore, col tetto di numeric(5,2) e lo zero trattato come errore
+// (una torta di 0 kg non esiste, e a quel peso il totale calcolato sarebbe 0).
+function cakeParseWeight(v) {
+  const n = cakeParsePrice(v, 999.99);
+  if (n == null) return n;                               // null = vuoto · undefined = non interpretabile
+  return n > 0 ? n : undefined;
+}
+
+// "1,20 kg" — i chili tondi si scrivono senza decimali ("1 kg"), come si dicono a voce
+const cakeFmtKg = (n) =>
+  (n == null || n === "" ? "" : Number(n).toFixed(2).replace(".", ",").replace(/,00$/, "") + " kg");
 
 function cakeIsToday(iso) {
   if (!iso) return false;
@@ -73,7 +85,7 @@ function renderCakeStats() {
 // ========== CATALOGO ==========
 async function loadCakeItems() {
   const { data, error } = await sb.from("cake_items")
-    .select("id,name,photo_url,has_small,has_large,price_small,price_large,available,sort_order")
+    .select("id,name,photo_url,price_kg,available,sort_order")
     .order("sort_order");
   if (error) { console.error("loadCakeItems", error); toast("Errore caricamento catalogo torte."); return; }
   CAKES_ALL = data || [];
@@ -93,24 +105,20 @@ function renderCakeCatalogo() {
   enableDragSort(list, ".drag-handle", ".cakerow", (ids) => persistOrder("cake_items", ids));
 }
 
-// Una variante = "esiste?" + "quanto costa". I due concetti restano separati:
-// col solo prezzo nullo, "il Tiramisu' non esiste piccolo" e "il prezzo non e'
-// ancora deciso" sarebbero indistinguibili.
-// La spunta e il suo prezzo stanno in un .c-pair proprio: dentro `.c-vars`, che va
-// a capo, una coppia spezzata a meta' riga lascerebbe un prezzo senza etichetta.
-// Il prezzo e' type="text" + inputmode="decimal" apposta: un type="number" scarta la
-// virgola prima che il codice la veda. Larghezza e stato disabilitato: css/styles.css.
-function cakeVariantHtml(key, label, has, price) {
-  return `<div class="c-pair" data-var="${key}">` +
-      `<label class="c-var${has ? "" : " off"}">` +
-        `<input type="checkbox" class="c-has"${has ? " checked" : ""}>` +
-        `<span>${esc(label)}</span>` +
-      `</label>` +
-      // il simbolo € sta FUORI dal campo: senza, il rettangolo non si legge come un prezzo
-      `<span class="c-money${has ? "" : " off"}">` +
+// Un solo prezzo, quello al kg: il formato non c'e' piu', il conto lo fa il peso
+// digitato al momento dell'ordine.
+// Il campo e' type="text" + inputmode="decimal" apposta: un type="number" scarta la
+// virgola prima che il codice la veda. Larghezze: css/styles.css.
+function cakePriceKgHtml(price) {
+  return `<div class="c-vars">` +
+      `<span class="c-varshead">Prezzo al kg</span>` +
+      // simbolo e unita' di misura FUORI dal campo: senza, il rettangolo non si legge
+      // come un prezzo, e dentro finirebbero nel valore da interpretare
+      `<span class="c-money">` +
         `<span class="c-cur" aria-hidden="true">€</span>` +
-        `<input class="c-price" type="text" inputmode="decimal" maxlength="7" placeholder="—"` +
-          ` aria-label="Prezzo ${esc(label)}" value="${esc(cakeFmtPrice(price))}"${has ? "" : " disabled"}>` +
+        `<input class="c-price" type="text" inputmode="decimal" maxlength="7"` +
+          ` aria-label="Prezzo al kg" value="${esc(cakeFmtPrice(price))}">` +
+        `<span class="c-unit" aria-hidden="true">/kg</span>` +
       `</span>` +
     `</div>`;
 }
@@ -125,11 +133,7 @@ function buildCakeRow(it) {
     `<div class="cakethumb" role="img" aria-label="Foto di ${esc(it.name)}"></div>` +
     `<div class="c-body">` +
       `<input class="c-name" value="${esc(it.name)}" aria-label="Nome torta">` +
-      `<div class="c-vars">` +
-        `<span class="c-varshead">Formati e prezzi</span>` +
-        cakeVariantHtml("small", "Piccola", it.has_small, it.price_small) +
-        cakeVariantHtml("large", "Grande", it.has_large, it.price_large) +
-      `</div>` +
+      cakePriceKgHtml(it.price_kg) +
       `<input type="file" class="c-file" accept="${CAKE_PHOTO_TYPES.join(",")}" aria-label="Foto della torta">` +
     `</div>` +
     availRadios("ck-" + it.id, it.available) +
@@ -176,41 +180,18 @@ function buildCakeRow(it) {
     await loadCakeItems();
   };
 
-  // --- varianti: esiste sì/no + prezzo ---
-  [["small", "has_small", "price_small"], ["large", "has_large", "price_large"]].forEach(([key, hasCol, priceCol]) => {
-    const pair = row.querySelector(`.c-pair[data-var="${key}"]`);
-    const chk = pair.querySelector(".c-has");
-    const price = pair.querySelector(".c-price");
-    // Si scrive PRIMA sul database e si aggiorna lo stato locale solo a scrittura riuscita:
-    // il vincolo cake_items_almeno_un_formato (has_small OR has_large) puo' rifiutare
-    // l'ultimo formato tolto (23514), e senza questo la spunta risulterebbe spenta e
-    // l'articolo sparirebbe dal menu della modale pur essendo ancora ordinabile.
-    // Niente updateRow qui: inghiotte l'esito. Si scrive in linea come fa printCakeOrder.
-    chk.onchange = async () => {
-      const on = chk.checked;
-      chk.disabled = true;
-      const { error } = await withAuthRetry(() => sb.from("cake_items").update({ [hasCol]: on }).eq("id", it.id));
-      chk.disabled = false;
-      if (error) {
-        console.error("cake_items " + hasCol, error);
-        chk.checked = !on;                                          // il database ha rifiutato: si torna indietro
-        toast(error.code === "23514" ? "Una torta deve avere almeno un formato." : "Errore salvataggio.");
-        return;
-      }
-      it[hasCol] = on;
-      price.disabled = !on;
-      // variante che non esiste: etichetta e riquadro del prezzo entrambi spenti
-      pair.querySelector(".c-var").classList.toggle("off", !on);
-      pair.querySelector(".c-money").classList.toggle("off", !on);
-    };
-    price.onchange = () => {
-      const v = cakeParsePrice(price.value);
-      if (v === undefined) { price.value = cakeFmtPrice(it[priceCol]); return; }   // testo non valido: si torna indietro
-      it[priceCol] = v;
-      price.value = cakeFmtPrice(v);
-      updateRow("cake_items", it.id, { [priceCol]: v });                            // vuoto → null, non 0
-    };
-  });
+  // --- prezzo al kg ---
+  const price = row.querySelector(".c-price");
+  price.onchange = () => {
+    const v = cakeParsePrice(price.value);
+    // La colonna e' not null: a differenza dei vecchi prezzi per formato, qui il campo
+    // vuoto non e' "prezzo da decidere" ma un ordine non calcolabile → si torna indietro,
+    // esattamente come per il testo non interpretabile.
+    if (v == null) { price.value = cakeFmtPrice(it.price_kg); return; }
+    it.price_kg = v;
+    price.value = cakeFmtPrice(v);
+    updateRow("cake_items", it.id, { price_kg: v });
+  };
 
   return row;
 }
@@ -244,7 +225,8 @@ async function uploadCakePhoto(file, itemId) {
 // ========== ORDINI E STORICO ==========
 async function loadCakeOrders() {
   const { data, error } = await sb.from("cake_orders")
-    .select("id,customer_id,customer_name,customer_phone,cake_item_id,item_name,variant,price," +
+    .select("id,customer_id,customer_name,customer_phone,cake_item_id,item_name,variant," +
+            "weight_kg,price_kg,extras_price,price," +
             "pickup_at,inscription,extras,notes,status,delivered_at,created_at")
     .order("pickup_at", { ascending: true });
   if (error) { console.error("loadCakeOrders", error); toast("Errore caricamento ordini torte."); return; }
@@ -259,7 +241,12 @@ async function loadCakeOrders() {
 function cakeOrderNote(o, storico) {
   const bits = [];
   if (o.inscription && o.inscription.trim()) bits.push(`<b>Scritta:</b> ${esc(o.inscription)}`);
-  if (o.extras && o.extras.trim()) bits.push(`<b>Extra:</b> ${esc(o.extras)}`);
+  // descrizione e importo sono due cose diverse e possono esserci una senza l'altra:
+  // "6 candeline" senza sovrapprezzo, o un extra gia' conteggiato che nessuno ha descritto
+  const ex = [];
+  if (o.extras && o.extras.trim()) ex.push(esc(o.extras));
+  if (o.extras_price != null) ex.push(esc(euro(o.extras_price)));
+  if (ex.length) bits.push(`<b>Extra:</b> ${ex.join(" · ")}`);
   if (o.notes && o.notes.trim()) bits.push(`<b>Note:</b> ${esc(o.notes)}`);
   if (storico) bits.push(`<b>Ritiro previsto:</b> ${esc(cakeDateTime(o.pickup_at))}`);
   return bits.length ? `<div class="co-note">${bits.join("<br>")}</div>` : "";
@@ -280,10 +267,13 @@ function buildCakeOrderRow(o, storico) {
   // .urgent = si ritira oggi · .done = gia' consegnato (bordo sinistro, colpo d'occhio)
   row.className = "corow" + (storico ? " done" : (cakeIsToday(o.pickup_at) ? " urgent" : ""));
   row.dataset.id = o.id;
+  // accanto al nome il peso; gli ordini presi prima del prezzo al kg non ce l'hanno
+  // e mostrano il formato di allora
+  const qta = o.weight_kg != null ? cakeFmtKg(o.weight_kg) : (o.variant || "");
   row.innerHTML =
     `<div class="co-when"><span class="co-day">${esc(day)}</span><span class="co-time">${esc(time)}</span></div>` +
     `<div class="co-main">` +
-      `<div class="co-what">${esc(o.item_name)} <span class="co-var">${esc(o.variant)}</span></div>` +
+      `<div class="co-what">${esc(o.item_name)} <span class="co-var">${esc(qta)}</span></div>` +
       `<div class="co-who">${esc(o.customer_name)} · ${esc(o.customer_phone)}</div>` +
       cakeOrderNote(o, storico) +
     `</div>` +
@@ -352,7 +342,8 @@ async function restoreCakeOrder(o) {
 // Non esiste lo stato "annullato": annullare ELIMINA la riga (scelta del titolare).
 // La conferma nominale e' l'unica rete: dopo non si recupera.
 async function deleteCakeOrder(o) {
-  const q = `Eliminare definitivamente l'ordine di ${o.customer_name} — ${o.item_name} ${o.variant}` +
+  const q = `Eliminare definitivamente l'ordine di ${o.customer_name} — ${o.item_name} ` +
+    `${o.weight_kg != null ? cakeFmtKg(o.weight_kg) : (o.variant || "")}` +
     ` del ${cakeDateTime(o.pickup_at)}?\n\nNon sara' piu' recuperabile.`;
   if (!confirm(q)) return;
   const { error } = await withAuthRetry(() => sb.from("cake_orders").delete().eq("id", o.id));
@@ -371,7 +362,12 @@ async function printCakeOrder(o) {
     customer_name: o.customer_name,
     customer_phone: o.customer_phone,
     item_name: o.item_name,
+    // `variant` resta nel payload: una ristampa dallo storico deve poter mostrare il
+    // formato degli ordini presi prima del passaggio al prezzo al kg
     variant: o.variant,
+    weight_kg: o.weight_kg,
+    price_kg: o.price_kg,
+    extras_price: o.extras_price,
     price: o.price,
     pickup_at: o.pickup_at,
     inscription: o.inscription,
@@ -384,13 +380,13 @@ async function printCakeOrder(o) {
 }
 
 // ========== MODALE NUOVO ORDINE ==========
-let coPriceTouched = false;    // il prezzo si precompila dal listino, ma non sovrascrive l'operatore
+let coPriceTouched = false;    // il totale si calcola da solo, ma non sovrascrive l'operatore
 let coAutoName = "";           // ultimo nome scritto da noi: se e' ancora quello, si puo' rimpiazzare
 let coAutoEmail = "";
 let coCustomersReady = false;  // anagrafica in memoria: finche' e' falso non si dice "Nuovo cliente"
 
-const CO_FIELDS = ["co-phone", "co-name", "co-email", "co-item", "co-variant", "co-price",
-  "co-pickup", "co-inscription", "co-extras", "co-notes"];
+const CO_FIELDS = ["co-phone", "co-name", "co-email", "co-item", "co-weight", "co-extras",
+  "co-extras-price", "co-price", "co-pickup", "co-inscription", "co-notes"];
 
 // il rosso del campo mancante sta su `.co-field .err` (css/styles.css), non in linea
 function coClearErrors() {
@@ -410,10 +406,9 @@ async function openCakeOrderModal() {
   coClearErrors();
   CO_FIELDS.forEach((id) => { const el = $(id); if (el && el.tagName !== "SELECT") el.value = ""; });
   const found = $("co-found"); if (found) found.textContent = "";
-  const vsel = $("co-variant"); if (vsel) vsel.innerHTML = "";   // azzera la variante del giro precedente
+  const rate = $("co-rate"); if (rate) rate.textContent = "";    // il prezzo al kg del giro precedente
   const save = $("co-save"); if (save) save.disabled = false;    // un salvataggio fallito prima non lascia il bottone spento
   coFillItems();
-  coFillVariants();
   if (typeof customersReady === "function") await customersReady();
   // customersReady() si risolve anche se loadCustomers e' fallito (non rigetta, non alza
   // CUSTOMERS_LOADED): senza questo controllo il riconoscimento cliente resterebbe cieco
@@ -428,30 +423,12 @@ function closeCakeOrderModal() {
 }
 
 // Solo gli articoli disponibili: un ordine impossibile non deve essere digitabile.
-// Fuori anche quelli senza alcun formato: il database ora impedisce di crearne (vincolo
-// cake_items_almeno_un_formato), ma una riga preesistente darebbe un menu Formato vuoto.
 function coFillItems() {
   const sel = $("co-item");
   if (!sel) return;
-  const items = CAKES_ALL.filter((it) => it.available && (it.has_small || it.has_large));
+  const items = CAKES_ALL.filter((it) => it.available);
   sel.innerHTML = '<option value="">— scegli la torta —</option>' +
     items.map((it) => `<option value="${esc(it.id)}">${esc(it.name)}</option>`).join("");
-}
-
-// Le varianti si costruiscono dall'articolo scelto: "piccola" solo se has_small,
-// "grande" solo se has_large. Col Tiramisu' l'opzione piccola non compare affatto.
-function coFillVariants() {
-  const sel = $("co-variant");
-  if (!sel) return;
-  const it = coCurrentItem();
-  const opts = [];
-  if (!it || it.has_small) opts.push("piccola");
-  if (!it || it.has_large) opts.push("grande");
-  const prev = sel.value;
-  sel.innerHTML = (opts.length > 1 ? '<option value="">— scegli il formato —</option>' : "") +
-    opts.map((v) => `<option value="${v}">${v}</option>`).join("");
-  if (opts.includes(prev)) sel.value = prev;
-  else if (opts.length === 1) sel.value = opts[0];
 }
 
 function coCurrentItem() {
@@ -460,14 +437,26 @@ function coCurrentItem() {
   return CAKES_ALL.find((it) => it.id === sel.value) || null;
 }
 
+// Il prezzo al kg scritto sotto il campo peso: senza, il totale calcolato e' un numero
+// che arriva dal nulla e l'operatore non ha modo di accorgersi di un listino sbagliato.
+function coFillRate() {
+  const el = $("co-rate");
+  if (!el) return;
+  const it = coCurrentItem();
+  el.textContent = it ? euro(it.price_kg) + " al kg" : "";
+}
+
+// Totale = peso × prezzo al kg + extra. L'extra e' COMPRESO nel totale (scelta del
+// titolare): a database resta anche da solo, per stamparne il dettaglio.
 function coFillPrice() {
   const el = $("co-price");
   if (!el || coPriceTouched) return;                 // gia' toccato a mano: non si sovrascrive
   const it = coCurrentItem();
-  const variant = $("co-variant") ? $("co-variant").value : "";
-  if (!it || !variant) { el.value = ""; return; }
-  const p = variant === "piccola" ? it.price_small : it.price_large;
-  el.value = cakeFmtPrice(p);
+  const kg = $("co-weight") ? cakeParseWeight($("co-weight").value) : null;
+  if (!it || kg == null) { el.value = ""; return; }  // copre vuoto e testo non interpretabile
+  const ex = $("co-extras-price") ? cakeParsePrice($("co-extras-price").value) : null;
+  const tot = kg * Number(it.price_kg) + (ex == null ? 0 : ex);
+  el.value = cakeFmtPrice(Math.min(9999.99, Math.round(tot * 100) / 100));
 }
 
 // L'anagrafica sta gia' in memoria: nessuna query per ogni tasto premuto.
@@ -495,14 +484,17 @@ function coLookupCustomer() {
   if (email && (!email.value.trim() || email.value === coAutoEmail)) { email.value = c.email || ""; coAutoEmail = email.value; }
 }
 
-// Validazione minima: nome, telefono, torta, variante, prezzo e ritiro.
+// Validazione minima: nome, telefono, torta, peso, totale e ritiro.
 // E' uno strumento interno, non un modulo pubblico: oltre questo non si va.
 function coCollect() {
   coClearErrors();
   const phone = $("co-phone"), name = $("co-name"), item = $("co-item"),
-    variant = $("co-variant"), price = $("co-price"), pickup = $("co-pickup");
+    weight = $("co-weight"), exPrice = $("co-extras-price"),
+    price = $("co-price"), pickup = $("co-pickup");
   const miss = [];
   const it = coCurrentItem();
+  const kg = weight ? cakeParseWeight(weight.value) : null;
+  const exVal = exPrice ? cakeParsePrice(exPrice.value) : null;
   const priceVal = price ? cakeParsePrice(price.value) : null;
   // "da chiedere" o simili non sono un numero: cliPhoneError rifiuta anche le stringhe
   // senza cifre e sotto le 9 cifre, non solo il campo vuoto. Senza questo controllo
@@ -512,7 +504,8 @@ function coCollect() {
   if (!name || !name.value.trim()) miss.push(name);
   if (phoneErr) miss.push(phone);
   if (!it) miss.push(item);
-  if (!variant || !variant.value) miss.push(variant);
+  if (kg == null) miss.push(weight);        // vuoto, non interpretabile o zero: nessuno dei tre e' un peso
+  if (exVal === undefined) miss.push(exPrice);   // l'extra vuoto (null) va bene, il testo non valido no
   if (priceVal == null) miss.push(price);   // copre sia il vuoto (null) sia il testo non valido (undefined)
   if (!pickup || !pickup.value) miss.push(pickup);
 
@@ -533,7 +526,9 @@ function coCollect() {
     email: txt(emailEl),
     cake_item_id: it.id,
     item_name: it.name,
-    variant: variant.value,
+    weight_kg: kg,
+    price_kg: it.price_kg,          // congelato: il listino puo' cambiare dopo
+    extras_price: exVal,
     price: priceVal,
     pickup_at: when.toISOString(),
     inscription: txt(inscr),
@@ -601,7 +596,9 @@ async function saveCakeOrder(d) {
     customer_phone: d.customer_phone,
     cake_item_id: d.cake_item_id,
     item_name: d.item_name,
-    variant: d.variant,
+    weight_kg: d.weight_kg,
+    price_kg: d.price_kg,
+    extras_price: d.extras_price,
     price: d.price,
     pickup_at: d.pickup_at,
     inscription: d.inscription,
@@ -616,16 +613,23 @@ async function saveCakeOrder(d) {
 function wireCakeModal() {
   const modal = $("cake-modal");
   if (!modal) return;
-  const phone = $("co-phone"), item = $("co-item"), variant = $("co-variant"), price = $("co-price");
+  const phone = $("co-phone"), item = $("co-item"), weight = $("co-weight"),
+    exPrice = $("co-extras-price"), price = $("co-price");
   if (phone) phone.addEventListener("input", coLookupCustomer);
-  // cambiando ARTICOLO il prezzo ricomincia dal listino: la correzione a mano valeva per la
-  // torta di prima, e restando appiccicata finirebbe a database sull'articolo sbagliato.
-  if (item) item.addEventListener("change", () => { coPriceTouched = false; coFillVariants(); coFillPrice(); });
-  // stesso ragionamento del listener sopra: cambiando FORMATO (piccola/grande) il prezzo
-  // ricomincia dal listino, altrimenti una correzione a mano sulla piccola resterebbe
-  // appiccicata passando alla grande, e l'ordine si salverebbe al prezzo sbagliato.
-  if (variant) variant.addEventListener("change", () => { coPriceTouched = false; coFillPrice(); });
+  // Toccando uno dei tre addendi (torta, peso, extra) il totale torna a calcolarsi: una
+  // correzione a mano valeva per il conto di prima e, restando appiccicata, l'ordine si
+  // salverebbe al prezzo sbagliato — il caso peggiore, perche' sembra giusto.
+  if (item) item.addEventListener("change", () => { coPriceTouched = false; coFillRate(); coFillPrice(); });
+  if (weight) weight.addEventListener("input", () => { coPriceTouched = false; coFillPrice(); });
+  if (exPrice) exPrice.addEventListener("input", () => { coPriceTouched = false; coFillPrice(); });
   if (price) price.addEventListener("input", () => { coPriceTouched = true; });
+  // A campo lasciato, peso ed extra si riscrivono in forma normale ("1.2" → "1,20"): cosi'
+  // si vede il numero che e' stato capito davvero. Il testo non valido resta com'e',
+  // altrimenti sparirebbe sotto gli occhi di chi l'ha scritto e coCollect non avrebbe
+  // piu' niente da segnalare.
+  const norm = (el, parse) => { const v = parse(el.value); if (v != null) el.value = cakeFmtPrice(v); };
+  if (weight) weight.addEventListener("change", () => norm(weight, cakeParseWeight));
+  if (exPrice) exPrice.addEventListener("change", () => norm(exPrice, cakeParsePrice));
 
   const cancel = $("co-cancel");
   if (cancel) cancel.onclick = closeCakeOrderModal;

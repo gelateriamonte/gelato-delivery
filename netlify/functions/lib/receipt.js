@@ -28,6 +28,8 @@ const esc = (s) => String(s == null ? "" : s)
   .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 
 const euro = (n) => (Number(n) || 0).toFixed(2).replace(".", ",");
+// peso torta: i chili tondi senza decimali ("1 kg"), come si dicono a voce
+const kgLabel = (n) => Number(n).toFixed(2).replace(".", ",").replace(/,00$/, "") + " kg";
 
 // conteggio per code-point (no split su coppie surrogate)
 const cp = (s) => Array.from(String(s));
@@ -256,7 +258,10 @@ function buildCakeOrderXml(payload, createdAtIso) {
   line(ritiro ? padLine("RITIRO", ritiro) : "RITIRO");
   line(sep);
 
-  line(padLine(cleanField(p.item_name || "-"), cleanField(p.variant || "")));
+  // a destra il peso; gli ordini presi prima del passaggio al prezzo al kg non ce l'hanno
+  // e mostrano il formato di allora
+  const qta = p.weight_kg != null ? kgLabel(p.weight_kg) : (p.variant || "");
+  line(padLine(cleanField(p.item_name || "-"), cleanField(qta)));
   campo("Scritta:", p.inscription);
   campo("Extra:", p.extras);
   line(sep);
@@ -267,6 +272,14 @@ function buildCakeOrderXml(payload, createdAtIso) {
   campo("Note:", p.notes);
   line(sep);
 
+  // Il conto in chiaro: chi ritira deve poter rifare il calcolo. Il totale comprende
+  // gia' l'extra, ed e' correggibile a mano dal back office — puo' quindi non coincidere
+  // con peso × prezzo + extra, e allora le righe di dettaglio spiegano di quanto.
+  // "x" ASCII e non "×": il set di caratteri della termica e' quello.
+  if (p.weight_kg != null && p.price_kg != null) {
+    line(padLine("Peso", kgLabel(p.weight_kg) + " x " + euro(p.price_kg) + "/kg"));
+  }
+  if (p.extras_price != null) line(padLine("Extra", euro(p.extras_price)));
   line(padLine("Prezzo", euro(p.price)));
   line(sep);
 

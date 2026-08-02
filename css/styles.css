@@ -960,43 +960,32 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
   background-position:center; background-size:cover; background-repeat:no-repeat;
 }
 
-/* varianti: "esiste sì/no" e "quanto costa" restano due concetti separati.
-   Le due coppie stanno IMPILATE, non affiancate: incolonnate, i due prezzi si
-   confrontano a colpo d'occhio e l'etichetta resta sempre attaccata al suo campo. */
+/* prezzo al kg: un solo campo, con l'etichetta sopra — accanto al nome della torta
+   un rettangolo con dentro un numero non direbbe di cosa è il prezzo. */
 .cakerow .c-vars{ display:flex; flex-direction:column; align-items:flex-start; gap:6px; min-width:0; }
 .cakerow .c-varshead{
   font-size:10px; font-weight:600; letter-spacing:.14em; text-transform:uppercase;
   color:var(--muted); margin-bottom:1px;
 }
-.cakerow .c-pair{ display:flex; align-items:center; gap:10px; min-width:0; }
-/* larghezza fissa: i due gruppi prezzo restano incolonnati sotto */
-.cakerow .c-var{
-  display:inline-flex; align-items:center; gap:7px; margin:0; flex:0 0 96px; cursor:pointer;
-  font-size:12.5px; font-weight:600; letter-spacing:normal; text-transform:none;
-  white-space:nowrap; color:var(--ink-2);
-}
-.cakerow .c-var.off{ color:var(--faint); }
-.cakerow .c-has{ width:auto; flex:none; margin:0; cursor:pointer; accent-color:var(--accent); }
-/* il simbolo € sta fuori dal campo, dentro il bordo: rende evidente che è un prezzo
-   senza rubare spazio a ciò che si digita, e non finisce nel valore da parsare. */
+/* il simbolo € e il /kg stanno fuori dal campo, dentro il bordo: rendono evidente che è
+   un prezzo al peso senza rubare spazio a ciò che si digita, e non finiscono nel valore
+   da parsare. */
 .cakerow .c-money{
   display:inline-flex; align-items:center; flex:none;
   border:1px solid var(--line-2); border-radius:9px; background:var(--paper);
   overflow:hidden; transition:border-color .15s;
 }
 .cakerow .c-money:focus-within{ border-color:var(--accent-line); }
-.cakerow .c-money.off{ background:var(--paper-2); border-color:var(--line); }
 .cakerow .c-cur{ padding:0 2px 0 10px; font-size:13px; color:var(--muted); }
-.cakerow .c-money.off .c-cur{ color:var(--faint); }
+.cakerow .c-unit{ padding:0 10px 0 1px; font-size:13px; color:var(--muted); }
 /* prezzo: type=text + inputmode=decimal (un type=number scarta la virgola).
    Cap esplicito: dentro un flex il max-content di un input risale al wrapper su WebKit. */
 .cakerow input.c-price{
   flex:0 0 66px; width:66px; max-width:66px; min-width:0; text-align:right;
-  padding:9px 10px 9px 2px; font-size:14px; font-variant-numeric:tabular-nums;
+  padding:9px 4px 9px 2px; font-size:14px; font-variant-numeric:tabular-nums;
   border:0; background:transparent; border-radius:0;
 }
 .cakerow input.c-price:focus{ outline:none; box-shadow:none; }
-.cakerow input.c-price:disabled{ color:var(--faint); cursor:not-allowed; }
 
 /* ---------- riga ordine torta (viste Ordini e Storico) ---------- */
 .corow{
@@ -1111,7 +1100,6 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
   .cakerow > .switch .switch-lbl{ display:none; }   /* toggle senza testo: lo stato è il colore */
   .cakerow > .btn.icon{ margin-top:0; padding:8px 9px; }
   .cakerow .c-vars{ gap:8px 12px; }
-  .cakerow .c-var{ font-size:12px; }
   .cakerow input.c-price{ flex:0 0 72px; width:72px; max-width:72px; padding:9px 4px; }
 
   .corow{ gap:9px 10px; padding:12px; }
