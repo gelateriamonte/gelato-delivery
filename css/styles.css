@@ -1035,9 +1035,45 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
 }
 .corow .co-acts{ flex:none; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
 
-/* ---------- anagrafica clienti (usa .frow/.mrow esistenti) ---------- */
+/* ---------- anagrafica clienti ---------- */
+/* La scheda è una CARD come .corow: prima erano quattro input identici in colonna, e in
+   un elenco lungo non si vedeva dove finiva un cliente e cominciava il successivo.
+   In lettura è testo; le caselle esistono solo in modifica (.editing). */
+#clienti-list .clicard{
+  gap:6px; background:var(--paper); border:1px solid var(--line);
+  border-radius:var(--r-md); box-shadow:var(--shadow-card); padding:13px 15px;
+}
+#clienti-list .cli-head{ display:flex; align-items:center; gap:10px; }
+#clienti-list .cli-nome{
+  flex:1 1 auto; min-width:0; font-family:var(--serif); font-size:19px; font-weight:600;
+  color:var(--ink); line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+#clienti-list .cli-head .count{ flex:none; }
+/* telefono e email sulla stessa riga: il puntino separatore appartiene all'email, così
+   sparisce insieme a lei quando manca */
+#clienti-list .cli-meta{ display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 8px; font-size:13px; }
+#clienti-list .cli-tel{ color:var(--ink-2); font-variant-numeric:tabular-nums; }
+#clienti-list .cli-mail{ color:var(--muted); min-width:0; overflow-wrap:anywhere; }
+#clienti-list .cli-mail::before{ content:"·"; margin-right:8px; color:var(--faint); }
+#clienti-list .cli-note{
+  font-size:12.5px; color:var(--muted); line-height:1.45; padding-left:9px;
+  border-left:2px solid var(--accent-line); overflow-wrap:anywhere;
+}
+#clienti-list .cli-acts{ display:flex; flex-wrap:wrap; gap:6px; margin-top:3px; }
+
+/* modifica: le caselle compaiono, i dati in sola lettura spariscono */
+#clienti-list .cli-form{ display:none; flex-wrap:wrap; gap:7px; }
+#clienti-list .clicard.editing .cli-form{ display:flex; }
+/* col nome nascosto la riga di testa si svuota: la pillola resta comunque a destra,
+   dov'era, invece di saltare a sinistra a ogni apertura */
+#clienti-list .clicard.editing .cli-head{ justify-content:flex-end; }
+#clienti-list .clicard.editing .cli-nome,
+#clienti-list .clicard.editing .cli-meta,
+#clienti-list .clicard.editing .cli-note,
+#clienti-list .clicard.editing .cli-acts{ display:none; }
+#clienti-list .cli-form > .g-desc{ flex:1 1 100%; }
+#clienti-list .cli-formacts{ display:flex; flex:1 1 100%; gap:6px; }
 .cli-phone{ font-variant-numeric:tabular-nums; }
-#clienti-list .mrow .count{ flex:none; }
 /* il conteggio diventa un bottone solo quando c'è una scheda da aprire: eredita .count
    e aggiunge il segnale che è cliccabile (cursore, freccia che ruota da aperto) */
 #clienti-list .cli-toggle{ cursor:pointer; transition:background .15s, border-color .15s; }

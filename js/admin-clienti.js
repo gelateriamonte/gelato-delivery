@@ -2,7 +2,7 @@
 // Tab "Clienti": elenco unico dei clienti (gelato + torte), ricerca per nome o
 // telefono, modifica in linea. Solo uso interno, tutto in italiano.
 // Si aggancia da solo ad admin.html: js/admin.js non va toccato.
-/* global $, esc, euro, toast, updateRow, cakeFmtKg */
+/* global $, esc, euro, toast, mkBtn, withAuthRetry, cakeFmtKg */
 /* exported CUSTOMERS_ALL, cliNormPhone, findCustomerByPhone, loadCustomers, renderCustomers, customersReady */
 
 let CUSTOMERS_ALL = [];
@@ -217,52 +217,139 @@ function renderCustomers() {
   rows.forEach((c) => list.appendChild(buildCustomerRow(c)));
 }
 
-// updated_at non ha trigger a database: lo aggiorna chi scrive.
-function saveCustomer(id, patch) {
-  return updateRow("customers", id, Object.assign({ updated_at: new Date().toISOString() }, patch));
+// Ritorna true solo se ha scritto davvero. Non passa da updateRow: quello inghiotte
+// l'esito (toast generico e nient'altro), e "Cliente aggiornato." finirebbe a schermo
+// anche a scrittura fallita. updated_at non ha trigger a database: lo aggiorna chi scrive.
+async function saveCustomer(id, patch) {
+  const { error } = await withAuthRetry(() => sb.from("customers")
+    .update(Object.assign({ updated_at: new Date().toISOString() }, patch)).eq("id", id));
+  if (error) { console.error("saveCustomer", error); toast("Errore salvataggio cliente."); return false; }
+  return true;
 }
 
+// Scheda cliente. In LETTURA è testo, non caselle: con quattro input identici uno sotto
+// l'altro per ogni cliente, l'elenco diventa una griglia di rettangoli tutti uguali in cui
+// non si vede dove finisce una scheda e comincia la successiva. Le caselle compaiono solo
+// premendo Modifica, che è anche la rete contro la correzione involontaria mentre si scorre.
 function buildCustomerRow(c) {
   const frow = document.createElement("div");
-  frow.className = "frow"; frow.dataset.id = c.id;
+  frow.className = "frow clicard"; frow.dataset.id = c.id;
 
-  const el = document.createElement("div");
-  el.className = "mrow";
-  // il telefono ha un max-width esplicito: su WebKit un input dentro un flex tiene
-  // la larghezza intrinseca (max-content) e sfonda la riga.
   const done = cliOrdersOf(c);
   const apribile = !!(done.gelato.length || done.torte.length);
-  // L'etichetta conta TUTTI gli ordini (come prima); la scheda mostra solo i conclusi.
-  // Diventa un bottone solo se c'e' qualcosa da aprire: un affordance che non apre niente
-  // e' peggio di nessun affordance.
-  el.innerHTML =
-    `<input class="cli-name grow" value="${esc(c.name)}" placeholder="Nome e cognome">` +
-    `<input class="cli-phone" type="tel" inputmode="tel" value="${esc(c.phone)}" placeholder="Telefono"` +
-    ` style="flex:0 0 152px;max-width:152px;min-width:0">` +
-    (apribile
-      ? `<button type="button" class="count cli-toggle" aria-expanded="false">` +
-          `${esc(ordersLabel(c.orders_count))} <span class="cli-caret" aria-hidden="true">▾</span></button>`
-      : `<span class="count">${esc(ordersLabel(c.orders_count))}</span>`);
-  frow.appendChild(el);
+  // L'etichetta conta TUTTI gli ordini; la scheda mostra solo i conclusi. Diventa un
+  // bottone solo se c'è qualcosa da aprire: un affordance che non apre niente è peggio
+  // di nessun affordance.
+  const pillola = apribile
+    ? `<button type="button" class="count cli-toggle" aria-expanded="false">` +
+        `${esc(ordersLabel(c.orders_count))} <span class="cli-caret" aria-hidden="true">▾</span></button>`
+    : `<span class="count">${esc(ordersLabel(c.orders_count))}</span>`;
 
-  // email e note su righe proprie: a schermo stretto quattro campi in fila sono illeggibili
-  const email = document.createElement("input");
-  email.className = "g-desc"; email.type = "email"; email.placeholder = "Email";
-  email.value = c.email || "";
-  frow.appendChild(email);
+  frow.innerHTML =
+    `<div class="cli-head"><span class="cli-nome"></span>${pillola}</div>` +
+    `<div class="cli-meta"><span class="cli-tel"></span><span class="cli-mail"></span></div>` +
+    `<div class="cli-note"></div>` +
+    // il telefono ha un max-width esplicito: su WebKit un input dentro un flex tiene la
+    // larghezza intrinseca (max-content) e sfonda la riga
+    `<div class="cli-form">` +
+      `<input class="cli-name grow" placeholder="Nome e cognome" aria-label="Nome e cognome">` +
+      `<input class="cli-phone" type="tel" inputmode="tel" placeholder="Telefono" aria-label="Telefono"` +
+        ` style="flex:0 0 152px;max-width:152px;min-width:0">` +
+      `<input class="cli-mail-in g-desc" type="email" placeholder="Email" aria-label="Email">` +
+      `<input class="cli-notes g-desc" placeholder="Note (es. senza glutine, cliente storico)" aria-label="Note">` +
+      `<div class="cli-formacts"></div>` +
+    `</div>` +
+    `<div class="cli-acts"></div>`;
 
-  const notes = document.createElement("input");
-  notes.className = "g-desc"; notes.placeholder = "Note (es. senza glutine, cliente storico)";
-  notes.value = c.notes || "";
-  frow.appendChild(notes);
+  const q = (s) => frow.querySelector(s);
+  const nomeEl = q(".cli-nome"), telEl = q(".cli-tel"), mailEl = q(".cli-mail"), noteEl = q(".cli-note");
+  const nameIn = q(".cli-name"), phoneIn = q(".cli-phone"), mailIn = q(".cli-mail-in"), notesIn = q(".cli-notes");
 
-  // scheda ordini: in fondo alla card, sotto i campi modificabili. Si disegna alla prima
-  // apertura — con l'anagrafica intera a schermo, disegnarle tutte sarebbe lavoro buttato.
+  // email e note mancanti: si nasconde l'elemento invece di lasciarlo vuoto, altrimenti
+  // resta lo spazio (e il separatore) di un dato che non c'è
+  const dipingi = () => {
+    nomeEl.textContent = c.name;
+    telEl.textContent = c.phone;
+    mailEl.textContent = c.email || "";
+    mailEl.classList.toggle("hidden", !c.email);
+    noteEl.textContent = c.notes || "";
+    noteEl.classList.toggle("hidden", !c.notes);
+  };
+  dipingi();
+
+  // I campi si ripopolano da `c` a ogni apertura: Annulla non deve ripristinare niente,
+  // e quel che si è digitato senza salvare non sopravvive alla chiusura.
+  const apriEdit = () => {
+    nameIn.value = c.name;
+    phoneIn.value = c.phone;
+    mailIn.value = c.email || "";
+    notesIn.value = c.notes || "";
+    frow.classList.add("editing");
+    nameIn.focus();
+    nameIn.select();
+  };
+  const chiudiEdit = () => frow.classList.remove("editing");
+
+  const salva = async () => {
+    const nome = nameIn.value.trim();
+    const tel = phoneIn.value.trim();
+    if (!nome) { toast("Il nome non può restare vuoto."); nameIn.focus(); return; }
+    const err = cliPhoneError(tel);
+    if (err) { toast(err); phoneIn.focus(); return; }
+    // stesso confronto della modale ordine torta: il numero si riconosce comunque sia
+    // scritto, e phone_norm ha un indice unico — il doppione lo rifiuterebbe il database
+    // con un errore illeggibile
+    const altro = findCustomerByPhone(tel);
+    if (altro && altro.id !== c.id) { toast("Questo numero è già di un altro cliente."); phoneIn.focus(); return; }
+    const telCambiato = tel !== c.phone;
+    const patch = { name: nome, phone: tel, email: mailIn.value.trim() || null, notes: notesIn.value.trim() || null };
+    btnSalva.disabled = true;
+    let ok = false;
+    try { ok = await saveCustomer(c.id, patch); } finally { btnSalva.disabled = false; }
+    if (!ok) return;
+    Object.assign(c, patch);
+    chiudiEdit();
+    toast("Cliente aggiornato.");
+    // phone_norm è generata a database: cambiando numero si rilegge tutto, non si indovina
+    if (telCambiato) await loadCustomers(); else dipingi();
+  };
+
+  // Il cliente si cancella, gli ordini no: `customer_id` è on delete set null e i campi
+  // dell'ordine sono congelati, quindi lo storico resta leggibile. La conferma lo dice
+  // e riporta quanti ordini sono: dopo non si recupera.
+  const elimina = async () => {
+    const n = c.orders_count;
+    const testo = `Eliminare ${c.name} dall'anagrafica?` +
+      (n ? `\n\nHa ${n === 1 ? "1 ordine" : n + " ordini"}: restano nello storico col nome e il telefono di allora,` +
+           ` ma perdono il collegamento a questa scheda.` : "") +
+      `\n\nNon sarà più recuperabile.`;
+    if (!confirm(testo)) return;
+    const { error } = await withAuthRetry(() => sb.from("customers").delete().eq("id", c.id));
+    if (error) { console.error("elimina cliente", error); toast("Errore eliminazione."); return; }
+    await loadCustomers();
+    toast("Cliente eliminato.");
+  };
+
+  const btnSalva = mkBtn("Salva", "btn ok sm", salva);
+  q(".cli-formacts").append(btnSalva, mkBtn("Annulla", "btn ghost sm", chiudiEdit));
+  q(".cli-acts").append(mkBtn("✏️ Modifica", "btn ghost sm", apriEdit),
+    mkBtn("Elimina", "btn danger sm", elimina));
+
+  // Invio salva, Esc annulla: chi corregge un numero non deve staccare le mani dai tasti
+  [nameIn, phoneIn, mailIn, notesIn].forEach((el) => {
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); salva(); }
+      else if (e.key === "Escape") { e.preventDefault(); chiudiEdit(); }
+    });
+  });
+
+  // scheda ordini: in fondo alla card. Si disegna alla prima apertura — con l'anagrafica
+  // intera a schermo, disegnarle tutte sarebbe lavoro buttato.
   if (apribile) {
     const panel = document.createElement("div");
     panel.className = "cli-orders hidden";
     frow.appendChild(panel);
-    const btn = el.querySelector(".cli-toggle");
+    const btn = q(".cli-toggle");
     btn.onclick = () => {
       const aperto = !panel.classList.toggle("hidden");
       if (aperto && !panel.dataset.pronto) {
@@ -273,38 +360,6 @@ function buildCustomerRow(c) {
       btn.classList.toggle("open", aperto);
     };
   }
-
-  const name = el.querySelector(".cli-name");
-  name.onchange = () => {
-    const v = name.value.trim();
-    if (!v) { name.value = c.name; toast("Il nome non può restare vuoto."); return; }
-    c.name = v;
-    saveCustomer(c.id, { name: v });
-  };
-
-  const phone = el.querySelector(".cli-phone");
-  phone.onchange = async () => {
-    const v = phone.value.trim();
-    const err = cliPhoneError(v);
-    if (err) { phone.value = c.phone; toast(err); return; }
-    const d = cliNormPhone(v);
-    if (CUSTOMERS_ALL.some((x) => x.id !== c.id && (x.phone_norm || cliNormPhone(x.phone)) === d)) {
-      phone.value = c.phone; toast("Questo numero è già di un altro cliente."); return;
-    }
-    await saveCustomer(c.id, { phone: v });
-    await loadCustomers();   // phone_norm è generata a database: si rilegge, non si indovina
-  };
-
-  email.onchange = () => {
-    const v = email.value.trim() || null;
-    c.email = v;
-    saveCustomer(c.id, { email: v });
-  };
-  notes.onchange = () => {
-    const v = notes.value.trim() || null;
-    c.notes = v;
-    saveCustomer(c.id, { notes: v });
-  };
 
   return frow;
 }
