@@ -176,10 +176,14 @@ function cliOrdersHtml(c) {
   const totGelato = somma(gelato, "total");
   const totTorte = somma(torte, "price");
 
-  const rGelato = gelato.map((o) => cliOrderLine(
-    cliDay(o.delivery_date || o.created_at),
-    [o.fulfillment === "pickup" ? "ritiro" : "consegna", o.slot_label].filter(Boolean).join(" · "),
-    o.total));
+  const rGelato = gelato.map((o) => {
+    const tipo = o.fulfillment === "pickup" ? "ritiro" : "consegna";
+    const fascia = o.slot_label || "";
+    // le fasce dei ritiri sono gia' scritte "Ritiro 13:00": senza questo controllo
+    // la riga diventa "ritiro · Ritiro 13:00"
+    const cosa = fascia.toLowerCase().startsWith(tipo) ? fascia : [tipo, fascia].filter(Boolean).join(" · ");
+    return cliOrderLine(cliDay(o.delivery_date || o.created_at), cosa, o.total);
+  });
   // il peso c'e' dagli ordini a kg in poi; prima al suo posto c'era il formato
   const rTorte = torte.map((o) => cliOrderLine(
     cliDay(o.delivered_at || o.pickup_at),
