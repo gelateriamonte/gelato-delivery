@@ -59,6 +59,15 @@ function cakeIsToday(iso) {
   const d = new Date(iso), n = new Date();
   return !isNaN(d) && d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
 }
+// Valore per <input type="datetime-local">: ora LOCALE senza fuso, cioe' quella che
+// l'operatore ha digitato. toISOString() darebbe UTC e sposterebbe il ritiro di due ore.
+function cakeLocalInput(iso) {
+  const d = new Date(iso);
+  if (!iso || isNaN(d)) return "";
+  const p = (n) => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) +
+    "T" + p(d.getHours()) + ":" + p(d.getMinutes());
+}
 function cakeDateTime(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -76,10 +85,13 @@ function setCakeView(v) {
 }
 
 function renderCakeStats() {
-  const el = $("torte-stats");
-  if (!el) return;
   const attesa = CAKE_ORDERS.filter((o) => o.status === "in attesa").length;
-  el.textContent = CAKES_ALL.length + " in catalogo · " + attesa + " da consegnare";
+  const el = $("torte-stats");
+  if (el) el.textContent = CAKES_ALL.length + " in catalogo · " + attesa + " da consegnare";
+  // stesso bollino dei tab Ordini e Take away: si contano TUTTE le torte ancora da
+  // consegnare, comprese quelle col ritiro gia' passato — sono proprio quelle da guardare.
+  const badge = $("badge-torte");
+  if (badge) { badge.textContent = attesa; badge.classList.toggle("show", attesa > 0); }
 }
 
 // ========== CATALOGO ==========
@@ -283,8 +295,12 @@ function buildCakeOrderRow(o, storico) {
   acts.className = "co-acts";
   // Su telefono i bottoni sono a piena larghezza: un tocco sbagliato su "Consegnato" e'
   // facile, e senza ritorno l'unica azione residua sarebbe cancellare la torta da preparare.
-  if (!storico) acts.append(mkBtn("Consegnato", "btn ok sm", () => markCakeDelivered(o)));
-  else acts.append(mkBtn("Rimetti in attesa", "btn ghost sm", () => restoreCakeOrder(o)));
+  if (!storico) {
+    acts.append(mkBtn("Consegnato", "btn ok sm", () => markCakeDelivered(o)));
+    // si modifica solo cio' che non e' ancora uscito dal laboratorio: sullo storico
+    // cambiare i dati vorrebbe dire riscrivere una vendita gia' fatta
+    acts.append(mkBtn("✏️ Modifica", "btn ghost sm", () => openCakeOrderModal(o)));
+  } else acts.append(mkBtn("Rimetti in attesa", "btn ghost sm", () => restoreCakeOrder(o)));
   acts.append(mkBtn("🖨️ Stampa", "btn ghost sm", () => printCakeOrder(o)));
   acts.append(mkBtn(storico ? "Elimina" : "Annulla", "btn danger sm", () => deleteCakeOrder(o)));
   row.appendChild(acts);
@@ -384,6 +400,7 @@ let coPriceTouched = false;    // il totale si calcola da solo, ma non sovrascri
 let coAutoName = "";           // ultimo nome scritto da noi: se e' ancora quello, si puo' rimpiazzare
 let coAutoEmail = "";
 let coCustomersReady = false;  // anagrafica in memoria: finche' e' falso non si dice "Nuovo cliente"
+let coEditId = null;           // id dell'ordine in modifica, null se e' un ordine nuovo
 
 const CO_FIELDS = ["co-phone", "co-name", "co-email", "co-item", "co-weight", "co-extras",
   "co-extras-price", "co-price", "co-pickup", "co-inscription", "co-notes"];
@@ -399,23 +416,58 @@ function coMarkMissing(el) {
 // La modale si apre anche dalla tab Torte, dove la tab Clienti puo' non essere mai stata
 // aperta: senza attendere l'anagrafica, il primo numero digitato risulterebbe sempre
 // "Nuovo cliente" e l'operatore riscriverebbe a mano un cliente che c'e' gia'.
-async function openCakeOrderModal() {
+// `o` presente = si modifica quell'ordine; assente = se ne prende uno nuovo.
+async function openCakeOrderModal(o) {
   const modal = $("cake-modal");
   if (!modal) return;
+  coEditId = o ? o.id : null;
   coPriceTouched = false; coAutoName = ""; coAutoEmail = ""; coCustomersReady = false;
   coClearErrors();
   CO_FIELDS.forEach((id) => { const el = $(id); if (el && el.tagName !== "SELECT") el.value = ""; });
   const found = $("co-found"); if (found) found.textContent = "";
   const rate = $("co-rate"); if (rate) rate.textContent = "";    // il prezzo al kg del giro precedente
-  const save = $("co-save"); if (save) save.disabled = false;    // un salvataggio fallito prima non lascia il bottone spento
-  coFillItems();
+  const save = $("co-save");
+  if (save) { save.disabled = false; save.textContent = o ? "Salva modifiche" : "Salva ordine"; }
+  const title = $("co-title");
+  if (title) title.textContent = o ? "Modifica ordine torta" : "Nuovo ordine torta";
+  coFillItems(o ? o.cake_item_id : null);
   if (typeof customersReady === "function") await customersReady();
   // customersReady() si risolve anche se loadCustomers e' fallito (non rigetta, non alza
   // CUSTOMERS_LOADED): senza questo controllo il riconoscimento cliente resterebbe cieco
   // dicendo pero' "Nuovo cliente", il caso peggiore.
   coCustomersReady = typeof CUSTOMERS_LOADED !== "undefined" && CUSTOMERS_LOADED;
+  if (o) coFillFromOrder(o);
   modal.classList.remove("hidden");
-  const phone = $("co-phone"); if (phone) phone.focus();
+  // in modifica il telefono e' gia' quello giusto: si parte dal primo campo che di
+  // solito si viene a cambiare
+  const first = o ? $("co-weight") : $("co-phone");
+  if (first) first.focus();
+}
+
+// Riporta nella modale un ordine gia' preso. I campi dell'ORDINE vincono su quelli
+// dell'anagrafica: sono la fotografia del momento in cui e' stato preso.
+function coFillFromOrder(o) {
+  const set = (id, v) => { const el = $(id); if (el) el.value = v == null ? "" : v; };
+  set("co-phone", o.customer_phone);
+  coLookupCustomer();                       // "Gia' cliente — …" ed email dall'anagrafica
+  set("co-name", o.customer_name);
+  coAutoName = "";                          // il nome ora e' dell'ordine: non e' piu' nostro da sovrascrivere
+  const sel = $("co-item");
+  if (sel) sel.value = o.cake_item_id || "";
+  // articolo cancellato dal catalogo: la tendina resta vuota e va riscelto. Meglio dirlo
+  // subito che lasciare scoprire il campo rosso al salvataggio.
+  if (sel && !sel.value) toast("L'articolo di questo ordine non è più in catalogo: scegline uno.");
+  set("co-weight", cakeFmtPrice(o.weight_kg));
+  set("co-extras", o.extras);
+  set("co-extras-price", cakeFmtPrice(o.extras_price));
+  set("co-price", cakeFmtPrice(o.price));
+  set("co-pickup", cakeLocalInput(o.pickup_at));
+  set("co-inscription", o.inscription);
+  set("co-notes", o.notes);
+  coFillRate();
+  // il totale e' quello concordato col cliente: non si tocca finche' non si tocca un
+  // addendo (allora i listener rimettono coPriceTouched a false e si ricalcola)
+  coPriceTouched = true;
 }
 function closeCakeOrderModal() {
   const modal = $("cake-modal");
@@ -423,10 +475,13 @@ function closeCakeOrderModal() {
 }
 
 // Solo gli articoli disponibili: un ordine impossibile non deve essere digitabile.
-function coFillItems() {
+// `keepId` (modifica) resta in elenco anche se nel frattempo e' stato messo non
+// disponibile: l'ordine e' gia' stato preso, togliergli la torta di sotto costringerebbe
+// a riscriverlo per cambiare l'orario di ritiro.
+function coFillItems(keepId) {
   const sel = $("co-item");
   if (!sel) return;
-  const items = CAKES_ALL.filter((it) => it.available);
+  const items = CAKES_ALL.filter((it) => it.available || it.id === keepId);
   sel.innerHTML = '<option value="">— scegli la torta —</option>' +
     items.map((it) => `<option value="${esc(it.id)}">${esc(it.name)}</option>`).join("");
 }
@@ -564,7 +619,9 @@ async function coUpdateExistingCustomer(found, d) {
   return true;
 }
 
-async function saveCakeOrder(d) {
+// `id` presente = si riscrive quell'ordine invece di crearne uno nuovo. Il cliente si
+// risolve comunque: in modifica il telefono puo' essere stato corretto.
+async function saveCakeOrder(d, id) {
   // 1) cliente: si CERCA per phone_norm, non si fa un upsert. Un upsert con
   //    onConflict:"phone_norm" e' un ON CONFLICT DO UPDATE su tutte le colonne del
   //    payload: chi ordina dal numero di casa di famiglia riscriverebbe in silenzio il
@@ -590,7 +647,7 @@ async function saveCakeOrder(d) {
   }
 
   // 2) ordine, con i campi congelati: lo storico deve reggere a rinomine e cancellazioni
-  const { error: e2 } = await withAuthRetry(() => sb.from("cake_orders").insert({
+  const riga = {
     customer_id: customerId,
     customer_name: d.customer_name,
     customer_phone: d.customer_phone,
@@ -604,9 +661,18 @@ async function saveCakeOrder(d) {
     inscription: d.inscription,
     extras: d.extras,
     notes: d.notes,
-  }));
-  if (e2) { console.error("saveCakeOrder ordine", e2); toast("Errore salvataggio ordine."); return false; }
-  toast("Ordine creato.");
+  };
+  // In modifica si riscrivono solo questi campi: status, delivered_at e created_at non
+  // sono nel payload e restano quelli di prima.
+  const { error: e2 } = await withAuthRetry(() => (id
+    ? sb.from("cake_orders").update(riga).eq("id", id)
+    : sb.from("cake_orders").insert(riga)));
+  if (e2) {
+    console.error("saveCakeOrder ordine", e2);
+    toast(id ? "Errore salvataggio modifiche." : "Errore salvataggio ordine.");
+    return false;
+  }
+  toast(id ? "Ordine aggiornato." : "Ordine creato.");
   return true;
 }
 
@@ -641,7 +707,7 @@ function wireCakeModal() {
       // finally: se la promise rigetta, senza questo il bottone resta spento per sempre
       save.disabled = true;
       let ok = false;
-      try { ok = await saveCakeOrder(d); } finally { save.disabled = false; }
+      try { ok = await saveCakeOrder(d, coEditId); } finally { save.disabled = false; }
       if (!ok) return;
       closeCakeOrderModal();
       if (typeof loadCustomers === "function") loadCustomers();   // il cliente nuovo compare in anagrafica
@@ -663,8 +729,10 @@ function wireCakeModal() {
   const bar = $("torte-views");
   if (bar) bar.querySelectorAll("[data-view]").forEach((b) => { b.onclick = () => setCakeView(b.dataset.view); });
 
+  // arrow e non `openCakeOrderModal` diretto: il gestore riceve l'evento come primo
+  // argomento, e la modale lo leggerebbe come "ordine da modificare"
   const nuovo = $("cake-new-order");
-  if (nuovo) nuovo.onclick = openCakeOrderModal;
+  if (nuovo) nuovo.onclick = () => openCakeOrderModal();
 
   const add = $("nc-add"), addName = $("nc-name");
   if (add && addName) {
@@ -690,6 +758,13 @@ function wireCakeModal() {
   // cosi' i due gestori convivono senza toccare quel file.
   const tab = document.querySelector('.tab[data-tab="torte"]');
   if (tab) tab.addEventListener("click", () => { loadCakeItems(); loadCakeOrders(); });
+
+  // Il bollino sul tab deve essere giusto PRIMA che qualcuno apra Torte, altrimenti
+  // segnala solo quello che si e' gia' andati a guardare. Gli ordini si caricano quindi
+  // all'accesso: si passa dalla sessione e non da initApp() di js/admin.js, che questo
+  // file non tocca. Sessione gia' aperta → getSession; login appena fatto → SIGNED_IN.
+  sb.auth.getSession().then(({ data }) => { if (data && data.session) loadCakeOrders(); });
+  sb.auth.onAuthStateChange((e, s) => { if (e === "SIGNED_IN" && s) loadCakeOrders(); });
 
   setCakeView("catalogo");
 })();
