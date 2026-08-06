@@ -131,15 +131,16 @@ function deliveryRings() {
   if (Array.isArray(a) && a.length >= 3) return [a];
   return window.SAN_TEODORO_POLY || [];
 }
-// point-in-polygon (ray casting) sulla zona di consegna
-function inDeliveryZone(lat, lng) {
+// point-in-polygon (ray casting)
+function pointInRings(lat, lng, rings) {
   let c = false;
-  for (const r of deliveryRings()) for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+  for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
     const yi = r[i][0], xi = r[i][1], yj = r[j][0], xj = r[j][1];
     if (((xi > lng) !== (xj > lng)) && (lat < (yj - yi) * (lng - xi) / (xj - xi) + yi)) c = !c;
   }
   return c;
 }
+function inDeliveryZone(lat, lng) { return pointInRings(lat, lng, deliveryRings()); }
 // contorno della zona disegnato sulla mappa cliente
 let zoneLayer = null;
 function drawDeliveryZone() {
@@ -223,37 +224,56 @@ function checkZone() {
 // Una scelta manuale (tap/drag/GPS/suggerimento) fatta mentre la ricerca è in volo non va
 // sovrascritta dalla risposta del geocoder in ritardo: setDelivery bumpa _geoSeq e la risposta
 // stale viene scartata (stesso pattern di _addrSeq per l'autocomplete).
-let _geoSeq = 0;
+let _geoSeq = 0, _geoBusy = false, _geoNoKey = false;
 async function geocodeAddress() {
+  if (_geoBusy) return;   // una ricerca alla volta: l'Enter col key-repeat non deve accodare chiamate
   const q = $("address").value.trim();
   if (!q) { toast(t("order.toast.enterAddressThenFind")); return; }
   const query = q + (/teodoro/i.test(q) ? "" : ", San Teodoro") + ", Sardegna, Italia";
   const vb = "9.5776,40.8649,9.7287,40.6967";
   const seq = ++_geoSeq;
+  _geoBusy = true;
   const btn = $("addr-find"); if (btn) btn.disabled = true;
   try {
-    let hit = null, netErr = false;
-    try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=it&viewbox=${vb}&q=${encodeURIComponent(query)}`);
-      const d = await r.json();
-      if (d.length) hit = { lat: +d[0].lat, lng: +d[0].lon };
-    } catch (e) { console.error(e); netErr = true; }
-    if (!hit) hit = await googleGeocodeFallback(query);
+    // Google prima scelta: copertura civici migliore (OSM ha buchi in zona, es. Via Capo
+    // Spartivento, 2026-08-06). Il suo 404 è un negativo autoritativo: NIENTE ripiego su
+    // Nominatim, che con una via inesistente può degradare al centroide del paese — il pin
+    // silenziosamente sbagliato che il filtro server-side esiste per impedire. Nominatim
+    // copre solo l'indisponibilità di Google (key non configurata, quota, rete).
+    let hit = null, notFound = false, gDown = false, netErr = false;
+    if (!_geoNoKey) {
+      const g = await googleGeocode(query);
+      hit = g.hit || null; notFound = !!g.notFound; gDown = !!g.down;
+    }
+    if (!hit && !notFound) {
+      try {
+        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=it&viewbox=${vb}&q=${encodeURIComponent(query)}`);
+        const d = await r.json();
+        if (d.length) hit = { lat: +d[0].lat, lng: +d[0].lon };
+      } catch (e) { console.error(e); netErr = true; }
+    }
     if (seq !== _geoSeq) return;   // superata da scelta manuale o da un "Trova" più recente
-    if (!hit) { toast(t(netErr ? "order.toast.mapSearchUnavailable" : "order.toast.addressNotFound")); return; }
+    if (!hit) {
+      // Google giù + Nominatim muto: non si può affermare "non trovato" — messaggio onesto
+      toast(t(netErr || gDown ? "order.toast.mapSearchUnavailable" : "order.toast.addressNotFound"));
+      return;
+    }
     try { setDelivery(hit.lat, hit.lng, true, false); }
     catch (e) { console.error(e); toast(t("order.toast.mapSearchUnavailable")); }
-  } finally { if (btn) btn.disabled = false; }
+  } finally { _geoBusy = false; if (btn) btn.disabled = false; }
 }
-// Fallback Google via function server-side (key mai nel client): copre vie/civici assenti da OSM,
-// es. "Via Capo Spartivento" (2026-08-06). Chiamata solo quando Nominatim non trova o fallisce.
-async function googleGeocodeFallback(query) {
+// Geocoding via function server-side (key mai nel client). Esiti distinti perché il chiamante
+// decide diversamente: {hit} trovato · {notFound} 404 autoritativo · {down} 502/rete · {} 503
+// key non configurata (memoizzato in _geoNoKey: da lì in poi si va diretti su Nominatim).
+async function googleGeocode(query) {
   try {
     const r = await fetch(`/.netlify/functions/geocode?q=${encodeURIComponent(query)}`);
-    if (!r.ok) return null;
+    if (r.status === 404) return { notFound: true };
+    if (r.status === 503) { _geoNoKey = true; return {}; }
+    if (!r.ok) return { down: true };
     const g = await r.json();
-    return (g && typeof g.lat === "number" && typeof g.lng === "number") ? g : null;
-  } catch { return null; }
+    return (g && typeof g.lat === "number" && typeof g.lng === "number") ? { hit: g } : { down: true };
+  } catch { return { down: true }; }
 }
 async function reverseFill(lat, lng) {
   try {
@@ -275,10 +295,17 @@ function onAddrInput() {
 async function fetchAddrSuggest(q) {
   const seq = ++_addrSeq;
   try {
-    const u = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${GELATERIA.lat}&lon=${GELATERIA.lng}&limit=5`;
+    // bbox comune di San Teodoro: si opera solo lì, suggerire altri comuni confonde e basta
+    const u = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${GELATERIA.lat}&lon=${GELATERIA.lng}&limit=5&bbox=9.5776,40.6967,9.7287,40.8649`;
     const d = await (await fetch(u)).json();
     if (seq !== _addrSeq) return;   // risposta superata da una più recente
-    renderAddrSuggest(d.features || []);
+    // il bbox è un rettangolo: taglio esatto sul confine comunale (fail-open se il poly manca)
+    let feats = d.features || [];
+    if (window.SAN_TEODORO_POLY) feats = feats.filter((f) => {
+      const c = f.geometry && f.geometry.coordinates;
+      return c && pointInRings(c[1], c[0], window.SAN_TEODORO_POLY);
+    });
+    renderAddrSuggest(feats);
   } catch (e) { /* suggerimenti opzionali: restano "Trova" + pin */ }
 }
 function addrLabel(p) {

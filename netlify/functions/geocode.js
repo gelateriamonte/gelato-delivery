@@ -1,9 +1,9 @@
-// Fallback geocoding via Google: OSM/Nominatim ha buchi sui civici della zona San Teodoro
-// (es. "Via Capo Spartivento" assente del tutto, verificato 2026-08-06). Il client prova prima
-// Nominatim (gratis, senza key) e chiama questa function solo a vuoto → il consumo Google resta
-// nell'ordine di decine di chiamate/mese, dentro il free tier (10k/mese).
+// Geocoding via Google, prima scelta del client: OSM/Nominatim ha buchi sui civici della zona
+// San Teodoro (es. "Via Capo Spartivento" assente del tutto, verificato 2026-08-06). Volumi
+// gelateria = poche migliaia di ricerche/mese al massimo, dentro il free tier Google (10k/mese).
 // La key resta server-side (env GOOGLE_GEOCODING_API_KEY): mai esporla nel browser.
-// Senza key configurata → 503, il client ripiega sul toast "trascina il pin".
+// Su 503 (key non configurata), 404, 502 o rete il client ripiega su Nominatim, poi sul toast
+// "trascina il pin": senza key il comportamento resta quello storico.
 
 exports.handler = async (event) => {
   const q = ((event.queryStringParameters && event.queryStringParameters.q) || "").trim();
