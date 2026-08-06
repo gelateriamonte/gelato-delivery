@@ -152,7 +152,7 @@ function drawDeliveryZone() {
 // inquadra l'intera zona di consegna (fallback bbox comune)
 function fitZone() {
   if (!map) return;
-  map.fitBounds(zoneLayer ? zoneLayer.getBounds() : ST_BBOX, { padding: [20, 20] });
+  map.fitBounds(zoneLayer ? zoneLayer.getBounds() : ST_BBOX, { padding: [10, 10] });
 }
 function pinIcon(color) {
   return L.divIcon({ className: "", iconSize: [28, 38], iconAnchor: [14, 37], popupAnchor: [0, -32],
@@ -162,7 +162,9 @@ async function initMap() {
   if (!$("map")) return;
   try { await ensureLeaflet(); } catch (e) { console.error("Leaflet load:", e); return; }
   if (typeof L === "undefined") return;
-  map = L.map("map", { center: [GELATERIA.lat, GELATERIA.lng], zoom: 12, scrollWheelZoom: false });
+  // zoomSnap frazionario: senza, fitBounds si ferma allo zoom INTERO che contiene la zona
+  // e l'inquadratura d'apertura resta larga — con 0.25 il fit è quasi il massimo possibile
+  map = L.map("map", { center: [GELATERIA.lat, GELATERIA.lng], zoom: 12, scrollWheelZoom: false, zoomSnap: 0.25 });
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
   delIcon = pinIcon("#a8552f");   // terracotta = punto consegna
   L.marker([GELATERIA.lat, GELATERIA.lng], { icon: pinIcon("#2b2620") }).addTo(map)
