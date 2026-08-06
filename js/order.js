@@ -200,6 +200,20 @@ function locateMe() {
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
 }
+// bottone primario "Usa la mia posizione": stesso flusso del crocino sulla mappa, ma con
+// stato busy inline sul bottone — è lui il punto di attenzione, il solo toast non basta
+function geoLocate() {
+  const b = $("geo-locate"), sp = b && b.querySelector("span");
+  if (!b || b.disabled) return;
+  if (!navigator.geolocation) { toast(t("order.toast.geolocationUnavailable")); return; }
+  b.disabled = true; if (sp) sp.textContent = t("order.toast.locating");
+  const done = () => { b.disabled = false; if (sp) sp.textContent = t("order.form.geoBtn"); };
+  navigator.geolocation.getCurrentPosition(
+    (pos) => { done(); setDelivery(pos.coords.latitude, pos.coords.longitude, true, true); },
+    (err) => { done(); toast(err && err.code === 1 ? t("order.toast.locationDenied") : t("order.toast.locationUnavailable")); },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
 function setDelivery(lat, lng, recenter, fillAddr) {
   _geoSeq++;   // ogni posizionamento (tap/drag/GPS/suggerimento) invalida le ricerche in volo
   DELIV_LAT = lat; DELIV_LNG = lng;
@@ -892,6 +906,7 @@ $("coupon").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.prev
 $("coupon").addEventListener("input", () => { if (!$("coupon").value.trim()) { COUPON = null; updateTotal(); } });
 ["name", "phone", "email"].forEach((id) => $(id).addEventListener("input", syncCouponGate));
 $("addr-find").onclick = () => { closeAddrSuggest(); geocodeAddress(); };
+if ($("geo-locate")) $("geo-locate").onclick = geoLocate;
 function toggleAddrClear() { $("addr-clear").hidden = !$("address").value; }
 $("addr-clear").onclick = () => { $("address").value = ""; closeAddrSuggest(); toggleAddrClear(); $("address").focus(); };
 $("address").addEventListener("input", toggleAddrClear);
