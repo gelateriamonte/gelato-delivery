@@ -305,6 +305,16 @@ async function fetchAddrSuggest(q) {
       const c = f.geometry && f.geometry.coordinates;
       return c && pointInRings(c[1], c[0], window.SAN_TEODORO_POLY);
     });
+    // OSM non ha tutti i civici della zona: se Photon tace, un colpo alla stessa function
+    // Google della ricerca — altrimenti l'autocomplete smentisce il "Trova" (2026-08-06).
+    // Aggancia da ~6 char utili in poi; il risultato passa dallo stesso filtro comunale.
+    if (!feats.length && q.length >= 6 && !_geoNoKey) {
+      const g = await googleGeocode(q + (/teodoro/i.test(q) ? "" : ", San Teodoro") + ", Sardegna, Italia");
+      if (seq !== _addrSeq) return;
+      if (g.hit && (!window.SAN_TEODORO_POLY || pointInRings(g.hit.lat, g.hit.lng, window.SAN_TEODORO_POLY))) {
+        feats = [{ geometry: { coordinates: [g.hit.lng, g.hit.lat] }, properties: { name: (g.hit.formatted || q).replace(/,\s*Italia$/, "") } }];
+      }
+    }
     renderAddrSuggest(feats);
   } catch (e) { /* suggerimenti opzionali: restano "Trova" + pin */ }
 }
