@@ -407,6 +407,10 @@ async function loadData() {
   DATA.slots = (DATA.slots || []).slice().sort((a, b) => slotMin(a.label) - slotMin(b.label));   // fasce sempre in ordine orario
   DAYS = next7(); SELECTED_DAY = ymd(DAYS[0]);   // applica max_advance_days dalle impostazioni
   drawDeliveryZone();
+  // la zona vera arriva col DB dopo il primo fit (fatto sul confine comunale provvisorio,
+  // più largo): ri-fit, così l'apertura mostra la stessa vista del pulsante reset.
+  // Non toccare la vista se l'utente ha già un pin (geocode da campo prefillato).
+  if (DELIV_LAT == null) fitZone();
   renderFormats();
   renderDayPick();
   await loadDaySlots();
