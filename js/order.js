@@ -200,6 +200,7 @@ function locateMe() {
   );
 }
 function setDelivery(lat, lng, recenter, fillAddr) {
+  _geoSeq++;   // ogni posizionamento (tap/drag/GPS/suggerimento) invalida le ricerche in volo
   DELIV_LAT = lat; DELIV_LNG = lng;
   if (!delivMarker) {
     delivMarker = L.marker([lat, lng], { icon: delIcon, draggable: true }).addTo(map);
@@ -219,17 +220,40 @@ function checkZone() {
   }
   updateTotal();
 }
+// Una scelta manuale (tap/drag/GPS/suggerimento) fatta mentre la ricerca è in volo non va
+// sovrascritta dalla risposta del geocoder in ritardo: setDelivery bumpa _geoSeq e la risposta
+// stale viene scartata (stesso pattern di _addrSeq per l'autocomplete).
+let _geoSeq = 0;
 async function geocodeAddress() {
   const q = $("address").value.trim();
   if (!q) { toast(t("order.toast.enterAddressThenFind")); return; }
   const query = q + (/teodoro/i.test(q) ? "" : ", San Teodoro") + ", Sardegna, Italia";
   const vb = "9.5776,40.8649,9.7287,40.6967";
+  const seq = ++_geoSeq;
+  const btn = $("addr-find"); if (btn) btn.disabled = true;
   try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=it&viewbox=${vb}&q=${encodeURIComponent(query)}`);
-    const d = await r.json();
-    if (!d.length) { toast(t("order.toast.addressNotFound")); return; }
-    setDelivery(+d[0].lat, +d[0].lon, true, false);
-  } catch (e) { console.error(e); toast(t("order.toast.mapSearchUnavailable")); }
+    let hit = null, netErr = false;
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=it&viewbox=${vb}&q=${encodeURIComponent(query)}`);
+      const d = await r.json();
+      if (d.length) hit = { lat: +d[0].lat, lng: +d[0].lon };
+    } catch (e) { console.error(e); netErr = true; }
+    if (!hit) hit = await googleGeocodeFallback(query);
+    if (seq !== _geoSeq) return;   // superata da scelta manuale o da un "Trova" più recente
+    if (!hit) { toast(t(netErr ? "order.toast.mapSearchUnavailable" : "order.toast.addressNotFound")); return; }
+    try { setDelivery(hit.lat, hit.lng, true, false); }
+    catch (e) { console.error(e); toast(t("order.toast.mapSearchUnavailable")); }
+  } finally { if (btn) btn.disabled = false; }
+}
+// Fallback Google via function server-side (key mai nel client): copre vie/civici assenti da OSM,
+// es. "Via Capo Spartivento" (2026-08-06). Chiamata solo quando Nominatim non trova o fallisce.
+async function googleGeocodeFallback(query) {
+  try {
+    const r = await fetch(`/.netlify/functions/geocode?q=${encodeURIComponent(query)}`);
+    if (!r.ok) return null;
+    const g = await r.json();
+    return (g && typeof g.lat === "number" && typeof g.lng === "number") ? g : null;
+  } catch { return null; }
 }
 async function reverseFill(lat, lng) {
   try {
