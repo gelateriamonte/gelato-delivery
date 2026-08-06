@@ -283,7 +283,7 @@ async function reverseFill(lat, lng) {
   } catch (e) { /* reverse opzionale */ }
 }
 
-// ---------- autocomplete indirizzo (Photon/komoot, gratis, no key) ----------
+// ---------- autocomplete indirizzo (Google Places via function; ripiego Photon/OSM) ----------
 let _addrSeq = 0, _addrTimer = null;
 function closeAddrSuggest() { const b = $("addr-suggest"); if (b) { b.innerHTML = ""; b.style.display = "none"; } }
 function onAddrInput() {
@@ -295,27 +295,33 @@ function onAddrInput() {
 async function fetchAddrSuggest(q) {
   const seq = ++_addrSeq;
   try {
-    // bbox comune di San Teodoro: si opera solo lì, suggerire altri comuni confonde e basta
-    const u = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${GELATERIA.lat}&lon=${GELATERIA.lng}&limit=5&bbox=9.5776,40.6967,9.7287,40.8649`;
-    const d = await (await fetch(u)).json();
-    if (seq !== _addrSeq) return;   // risposta superata da una più recente
-    // il bbox è un rettangolo: taglio esatto sul confine comunale (fail-open se il poly manca)
-    let feats = d.features || [];
-    if (window.SAN_TEODORO_POLY) feats = feats.filter((f) => {
-      const c = f.geometry && f.geometry.coordinates;
-      return c && pointInRings(c[1], c[0], window.SAN_TEODORO_POLY);
-    });
-    // OSM non ha tutti i civici della zona: se Photon tace, un colpo alla stessa function
-    // Google della ricerca — altrimenti l'autocomplete smentisce il "Trova" (2026-08-06).
-    // Aggancia da ~6 char utili in poi; il risultato passa dallo stesso filtro comunale.
-    if (!feats.length && q.length >= 6 && !_geoNoKey) {
-      const g = await googleGeocode(q + (/teodoro/i.test(q) ? "" : ", San Teodoro") + ", Sardegna, Italia");
-      if (seq !== _addrSeq) return;
-      if (g.hit && (!window.SAN_TEODORO_POLY || pointInRings(g.hit.lat, g.hit.lng, window.SAN_TEODORO_POLY))) {
-        feats = [{ geometry: { coordinates: [g.hit.lng, g.hit.lat] }, properties: { name: (g.hit.formatted || q).replace(/,\s*Italia$/, "") } }];
-      }
+    // Google Places prima scelta (decisione Vla 2026-08-06: stessa fonte del "Trova", OSM ha
+    // buchi sui civici). Photon/OSM solo come ripiego se Places non è disponibile.
+    let items = null;
+    if (!_geoNoKey) {
+      try {
+        const r = await fetch(`/.netlify/functions/places-suggest?q=${encodeURIComponent(q)}`);
+        if (r.status === 503) _geoNoKey = true;
+        else if (r.ok) items = await r.json();
+      } catch (e) { /* si ripiega su Photon */ }
     }
-    renderAddrSuggest(feats);
+    if (items === null) {
+      // ripiego OSM: bbox comune + taglio esatto sul confine comunale (fail-open senza poly)
+      const u = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${GELATERIA.lat}&lon=${GELATERIA.lng}&limit=5&bbox=9.5776,40.6967,9.7287,40.8649`;
+      const d = await (await fetch(u)).json();
+      let feats = d.features || [];
+      if (window.SAN_TEODORO_POLY) feats = feats.filter((f) => {
+        const c = f.geometry && f.geometry.coordinates;
+        return c && pointInRings(c[1], c[0], window.SAN_TEODORO_POLY);
+      });
+      items = feats.map((f) => {
+        const p = f.properties || {}, c = f.geometry && f.geometry.coordinates;
+        const l = addrLabel(p);
+        return c && l.primary ? { primary: l.primary, secondary: l.secondary, lat: c[1], lng: c[0] } : null;
+      }).filter(Boolean);
+    }
+    if (seq !== _addrSeq) return;   // risposta superata da una più recente
+    renderAddrSuggest(items);
   } catch (e) { /* suggerimenti opzionali: restano "Trova" + pin */ }
 }
 function addrLabel(p) {
@@ -323,26 +329,32 @@ function addrLabel(p) {
   const secondary = [p.postcode, p.city || p.town || p.village || p.county, p.state].filter(Boolean).join(" ");
   return { primary, secondary };
 }
-function renderAddrSuggest(feats) {
+function renderAddrSuggest(items) {
   const box = $("addr-suggest"); if (!box) return;
   box.innerHTML = "";
-  feats.forEach((f) => {
-    const p = f.properties || {}, c = f.geometry && f.geometry.coordinates;
-    if (!c) return;
-    const { primary, secondary } = addrLabel(p);
-    if (!primary) return;
+  items.forEach((it) => {
+    if (!it || !it.primary) return;
+    const label = [it.primary, it.secondary].filter(Boolean).join(", ");
     const item = document.createElement("div");
     item.className = "addr-item"; item.setAttribute("role", "option");
-    item.innerHTML = `<span class="ai-1">${esc(primary)}</span>${secondary ? `<span class="ai-2">${esc(secondary)}</span>` : ""}`;
+    item.innerHTML = `<span class="ai-1">${esc(it.primary)}</span>${it.secondary ? `<span class="ai-2">${esc(it.secondary)}</span>` : ""}`;
     item.onmousedown = (e) => {   // mousedown: scatta prima del blur dell'input
       e.preventDefault();
-      $("address").value = [primary, secondary].filter(Boolean).join(", ");
+      $("address").value = label;
       closeAddrSuggest();
-      setDelivery(c[1], c[0], true, false);   // Photon dà [lng,lat] → piazza pin + ricentra
+      if (typeof it.lat === "number") setDelivery(it.lat, it.lng, true, false);   // Photon: coordinate già note
+      else resolveSuggestion(label);   // Places: coordinate assenti, le risolve il geocode
     };
     box.appendChild(item);
   });
   box.style.display = box.children.length ? "block" : "none";
+}
+// Places non include le coordinate nella suggestion: un colpo al geocode (stessa key, già attivo)
+async function resolveSuggestion(text) {
+  const seq = ++_geoSeq;
+  const g = await googleGeocode(text);
+  if (seq !== _geoSeq) return;   // l'utente ha già sistemato il pin a mano nel frattempo
+  if (g.hit) setDelivery(g.hit.lat, g.hit.lng, true, false);
 }
 
 // ---------- caricamento dati ----------
