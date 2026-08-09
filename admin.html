@@ -286,7 +286,11 @@
       </div>
 
       <div id="torte-storico" class="hidden">
-        <p class="muted small">Torte già consegnate, dalla più recente.</p>
+        <div class="admin-head"><h2>Da pagare</h2><span class="count" id="cake-unpaid-stats">0 in sospeso</span></div>
+        <p class="muted small">Torte consegnate con pagamento differito, dalla scadenza più vicina. Tocca il <b>nome del cliente</b> per la scheda con tutti i suoi sospesi.</p>
+        <div id="cake-unpaid-list" class="stack"></div>
+        <div class="admin-head" style="margin-top:26px"><h2>Consegnate e pagate</h2></div>
+        <p class="muted small">Dalla più recente.</p>
         <div id="cake-history-list" class="stack"></div>
       </div>
     </section>
@@ -361,6 +365,39 @@
       <div class="row" style="gap:8px">
         <button class="btn ghost sm" id="co-cancel" type="button">Annulla</button>
         <button class="btn" id="co-save" type="button">Salva ordine</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE CONSEGNA TORTA — pagato subito o differito. "Consegnato" passa da qui:
+       senza risposta sul pagamento l'ordine resta in attesa. -->
+  <div class="modal hidden" id="cake-pay-modal">
+    <div class="modal-box">
+      <div class="admin-head"><h2>Consegna e pagamento</h2></div>
+      <p class="muted small" id="cp-who" style="margin:0 0 14px"></p>
+      <div class="stack" style="gap:8px">
+        <button class="btn block" id="cp-paid" type="button">✓ Pagato alla consegna</button>
+        <button class="btn ghost block" id="cp-defer" type="button">📅 Pagamento differito</button>
+      </div>
+      <div class="field co-field hidden" id="cp-defer-row" style="margin-top:14px">
+        <label for="cp-due">Pagamento previsto entro</label>
+        <input id="cp-due" type="date">
+        <button class="btn block" id="cp-confirm" type="button" style="margin-top:10px">Conferma consegna</button>
+      </div>
+      <div class="row" style="gap:8px;margin-top:14px">
+        <button class="btn ghost sm" id="cp-cancel" type="button">Annulla</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCHEDA CLIENTE — pagamenti in sospeso, si apre dal nome nella lista "Da pagare" -->
+  <div class="modal hidden" id="cake-cust-modal">
+    <div class="modal-box">
+      <div class="admin-head"><h2 id="cu-title">Cliente</h2></div>
+      <div id="cu-body"></div>
+      <div class="row" style="gap:8px;margin-top:14px">
+        <button class="btn ghost sm" id="cu-close" type="button">Chiudi</button>
+        <button class="btn" id="cu-payall" type="button">Segna tutti pagati</button>
       </div>
     </div>
   </div>

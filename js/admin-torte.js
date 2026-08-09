@@ -1,7 +1,7 @@
 /* global $, esc, euro, toast, updateRow, delRow, withAuthRetry, mkBtn,
            enableDragSort, persistOrder, nextSortOrder, availRadios, wireAvailRadios,
            cliNormPhone, cliPhoneError, findCustomerByPhone, loadCustomers, customersReady,
-           CUSTOMERS_LOADED */
+           CUSTOMERS_LOADED, cliDay */
 
 // ========== TORTE — catalogo, ordini, storico, modale, stampa ==========
 // Si aggancia da solo ad admin.html: nessuna modifica a js/admin.js.
@@ -74,6 +74,37 @@ function cakeDateTime(iso) {
   if (isNaN(d)) return "—";
   return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + d.getFullYear() +
     " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+}
+
+// ---------- pagamenti ----------
+// Ultimo giorno del mese corrente in formato <input type="date"> (YYYY-MM-DD):
+// il default del pagamento differito. Giorno 0 del mese dopo = ultimo di questo.
+function cakeLastOfMonth(now) {
+  const n = now || new Date();
+  const d = new Date(n.getFullYear(), n.getMonth() + 1, 0);
+  const p = (x) => String(x).padStart(2, "0");
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+}
+
+// "Da pagare" non e' uno stato scritto a database: e' consegnato senza incasso.
+// (Gli ordini pre-feature sono stati marcati pagati dalla migration 2026-08-09.)
+function cakeUnpaid(o) {
+  return o.status === "consegnato" && !o.paid_at;
+}
+
+// Scadenza piu' vicina in cima; chi non ha data va in fondo (non c'e' urgenza nota).
+function cakeByDue(a, b) {
+  const ta = a.payment_due_date ? new Date(a.payment_due_date).getTime() : Infinity;
+  const tb = b.payment_due_date ? new Date(b.payment_due_date).getTime() : Infinity;
+  return ta - tb || new Date(b.delivered_at || 0) - new Date(a.delivered_at || 0);
+}
+
+// Tutti i sospesi di un numero di telefono, per la scheda cliente.
+function cakeUnpaidByPhone(phone) {
+  const k = cliNormPhone(phone);
+  if (!k) return [];
+  return CAKE_ORDERS.filter((o) => cakeUnpaid(o) && cliNormPhone(o.customer_phone) === k)
+    .sort(cakeByDue);
 }
 
 // ---------- viste (Catalogo / Ordini / Storico) ----------
@@ -239,7 +270,8 @@ async function loadCakeOrders() {
   const { data, error } = await sb.from("cake_orders")
     .select("id,customer_id,customer_name,customer_phone,cake_item_id,item_name,variant," +
             "weight_kg,price_kg,extras_price,price," +
-            "pickup_at,inscription,extras,notes,status,delivered_at,created_at")
+            "pickup_at,inscription,extras,notes,status,delivered_at,created_at," +
+            "paid_at,payment_due_date")
     .order("pickup_at", { ascending: true });
   if (error) { console.error("loadCakeOrders", error); toast("Errore caricamento ordini torte."); return; }
   CAKE_ORDERS = data || [];
@@ -275,32 +307,50 @@ function buildCakeOrderRow(o, storico) {
       : CAKE_WD[d.getDay()] + " " + String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0");
   const time = valid ? String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") : "—";
 
+  const unpaid = storico && cakeUnpaid(o);
   const row = document.createElement("div");
-  // .urgent = si ritira oggi · .done = gia' consegnato (bordo sinistro, colpo d'occhio)
-  row.className = "corow" + (storico ? " done" : (cakeIsToday(o.pickup_at) ? " urgent" : ""));
+  // .urgent = si ritira oggi · .done = consegnato e pagato · .unpaid = consegnato,
+  // incasso ancora da fare (bordo sinistro, colpo d'occhio)
+  row.className = "corow" + (storico ? (unpaid ? " unpaid" : " done") : (cakeIsToday(o.pickup_at) ? " urgent" : ""));
   row.dataset.id = o.id;
   // accanto al nome il peso; gli ordini presi prima del prezzo al kg non ce l'hanno
   // e mostrano il formato di allora
   const qta = o.weight_kg != null ? cakeFmtKg(o.weight_kg) : (o.variant || "");
+  // sul sospeso il nome e' un bottone: apre la scheda con tutti i sospesi del cliente
+  const who = esc(o.customer_name) + " · " + esc(o.customer_phone);
   row.innerHTML =
     `<div class="co-when"><span class="co-day">${esc(day)}</span><span class="co-time">${esc(time)}</span></div>` +
     `<div class="co-main">` +
       `<div class="co-what">${esc(o.item_name)} <span class="co-var">${esc(qta)}</span></div>` +
-      `<div class="co-who">${esc(o.customer_name)} · ${esc(o.customer_phone)}</div>` +
+      (unpaid
+        ? `<button type="button" class="co-who co-who-btn" title="Scheda pagamenti del cliente">${who}</button>`
+        : `<div class="co-who">${who}</div>`) +
+      (unpaid
+        ? `<div class="co-due">${o.payment_due_date ? "Da pagare entro " + esc(cliDay(o.payment_due_date)) : "Da pagare"}</div>`
+        : "") +
       cakeOrderNote(o, storico) +
     `</div>` +
     `<div class="co-amt">${esc(euro(o.price))}</div>`;
+
+  if (unpaid) {
+    const btn = row.querySelector(".co-who-btn");
+    if (btn) btn.onclick = () => openCakeCustModal(o.customer_phone);
+  }
 
   const acts = document.createElement("div");
   acts.className = "co-acts";
   // Su telefono i bottoni sono a piena larghezza: un tocco sbagliato su "Consegnato" e'
   // facile, e senza ritorno l'unica azione residua sarebbe cancellare la torta da preparare.
   if (!storico) {
-    acts.append(mkBtn("Consegnato", "btn ok sm", () => markCakeDelivered(o)));
+    acts.append(mkBtn("Consegnato", "btn ok sm", () => openCakePayModal(o)));
     // si modifica solo cio' che non e' ancora uscito dal laboratorio: sullo storico
     // cambiare i dati vorrebbe dire riscrivere una vendita gia' fatta
     acts.append(mkBtn("✏️ Modifica", "btn ghost sm", () => openCakeOrderModal(o)));
-  } else acts.append(mkBtn("Rimetti in attesa", "btn ghost sm", () => restoreCakeOrder(o)));
+  } else {
+    if (unpaid) acts.append(mkBtn("✓ Pagato", "btn ok sm", () =>
+      cakePayAndRefresh([o.id], "Ordine incassato.")));
+    acts.append(mkBtn("Rimetti in attesa", "btn ghost sm", () => restoreCakeOrder(o)));
+  }
   acts.append(mkBtn("🖨️ Stampa", "btn ghost sm", () => printCakeOrder(o)));
   acts.append(mkBtn(storico ? "Elimina" : "Annulla", "btn danger sm", () => deleteCakeOrder(o)));
   row.appendChild(acts);
@@ -320,36 +370,79 @@ function renderCakeOrdini() {
   rows.forEach((o) => list.appendChild(buildCakeOrderRow(o, false)));
 }
 
+// Due liste: i sospesi in cima (sono soldi da andare a prendere), sotto le saldate.
 function renderCakeStorico() {
-  const list = $("cake-history-list");
-  if (!list) return;
-  list.innerHTML = "";
-  const rows = CAKE_ORDERS.filter((o) => o.status === "consegnato")
+  const done = CAKE_ORDERS.filter((o) => o.status === "consegnato");
+  const unpaid = done.filter(cakeUnpaid).sort(cakeByDue);
+  const paid = done.filter((o) => !cakeUnpaid(o))
     .sort((a, b) => new Date(b.delivered_at || b.pickup_at) - new Date(a.delivered_at || a.pickup_at));
-  if (!rows.length) {
-    list.innerHTML = '<p class="muted small" style="margin:0;padding:6px 2px">Nessuna torta consegnata.</p>';
-    return;
+
+  const vuoto = (msg) => '<p class="muted small" style="margin:0;padding:6px 2px">' + msg + "</p>";
+  const ul = $("cake-unpaid-list");
+  if (ul) {
+    ul.innerHTML = "";
+    if (!unpaid.length) ul.innerHTML = vuoto("Nessun pagamento in sospeso.");
+    else unpaid.forEach((o) => ul.appendChild(buildCakeOrderRow(o, true)));
   }
-  rows.forEach((o) => list.appendChild(buildCakeOrderRow(o, true)));
+  const stats = $("cake-unpaid-stats");
+  if (stats) {
+    const tot = unpaid.reduce((t, o) => t + Number(o.price || 0), 0);
+    stats.textContent = unpaid.length
+      ? (unpaid.length === 1 ? "1 in sospeso" : unpaid.length + " in sospeso") + " · " + euro(tot)
+      : "0 in sospeso";
+  }
+  const list = $("cake-history-list");
+  if (list) {
+    list.innerHTML = "";
+    if (!paid.length) list.innerHTML = vuoto("Nessuna torta consegnata.");
+    else paid.forEach((o) => list.appendChild(buildCakeOrderRow(o, true)));
+  }
 }
 
 // Le tre scritture sotto NON passano da updateRow/delRow: quelli inghiottono l'errore
 // (toast generico e nient'altro da leggere), e il messaggio di successo finirebbe a schermo
 // anche a scrittura fallita — con la sessione scaduta si leggeva "Ordine consegnato."
 // mentre a database non era cambiato niente. Qui si guarda l'esito, come fa printCakeOrder.
-async function markCakeDelivered(o) {
+// La consegna passa dalla modale pagamento (openCakePayModal): la scrittura vera
+// sta qui. paid=true → incassato ora; paid=false → differito con la sua scadenza.
+async function cakeDeliver(o, paid, dueDate) {
   const { error } = await withAuthRetry(() => sb.from("cake_orders")
-    .update({ status: "consegnato", delivered_at: new Date().toISOString() }).eq("id", o.id));
-  if (error) { console.error("markCakeDelivered", error); toast("Errore salvataggio."); return; }
+    .update({
+      status: "consegnato", delivered_at: new Date().toISOString(),
+      paid_at: paid ? new Date().toISOString() : null,
+      payment_due_date: paid ? null : dueDate,
+    }).eq("id", o.id));
+  if (error) { console.error("cakeDeliver", error); toast("Errore salvataggio."); return false; }
   await loadCakeOrders();
-  toast("Ordine consegnato.");
+  toast(paid ? "Consegnato e incassato." : "Consegnato — da pagare entro " + cliDay(dueDate) + ".");
+  return true;
+}
+
+// Incassa uno o piu' ordini. Ritorna true solo se ha scritto davvero.
+async function markCakeOrdersPaid(ids) {
+  const { error } = await withAuthRetry(() => sb.from("cake_orders")
+    .update({ paid_at: new Date().toISOString() }).in("id", ids));
+  if (error) { console.error("markCakeOrdersPaid", error); toast("Errore salvataggio."); return false; }
+  return true;
+}
+
+// Incasso + riallineamento delle viste che lo mostrano: storico torte e, se gia'
+// caricata, l'anagrafica clienti. Chiamata anche da admin-clienti.js (a quel punto
+// dell'esecuzione entrambi gli script sono definiti).
+async function cakePayAndRefresh(ids, msg) {
+  if (!await markCakeOrdersPaid(ids)) return false;
+  await loadCakeOrders();
+  if (typeof CUSTOMERS_LOADED !== "undefined" && CUSTOMERS_LOADED) loadCustomers();
+  toast(msg);
+  return true;
 }
 
 // Ritorno indietro dallo storico: lo stato torna quello di partenza e la torta ricompare
 // fra quelle da preparare. Il CHECK su status ammette gia' "in attesa": nessuna migration.
+// Si azzera anche il pagamento: e' figlio della consegna che si sta annullando.
 async function restoreCakeOrder(o) {
   const { error } = await withAuthRetry(() => sb.from("cake_orders")
-    .update({ status: "in attesa", delivered_at: null }).eq("id", o.id));
+    .update({ status: "in attesa", delivered_at: null, paid_at: null, payment_due_date: null }).eq("id", o.id));
   if (error) { console.error("restoreCakeOrder", error); toast("Errore salvataggio."); return; }
   await loadCakeOrders();
   toast("Ordine rimesso in attesa.");
@@ -393,6 +486,124 @@ async function printCakeOrder(o) {
   const { error } = await withAuthRetry(() => sb.from("print_jobs").insert({ kind: "cake_order", payload }));
   if (error) console.error("stampa torta print_jobs", error);
   toast(error ? "Errore stampa." : "Inviato in stampa…");
+}
+
+// ========== MODALE CONSEGNA/PAGAMENTO ==========
+// "Consegnato" non scrive piu' subito: prima si dice come paga. Annulla (o il
+// fondale, o Esc) non scrive niente e l'ordine resta in attesa.
+let cpOrder = null;    // ordine in consegna, null a modale chiusa
+
+function openCakePayModal(o) {
+  const modal = $("cake-pay-modal");
+  if (!modal) return;
+  cpOrder = o;
+  const who = $("cp-who");
+  if (who) who.textContent = o.item_name +
+    (o.weight_kg != null ? " " + cakeFmtKg(o.weight_kg) : "") +
+    " — " + o.customer_name + " · " + euro(o.price);
+  const row = $("cp-defer-row");
+  if (row) row.classList.add("hidden");            // la data compare solo scegliendo "differito"
+  const due = $("cp-due");
+  if (due) { due.value = cakeLastOfMonth(); due.classList.remove("err"); }
+  modal.classList.remove("hidden");
+}
+function closeCakePayModal() {
+  cpOrder = null;
+  const modal = $("cake-pay-modal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function wireCakePayModal() {
+  const modal = $("cake-pay-modal");
+  if (!modal) return;
+  const paid = $("cp-paid"), defer = $("cp-defer"), row = $("cp-defer-row"),
+    due = $("cp-due"), confirmBtn = $("cp-confirm"), cancel = $("cp-cancel");
+  // bottoni spenti durante la scrittura: due tocchi ravvicinati farebbero due update
+  const deliver = async (isPaid, dueDate) => {
+    const o = cpOrder;
+    if (!o) return;
+    [paid, defer, confirmBtn].forEach((b) => { if (b) b.disabled = true; });
+    let ok = false;
+    try { ok = await cakeDeliver(o, isPaid, dueDate); }
+    finally { [paid, defer, confirmBtn].forEach((b) => { if (b) b.disabled = false; }); }
+    if (ok) closeCakePayModal();
+  };
+  if (paid) paid.onclick = () => deliver(true, null);
+  if (defer) defer.onclick = () => {
+    if (row) row.classList.remove("hidden");
+    if (due) due.focus();
+  };
+  if (confirmBtn) confirmBtn.onclick = () => {
+    const v = due ? due.value : "";
+    if (!v) { if (due) { due.classList.add("err"); due.focus(); } toast("Serve la data prevista di pagamento."); return; }
+    deliver(false, v);
+  };
+  if (cancel) cancel.onclick = closeCakePayModal;
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeCakePayModal(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.classList.contains("hidden")) closeCakePayModal();
+  });
+}
+
+// ========== SCHEDA CLIENTE — SOSPESI ==========
+// Si apre dal nome del cliente nella lista "Da pagare": anagrafica + tutti i suoi
+// sospesi + chiusura in un colpo solo. Il singolo si chiude dalla lista, qui no.
+let cuIds = [];   // ordini elencati nella scheda aperta, per "Segna tutti pagati"
+
+async function openCakeCustModal(phone) {
+  const modal = $("cake-cust-modal");
+  if (!modal) return;
+  const orders = cakeUnpaidByPhone(phone);
+  if (!orders.length) { toast("Nessun pagamento in sospeso."); return; }
+  cuIds = orders.map((o) => o.id);
+  // l'anagrafica puo' mancare (cliente cancellato): si mostra quello che l'ordine ricorda
+  if (typeof customersReady === "function") await customersReady();
+  const c = typeof findCustomerByPhone === "function" ? findCustomerByPhone(phone) : null;
+  const title = $("cu-title");
+  if (title) title.textContent = (c && c.name) || orders[0].customer_name || "Cliente";
+  const body = $("cu-body");
+  if (body) {
+    const tot = orders.reduce((t, o) => t + Number(o.price || 0), 0);
+    const contatto = [(c && c.phone) || phone, c && c.email, c && c.notes].filter(Boolean);
+    const righe = orders.map((o) =>
+      `<div class="cli-ord">` +
+        `<span class="cli-ord-d">${esc(cliDay(o.delivered_at || o.pickup_at))}</span>` +
+        `<span class="cli-ord-x">${esc([o.item_name, o.weight_kg != null ? cakeFmtKg(o.weight_kg) : o.variant].filter(Boolean).join(" · "))}</span>` +
+        (o.payment_due_date ? `<span class="cli-ord-due">entro ${esc(cliDay(o.payment_due_date))}</span>` : "") +
+        `<span class="cli-ord-e">${esc(euro(o.price))}</span>` +
+      `</div>`).join("");
+    body.innerHTML =
+      `<p class="muted small" style="margin:0 0 10px">${contatto.map(esc).join(" · ")}</p>` +
+      `<div class="cli-orders">` +
+        `<div class="cli-grp"><div class="cli-grp-h"><b>Da pagare</b>` +
+          `<span>${orders.length === 1 ? "1 ordine" : orders.length + " ordini"}</span>` +
+          `<span class="cli-grp-tot">${esc(euro(tot))}</span></div>` +
+        righe +
+      `</div></div>`;
+  }
+  const payall = $("cu-payall");
+  if (payall) payall.textContent = orders.length === 1 ? "Segna pagato" : "Segna tutti pagati (" + orders.length + ")";
+  modal.classList.remove("hidden");
+}
+
+function wireCakeCustModal() {
+  const modal = $("cake-cust-modal");
+  if (!modal) return;
+  const chiudi = () => modal.classList.add("hidden");
+  const close = $("cu-close"), payall = $("cu-payall");
+  if (close) close.onclick = chiudi;
+  if (payall) payall.onclick = async () => {
+    if (!cuIds.length) return;
+    payall.disabled = true;
+    let ok = false;
+    try { ok = await cakePayAndRefresh(cuIds, cuIds.length === 1 ? "Ordine incassato." : "Ordini incassati."); }
+    finally { payall.disabled = false; }
+    if (ok) chiudi();
+  };
+  modal.addEventListener("click", (e) => { if (e.target === modal) chiudi(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.classList.contains("hidden")) chiudi();
+  });
 }
 
 // ========== MODALE NUOVO ORDINE ==========
@@ -725,6 +936,8 @@ function wireCakeModal() {
 // ========== AGGANCI ==========
 (function wireTorte() {
   wireCakeModal();
+  wireCakePayModal();
+  wireCakeCustModal();
 
   const bar = $("torte-views");
   if (bar) bar.querySelectorAll("[data-view]").forEach((b) => { b.onclick = () => setCakeView(b.dataset.view); });

@@ -999,7 +999,8 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
   border-radius:var(--r-md); box-shadow:var(--shadow-card); padding:13px 15px;
 }
 .corow.urgent{ border-left-color:var(--rosso); }      /* ritiro oggi */
-.corow.done{ border-left-color:var(--pistachio); }    /* storico */
+.corow.done{ border-left-color:var(--pistachio); }    /* storico, saldata */
+.corow.unpaid{ border-left-color:var(--rosso); }      /* consegnata, incasso da fare */
 /* il ritiro è il dato che, se sbagliato, manda a monte il lavoro: in evidenza e staccato */
 .corow .co-when{
   flex:none; min-width:96px; max-width:134px; display:flex; flex-direction:column;
@@ -1018,6 +1019,9 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
 .corow.urgent .co-day, .corow.urgent .co-time{ color:var(--rosso); }
 .corow.done .co-when{ background:var(--paper-2); border-color:var(--line-2); }
 .corow.done .co-day, .corow.done .co-time{ color:var(--muted); }
+/* il sospeso è storico anche lui: box data spento, l'urgenza sta nel bordo e nella scadenza */
+.corow.unpaid .co-when{ background:var(--paper-2); border-color:var(--line-2); }
+.corow.unpaid .co-day, .corow.unpaid .co-time{ color:var(--muted); }
 
 .corow .co-main{ flex:1 1 auto; min-width:0; }
 /* nome torta e cliente: troncati con ellissi, mai disegnati sopra il prezzo */
@@ -1026,10 +1030,18 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .corow .co-var{ font-weight:500; color:var(--muted); }
+/* sul sospeso il nome è un bottone (apre la scheda pagamenti del cliente): qui si
+   azzera solo il chrome del button, PRIMA di .co-who che così vince su font e colori */
+.corow .co-who-btn{
+  display:block; width:100%; background:none; border:0; padding:0; font:inherit; color:inherit;
+  cursor:pointer; text-align:left; text-decoration:underline dotted; text-underline-offset:3px;
+}
 .corow .co-who{
   font-size:13px; color:var(--ink-2); margin-top:3px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
+/* la scadenza del pagamento: rossa e sopra le note, è il dato per cui esiste la lista */
+.corow .co-due{ font-size:12.5px; font-weight:600; color:var(--rosso); margin-top:4px; }
 /* scritta/extra/note: qui il testo serve intero e va a capo, ma una parola
    lunghissima non deve sfondare la scheda */
 .corow .co-note{ font-size:12.5px; color:var(--muted); line-height:1.5; margin-top:5px; overflow-wrap:anywhere; }
@@ -1107,11 +1119,17 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
 .cli-ord-d{ flex:0 0 84px; color:var(--muted); font-variant-numeric:tabular-nums; }
 .cli-ord-x{ flex:1 1 auto; min-width:0; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .cli-ord-e{ flex:none; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; }
-.cli-tot{
-  display:flex; justify-content:space-between; gap:10px; margin-top:11px; padding-top:8px;
-  border-top:1px solid var(--line-2); font-size:12px; color:var(--muted);
+/* la coda "da pagare" / "entro gg/mm/aaaa" sulle righe ordine */
+.cli-ord-due{ flex:none; font-size:11px; font-weight:700; letter-spacing:.02em; color:var(--rosso); }
+.cli-ord .btn.cli-pay{ flex:none; align-self:center; }
+
+/* pillole per tipo (Gelato N · Torte N) + badge rosso dei sospesi */
+.cli-pills{ flex:none; display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; }
+.count.cli-due{
+  color:var(--rosso); background:var(--rosso-soft);
+  border-color:color-mix(in oklch,var(--rosso) 30%,transparent);
 }
-.cli-tot b{ font-family:var(--serif); font-size:17px; color:var(--ink); font-variant-numeric:tabular-nums; }
+#clienti-list .cli-toggle.cli-due:hover{ background:var(--rosso-soft); border-color:var(--rosso); }
 
 @media (max-width:560px){
   .cli-ord{ flex-wrap:wrap; gap:2px 10px; }
@@ -1121,6 +1139,11 @@ body.order .mode-opt.sel{ background:#fce3d5; border-color:#d3cdc4; color:var(--
   /* la freccia costa ~14px alla pillola, e su questa riga li paga il nome del cliente,
      che a 360px è già troncato. Aperta la scheda si vede da sola, sotto. */
   .cli-caret{ display:none; }
+  /* tre pillole non ci stanno accanto al nome: la testa va a capo e le pillole
+     scendono sotto, compatte, invece di schiacciare il nome a niente */
+  #clienti-list .cli-head{ flex-wrap:wrap; }
+  .cli-pills{ gap:5px; }
+  .cli-pills .count{ font-size:13px; padding:2px 10px; }
 }
 
 /* ============================================================

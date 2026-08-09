@@ -2,8 +2,8 @@
 // Tab "Clienti": elenco unico dei clienti (gelato + torte), ricerca per nome o
 // telefono, modifica in linea. Solo uso interno, tutto in italiano.
 // Si aggancia da solo ad admin.html: js/admin.js non va toccato.
-/* global $, esc, euro, toast, mkBtn, withAuthRetry, cakeFmtKg */
-/* exported CUSTOMERS_ALL, cliNormPhone, findCustomerByPhone, loadCustomers, renderCustomers, customersReady */
+/* global $, esc, euro, toast, mkBtn, withAuthRetry, cakeFmtKg, cakePayAndRefresh */
+/* exported CUSTOMERS_ALL, cliNormPhone, findCustomerByPhone, loadCustomers, renderCustomers, customersReady, cliDay */
 
 let CUSTOMERS_ALL = [];
 let CUSTOMERS_LOADED = false;   // il caricamento avviene alla prima apertura della tab
@@ -64,7 +64,7 @@ const CLI_DONE = "consegnato";
 // ordini (l'etichetta sulla riga, come prima) sia l'elenco dei soli conclusi che si
 // apre sotto. PostgREST non raggruppa: si raggruppa qui, sono poche righe.
 async function customerOrders() {
-  const counts = new Map();
+  const counts = new Map();          // k → { gelato, torte }: TUTTI gli ordini, per le pillole
   const details = new Map();
   const bucket = (k) => {
     if (!details.has(k)) details.set(k, { gelato: [], torte: [] });
@@ -73,12 +73,14 @@ async function customerOrders() {
   const tally = (rows, tipo) => (rows || []).forEach((r) => {
     const k = cliNormPhone(r.customer_phone);
     if (!k) return;
-    counts.set(k, (counts.get(k) || 0) + 1);
+    if (!counts.has(k)) counts.set(k, { gelato: 0, torte: 0 });
+    counts.get(k)[tipo]++;
     if (r.status === CLI_DONE) bucket(k)[tipo].push(r);
   });
   const [gelato, torte] = await Promise.all([
     sb.from("orders").select("id,customer_phone,delivery_date,slot_label,fulfillment,total,status,created_at"),
-    sb.from("cake_orders").select("id,customer_phone,item_name,variant,weight_kg,price,pickup_at,delivered_at,status"),
+    sb.from("cake_orders").select("id,customer_phone,item_name,variant,weight_kg,price,pickup_at,delivered_at,status," +
+      "paid_at,payment_due_date"),
   ]);
   if (gelato.error) console.error("ordini gelato del cliente", gelato.error); else tally(gelato.data, "gelato");
   if (torte.error) console.error("ordini torta del cliente", torte.error); else tally(torte.data, "torte");
@@ -98,7 +100,11 @@ async function loadCustomers() {
   if (res.error) { console.error(res.error); toast("Errore caricamento clienti."); return; }
   CUSTOMERS_ALL = res.data || [];
   CUSTOMER_ORDERS = ord.details;
-  CUSTOMERS_ALL.forEach((c) => { c.orders_count = ord.counts.get(c.phone_norm || cliNormPhone(c.phone)) || 0; });
+  CUSTOMERS_ALL.forEach((c) => {
+    const n = ord.counts.get(c.phone_norm || cliNormPhone(c.phone));
+    c.gelato_count = n ? n.gelato : 0;
+    c.torte_count = n ? n.torte : 0;
+  });
   CUSTOMERS_LOADED = true;
   renderCustomers();
 }
@@ -126,10 +132,6 @@ function filterCustomers(q) {
   );
 }
 
-function ordersLabel(n) {
-  if (!n) return "nessun ordine";
-  return n === 1 ? "1 ordine" : n + " ordini";
-}
 
 // ---------- ordini conclusi del cliente (scheda che si apre dalla riga) ----------
 // Data non valida = 0: finisce in fondo all'ordinamento invece di far saltare il confronto.
@@ -148,11 +150,13 @@ function cliOrdersOf(c) {
   return CUSTOMER_ORDERS.get(c.phone_norm || cliNormPhone(c.phone)) || { gelato: [], torte: [] };
 }
 
-// una riga = data · cosa era · quanto. Il totale del gruppo sta nell'intestazione.
-function cliOrderLine(quando, cosa, importo) {
+// una riga = data · cosa era · (eventuale coda, es. "da pagare") · quanto.
+// Il totale del gruppo sta nell'intestazione.
+function cliOrderLine(quando, cosa, importo, coda) {
   return `<div class="cli-ord">` +
       `<span class="cli-ord-d">${esc(quando)}</span>` +
       `<span class="cli-ord-x">${esc(cosa)}</span>` +
+      (coda || "") +
       `<span class="cli-ord-e">${esc(euro(importo))}</span>` +
     `</div>`;
 }
@@ -167,32 +171,79 @@ function cliGroupHtml(titolo, righe, totale) {
     `</div>`;
 }
 
-// La scheda si costruisce una volta sola, alla prima apertura: finche' resta chiusa non
-// c'e' motivo di disegnare le righe di chi non le guarda.
-function cliOrdersHtml(c) {
+function cliVuoto(msg) {
+  return '<p class="muted small" style="margin:0">' + esc(msg) + "</p>";
+}
+
+// Contenuto del pannello sotto la card, per vista: "gelato", "torte" o "sospesi".
+// Si ridisegna a ogni apertura: i sospesi cambiano quando si incassa.
+function cliPanelHtml(c, view) {
   const { gelato, torte } = cliOrdersOf(c);
-  if (!gelato.length && !torte.length) return "";
   const somma = (rows, campo) => rows.reduce((t, r) => t + Number(r[campo] || 0), 0);
-  const totGelato = somma(gelato, "total");
-  const totTorte = somma(torte, "price");
 
-  const rGelato = gelato.map((o) => {
-    const tipo = o.fulfillment === "pickup" ? "ritiro" : "consegna";
-    const fascia = o.slot_label || "";
-    // le fasce dei ritiri sono gia' scritte "Ritiro 13:00": senza questo controllo
-    // la riga diventa "ritiro · Ritiro 13:00"
-    const cosa = fascia.toLowerCase().startsWith(tipo) ? fascia : [tipo, fascia].filter(Boolean).join(" · ");
-    return cliOrderLine(cliDay(o.delivery_date || o.created_at), cosa, o.total);
+  if (view === "gelato") {
+    const righe = gelato.map((o) => {
+      const tipo = o.fulfillment === "pickup" ? "ritiro" : "consegna";
+      const fascia = o.slot_label || "";
+      // le fasce dei ritiri sono gia' scritte "Ritiro 13:00": senza questo controllo
+      // la riga diventa "ritiro · Ritiro 13:00"
+      const cosa = fascia.toLowerCase().startsWith(tipo) ? fascia : [tipo, fascia].filter(Boolean).join(" · ");
+      return cliOrderLine(cliDay(o.delivery_date || o.created_at), cosa, o.total);
+    });
+    return cliGroupHtml("Gelato", righe, somma(gelato, "total")) || cliVuoto("Nessun ordine gelato concluso.");
+  }
+
+  if (view === "torte") {
+    // il peso c'e' dagli ordini a kg in poi; prima al suo posto c'era il formato.
+    // Sui non incassati resta il segno "da pagare": si vede anche da questa vista.
+    const righe = torte.map((o) => cliOrderLine(
+      cliDay(o.delivered_at || o.pickup_at),
+      [o.item_name, o.weight_kg != null ? cakeFmtKg(o.weight_kg) : o.variant].filter(Boolean).join(" · "),
+      o.price,
+      o.paid_at ? "" : '<span class="cli-ord-due">da pagare</span>'));
+    return cliGroupHtml("Torte", righe, somma(torte, "price")) || cliVuoto("Nessun ordine torta concluso.");
+  }
+
+  // sospesi: scadenza e chiusura singola per riga, chiusura di tutto in fondo
+  const sospesi = torte.filter((o) => !o.paid_at);
+  if (!sospesi.length) return cliVuoto("Nessun pagamento in sospeso.");
+  const righe = sospesi.map((o) =>
+    `<div class="cli-ord">` +
+      `<span class="cli-ord-d">${esc(cliDay(o.delivered_at || o.pickup_at))}</span>` +
+      `<span class="cli-ord-x">${esc([o.item_name, o.weight_kg != null ? cakeFmtKg(o.weight_kg) : o.variant].filter(Boolean).join(" · "))}</span>` +
+      (o.payment_due_date ? `<span class="cli-ord-due">entro ${esc(cliDay(o.payment_due_date))}</span>` : "") +
+      `<span class="cli-ord-e">${esc(euro(o.price))}</span>` +
+      `<button type="button" class="btn ok sm cli-pay" data-id="${esc(o.id)}">Pagato</button>` +
+    `</div>`).join("");
+  return `<div class="cli-grp">` +
+      `<div class="cli-grp-h"><b>Da pagare</b>` +
+        `<span>${sospesi.length === 1 ? "1 ordine" : sospesi.length + " ordini"}</span>` +
+        `<span class="cli-grp-tot">${esc(euro(somma(sospesi, "price")))}</span></div>` +
+      righe +
+    `</div>` +
+    (sospesi.length > 1
+      ? `<button type="button" class="btn sm cli-payall" style="margin-top:10px">Segna tutti pagati (${sospesi.length})</button>`
+      : "");
+}
+
+// Bottoni "Pagato" del pannello sospesi. La scrittura sta in admin-torte.js
+// (cakePayAndRefresh), che a fine incasso ricarica anche questa anagrafica:
+// la card si ridisegna e il sospeso sparisce da solo.
+function cliWirePay(panel) {
+  const singoli = panel.querySelectorAll(".cli-pay");
+  singoli.forEach((b) => {
+    b.onclick = async () => {
+      b.disabled = true;
+      try { await cakePayAndRefresh([b.dataset.id], "Ordine incassato."); }
+      finally { b.disabled = false; }
+    };
   });
-  // il peso c'e' dagli ordini a kg in poi; prima al suo posto c'era il formato
-  const rTorte = torte.map((o) => cliOrderLine(
-    cliDay(o.delivered_at || o.pickup_at),
-    [o.item_name, o.weight_kg != null ? cakeFmtKg(o.weight_kg) : o.variant].filter(Boolean).join(" · "),
-    o.price));
-
-  return cliGroupHtml("Gelato", rGelato, totGelato) +
-    cliGroupHtml("Torte", rTorte, totTorte) +
-    `<div class="cli-tot">Totale speso <b>${esc(euro(totGelato + totTorte))}</b></div>`;
+  const tutti = panel.querySelector(".cli-payall");
+  if (tutti) tutti.onclick = async () => {
+    tutti.disabled = true;
+    try { await cakePayAndRefresh(Array.from(singoli).map((b) => b.dataset.id), "Ordini incassati."); }
+    finally { tutti.disabled = false; }
+  };
 }
 
 function renderCustomers() {
@@ -236,17 +287,25 @@ function buildCustomerRow(c) {
   frow.className = "frow clicard"; frow.dataset.id = c.id;
 
   const done = cliOrdersOf(c);
-  const apribile = !!(done.gelato.length || done.torte.length);
-  // L'etichetta conta TUTTI gli ordini; la scheda mostra solo i conclusi. Diventa un
-  // bottone solo se c'è qualcosa da aprire: un affordance che non apre niente è peggio
-  // di nessun affordance.
-  const pillola = apribile
-    ? `<button type="button" class="count cli-toggle" aria-expanded="false">` +
-        `${esc(ordersLabel(c.orders_count))} <span class="cli-caret" aria-hidden="true">▾</span></button>`
-    : `<span class="count">${esc(ordersLabel(c.orders_count))}</span>`;
+  const sospesi = done.torte.filter((o) => !o.paid_at);
+  // Una pillola per tipo: il conteggio e' su TUTTI gli ordini, la scheda mostra i
+  // conclusi. Diventa un bottone solo se c'è qualcosa da aprire: un affordance che
+  // non apre niente è peggio di nessun affordance. Il badge rosso dei sospesi compare
+  // solo quando ci sono soldi da incassare: è la cosa da vedere a colpo d'occhio.
+  const pill = (view, label, apribile, extra) => apribile
+    ? `<button type="button" class="count cli-toggle${extra || ""}" data-view="${view}" aria-expanded="false">` +
+        `${esc(label)} <span class="cli-caret" aria-hidden="true">▾</span></button>`
+    : `<span class="count">${esc(label)}</span>`;
+  const pillole = `<div class="cli-pills">` +
+    pill("gelato", "Gelato " + (c.gelato_count || 0), done.gelato.length > 0) +
+    pill("torte", "Torte " + (c.torte_count || 0), done.torte.length > 0) +
+    (sospesi.length
+      ? pill("sospesi", sospesi.length === 1 ? "1 da pagare" : sospesi.length + " da pagare", true, " cli-due")
+      : "") +
+    `</div>`;
 
   frow.innerHTML =
-    `<div class="cli-head"><span class="cli-nome"></span>${pillola}</div>` +
+    `<div class="cli-head"><span class="cli-nome"></span>${pillole}</div>` +
     `<div class="cli-meta"><span class="cli-tel"></span><span class="cli-mail"></span></div>` +
     `<div class="cli-note"></div>` +
     // il telefono ha un max-width esplicito: su WebKit un input dentro un flex tiene la
@@ -318,7 +377,7 @@ function buildCustomerRow(c) {
   // dell'ordine sono congelati, quindi lo storico resta leggibile. La conferma lo dice
   // e riporta quanti ordini sono: dopo non si recupera.
   const elimina = async () => {
-    const n = c.orders_count;
+    const n = (c.gelato_count || 0) + (c.torte_count || 0);
     const testo = `Eliminare ${c.name} dall'anagrafica?` +
       (n ? `\n\nHa ${n === 1 ? "1 ordine" : n + " ordini"}: restano nello storico col nome e il telefono di allora,` +
            ` ma perdono il collegamento a questa scheda.` : "") +
@@ -343,22 +402,31 @@ function buildCustomerRow(c) {
     });
   });
 
-  // scheda ordini: in fondo alla card. Si disegna alla prima apertura — con l'anagrafica
-  // intera a schermo, disegnarle tutte sarebbe lavoro buttato.
-  if (apribile) {
+  // pannello ordini in fondo alla card: una sola area, il contenuto dipende dalla
+  // pillola premuta. Ripremendola si chiude; premendone un'altra si cambia vista.
+  // Si disegna all'apertura (con l'anagrafica intera a schermo, disegnarli tutti
+  // sarebbe lavoro buttato) e si RIdisegna ogni volta: i sospesi cambiano incassando.
+  const toggles = frow.querySelectorAll(".cli-toggle");
+  if (toggles.length) {
     const panel = document.createElement("div");
     panel.className = "cli-orders hidden";
     frow.appendChild(panel);
-    const btn = q(".cli-toggle");
-    btn.onclick = () => {
-      const aperto = !panel.classList.toggle("hidden");
-      if (aperto && !panel.dataset.pronto) {
-        panel.innerHTML = cliOrdersHtml(c);
-        panel.dataset.pronto = "1";
-      }
-      btn.setAttribute("aria-expanded", String(aperto));
-      btn.classList.toggle("open", aperto);
-    };
+    let vista = null;
+    toggles.forEach((btn) => {
+      btn.onclick = () => {
+        const chiude = vista === btn.dataset.view && !panel.classList.contains("hidden");
+        panel.classList.toggle("hidden", chiude);
+        toggles.forEach((b) => {
+          const attivo = !chiude && b === btn;
+          b.setAttribute("aria-expanded", String(attivo));
+          b.classList.toggle("open", attivo);
+        });
+        if (chiude) { vista = null; return; }
+        vista = btn.dataset.view;
+        panel.innerHTML = cliPanelHtml(c, vista);
+        cliWirePay(panel);
+      };
+    });
   }
 
   return frow;
