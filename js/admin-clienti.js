@@ -213,7 +213,7 @@ function cliPanelHtml(c, view) {
       `<span class="cli-ord-x">${esc([o.item_name, o.weight_kg != null ? cakeFmtKg(o.weight_kg) : o.variant].filter(Boolean).join(" · "))}</span>` +
       (o.payment_due_date ? `<span class="cli-ord-due">entro ${esc(cliDay(o.payment_due_date))}</span>` : "") +
       `<span class="cli-ord-e">${esc(euro(o.price))}</span>` +
-      `<button type="button" class="btn ok sm cli-pay" data-id="${esc(o.id)}">Pagato</button>` +
+      `<button type="button" class="btn sm cli-pay" data-id="${esc(o.id)}">Segna pagato</button>` +
     `</div>`).join("");
   return `<div class="cli-grp">` +
       `<div class="cli-grp-h"><b>Da pagare</b>` +

@@ -347,7 +347,9 @@ function buildCakeOrderRow(o, storico) {
     // cambiare i dati vorrebbe dire riscrivere una vendita gia' fatta
     acts.append(mkBtn("✏️ Modifica", "btn ghost sm", () => openCakeOrderModal(o)));
   } else {
-    if (unpaid) acts.append(mkBtn("✓ Pagato", "btn ok sm", () =>
+    // "Segna pagato", non "Pagato": verbo d'azione, non stato — un bottone verde con
+    // scritto "Pagato" sembrava dire che l'ordine era gia' saldato
+    if (unpaid) acts.append(mkBtn("Segna pagato", "btn sm", () =>
       cakePayAndRefresh([o.id], "Ordine incassato.")));
     acts.append(mkBtn("Rimetti in attesa", "btn ghost sm", () => restoreCakeOrder(o)));
   }
