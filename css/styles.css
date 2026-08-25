@@ -342,6 +342,12 @@ body.order .cal .day.sel .dwd{ color:var(--muted); } body.order .cal .day.sel .d
 .geo-btn:disabled{ opacity:.65; cursor:default; }
 .geo-btn svg{ display:block; flex:none; }
 .addr-or{ font-size:12px; color:var(--faint); text-align:center; margin:0 0 10px; }
+/* avviso permesso posizione bloccato: informativo, non un errore -> ocra, non rosso */
+.geo-hint{
+  font-size:12.5px; line-height:1.45; color:var(--ochre-ink); background:var(--ochre-soft);
+  border-radius:var(--r-sm); padding:9px 11px; margin:0 0 10px;
+}
+.geo-hint[hidden]{ display:none; }
 .addr-row{ display:flex; gap:8px; align-items:center; }
 .addr-row .grow{ flex:1; min-width:0; }
 .addr-row .btn{ flex:none; }

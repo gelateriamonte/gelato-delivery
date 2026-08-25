@@ -197,10 +197,35 @@ function locateMe() {
   if (!navigator.geolocation) { toast(t("order.toast.geolocationUnavailable")); return; }
   toast(t("order.toast.locating"));
   navigator.geolocation.getCurrentPosition(
-    (pos) => setDelivery(pos.coords.latitude, pos.coords.longitude, true, true),
-    (err) => toast(err && err.code === 1 ? t("order.toast.locationDenied") : t("order.toast.locationUnavailable")),
+    (pos) => { showGeoHint(false); setDelivery(pos.coords.latitude, pos.coords.longitude, true, true); },
+    geoError,
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
+}
+function showGeoHint(on) { const el = $("geo-hint"); if (el) el.hidden = !on; }
+// Un PERMISSION_DENIED non distingue "ha premuto Blocca" da "ha chiuso il popup per sbaglio":
+// nel secondo caso il permesso resta "prompt" e ri-chiamare getCurrentPosition lo rimostra, nel
+// primo il browser non riaprirà mai il popup e l'unica via è che l'utente sblocchi dalle
+// impostazioni. La Permissions API è l'unico modo per separarli; se manca si punta sul retry,
+// che nel caso peggiore costa un tap a vuoto.
+async function geoError(err) {
+  if (!err || err.code !== 1) { toast(t("order.toast.locationUnavailable")); return; }
+  let state = "prompt";
+  try { state = (await navigator.permissions.query({ name: "geolocation" })).state; } catch (e) {}
+  if (state === "denied") showGeoHint(true);   // niente toast: l'avviso resta a schermo, doppio messaggio è rumore
+  else { showGeoHint(false); toast(t("order.toast.locationRetry")); }
+}
+// Lo sblocco dalle impostazioni del browser non ricarica la pagina: si intercetta il cambio di
+// permesso, si toglie l'avviso e si riparte da soli invece di chiedere all'utente di ricaricare.
+function watchGeoPermission() {
+  if (!navigator.permissions || !navigator.permissions.query) return;
+  navigator.permissions.query({ name: "geolocation" }).then((st) => {
+    st.onchange = () => {
+      if (st.state === "denied") return;
+      showGeoHint(false);
+      if (st.state === "granted") geoLocate();
+    };
+  }).catch(() => {});
 }
 // bottone primario "Usa la mia posizione": stesso flusso del crocino sulla mappa, ma con
 // stato busy inline sul bottone — è lui il punto di attenzione, il solo toast non basta
@@ -211,8 +236,8 @@ function geoLocate() {
   b.disabled = true; if (sp) sp.textContent = t("order.toast.locating");
   const done = () => { b.disabled = false; if (sp) sp.textContent = t("order.form.geoBtn"); };
   navigator.geolocation.getCurrentPosition(
-    (pos) => { done(); setDelivery(pos.coords.latitude, pos.coords.longitude, true, true); },
-    (err) => { done(); toast(err && err.code === 1 ? t("order.toast.locationDenied") : t("order.toast.locationUnavailable")); },
+    (pos) => { done(); showGeoHint(false); setDelivery(pos.coords.latitude, pos.coords.longitude, true, true); },
+    (err) => { done(); geoError(err); },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
 }
@@ -912,7 +937,7 @@ $("coupon").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.prev
 $("coupon").addEventListener("input", () => { if (!$("coupon").value.trim()) { COUPON = null; updateTotal(); } });
 ["name", "phone", "email"].forEach((id) => $(id).addEventListener("input", syncCouponGate));
 $("addr-find").onclick = () => { closeAddrSuggest(); geocodeAddress(); };
-if ($("geo-locate")) $("geo-locate").onclick = geoLocate;
+if ($("geo-locate")) { $("geo-locate").onclick = geoLocate; watchGeoPermission(); }
 function toggleAddrClear() { $("addr-clear").hidden = !$("address").value; }
 $("addr-clear").onclick = () => { $("address").value = ""; closeAddrSuggest(); toggleAddrClear(); $("address").focus(); };
 $("address").addEventListener("input", toggleAddrClear);
