@@ -181,11 +181,22 @@ Campi vuoti -> default dal dizionario (`js/i18n.js`, chiavi `closed.*`).
 
 Tre livelli, non uno:
 - `js/season-closed.js` (incluso su `index`, `ordina`, `consegna-a-domicilio`, `grazie`,
-  `informazioni`): riempie e mostra `#closed-box`, nasconde `[data-closed-hide]`, spegne i link a
-  `/ordina`. Li spegne **due volte**: sostituzione con `<span>` *e* una regola CSS iniettata, perche'
-  il footer NAP viene riscritto dopo da `footer-nap.js` e da ogni cambio lingua di i18n.
-  `killOrderLinks` salta gli elementi `[data-closed-hide]`: sostituirli con uno `<span>` senza
-  `display:none` li farebbe ricomparire come testo.
+  `informazioni`): mostra `#closed-box`, nasconde `[data-closed-hide]`, rende inerti i link a `/ordina`.
+  ⚠️ **Due trappole, entrambe prese dal vivo il 2026-09-11 con la chiusura gia' accesa in produzione:**
+  1. Il testo dal DB **non** si scrive con `textContent` sui nodi `[data-i18n]` del box: ogni
+     `I18N.applyLang()` li riscrive col dizionario, e `applyLang()` lo chiamano **dopo** sia il merge di
+     `home_content` (script inline di `index.html`) sia `footer-nap.js`. Va passato da
+     `I18N.merge(lang, {"closed.title":…, "closed.body":…}, false)`: entra nel dizionario e sopravvive a
+     ogni riapplicazione. Stesso motivo per cui `home_content` usa `merge` e non tocca il DOM.
+  2. Per lo stesso motivo i link a `/ordina` **non** si sostituiscono con uno `<span>`: il footer NAP
+     ricompare e il link con lui. Restano nel DOM, resi inerti da una regola CSS iniettata
+     (`pointer-events:none` + look da testo) **piu'** un listener `click` in **cattura** che fa
+     `preventDefault` — `pointer-events:none` ferma il mouse ma **non** l'Invio da tastiera su un
+     `<a>` ancora focusabile.
+
+  Un test che stubba Supabase non becca nessuna delle due se `home_content` e' vuoto o se la risposta
+  di `season_closed` arriva per ultima: va ritardata la risposta di `home_content` per riprodurre
+  l'ordine reale.
 - `js/order.js`: esce da `loadData()` e nasconde la shell **da solo**, senza dipendere dal file sopra
   (se quella fetch fallisse, la pagina d'ordine resterebbe visibile ma morta).
 - `create-checkout.js` / `create-order-unpaid.js`: **409**. E' l'unico blocco vero: sono endpoint
