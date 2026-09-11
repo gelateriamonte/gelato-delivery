@@ -404,7 +404,7 @@ async function loadData() {
   // (production_note, wa_templates, cancel_lead_hours) che finirebbero nel payload di ogni visitatore.
   // Colonne esplicite = ogni colonna nuova nasce privata. Tenere allineato al grant per colonna del
   // ruolo anon: supabase/migration-2026-08-01c-settings-column-grants.sql.
-  const pSettings = sb.from("settings").select("id,delivery_cost,min_order,max_advance_days,slot_lead_minutes,slot_lead_hours,opening_hours,delivery_area").eq("id", 1).single();
+  const pSettings = sb.from("settings").select("id,delivery_cost,min_order,max_advance_days,slot_lead_minutes,slot_lead_hours,opening_hours,delivery_area,season_closed").eq("id", 1).single();
   // flavors: stessa regola di settings — MAI select("*"). La tabella contiene i campi del piano di
   // produzione (prod_on, prod_kg, prod_order, prod_base_ratio: ricetta e costo, roba del back office)
   // che con select("*") finivano nel payload di ogni visitatore. Tenere allineato al grant per colonna
@@ -422,6 +422,18 @@ async function loadData() {
     toast(t("order.toast.loadError"));
     console.error(settings.error || flavors.error || formats.error || slots.error);
     const fw = $("formats"); if (fw) fw.innerHTML = `<p class="hint">${t("order.error.menuLoadFailed")}</p>`;
+    return;
+  }
+  // chiusura stagionale: l'app d'ordine non parte proprio. Il box di saluto e la
+  // sparizione di #shop/#bar li fa js/season-closed.js (markup in ordina.html); qui si
+  // evita di montare carrello, mappa e calendario dentro DOM nascosto.
+  // Il rifiuto autorevole sta nelle function (create-checkout, create-order-unpaid).
+  if (settings.data && settings.data.season_closed) {
+    // fallback autonomo: se la fetch di season-closed.js fallisce, questa pagina resterebbe
+    // con menù e barra checkout visibili ma morti. Il testo del box lo rifinisce quello script.
+    document.querySelectorAll("[data-closed-hide]").forEach((el) => { el.style.display = "none"; });
+    const box = $("closed-box");
+    if (box) { box.hidden = false; box.style.display = "block"; }
     return;
   }
   DATA = {

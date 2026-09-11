@@ -303,6 +303,22 @@ body.order .cal .day.sel .dwd{ color:var(--muted); } body.order .cal .day.sel .d
 #min-banner{ background:none; border:0; padding:0; color:#cb8d73; font-weight:700; text-align:center; }
 #min-banner::before{ content:""; display:inline-block; width:1em; height:1em; margin-right:6px; vertical-align:-.15em; background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23cb8d73%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M10.29%203.86%201.82%2018a2%202%200%200%200%201.71%203h16.94a2%202%200%200%200%201.71-3L13.71%203.86a2%202%200%200%200-3.42%200z%22/%3E%3Cline%20x1%3D%2212%22%20y1%3D%229%22%20x2%3D%2212%22%20y2%3D%2213%22/%3E%3Cline%20x1%3D%2212%22%20y1%3D%2217%22%20x2%3D%2212.01%22%20y2%3D%2217%22/%3E%3C/svg%3E") center/contain no-repeat; }
 
+/* ---------- box chiusura stagionale (settings.season_closed) ---------- */
+/* riempito da js/season-closed.js; l'equivalente per la home sta inline in index.html */
+.closed-box{
+  margin:10px 0 4px; padding:20px 22px; border-radius:var(--r-md);
+  background:var(--accent-soft); border:1px solid var(--accent-line); box-shadow:var(--shadow-card);
+}
+.closed-box .eyebrow{ color:var(--accent-ink); margin:0 0 8px; }
+.closed-box h2{
+  font-family:var(--serif); font-weight:500; font-size:27px; line-height:1.14;
+  margin:0 0 9px; color:var(--ink); letter-spacing:-.01em;
+}
+.closed-box p{ margin:0; font-size:14px; line-height:1.6; color:var(--ink-2); }
+.closed-box .closed-note{ margin-top:12px; font-size:12.5px; font-weight:600; color:var(--accent-ink); }
+/* .btn non dichiara display: su <button> basta l'inline-block di default, su <a> no. */
+.closed-box .btn{ display:block; text-align:center; text-decoration:none; }
+
 /* ---------- checkout bar (fissa in basso) ---------- */
 .bar{
   position:fixed; left:0; right:0; bottom:0; z-index:25;

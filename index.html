@@ -159,6 +159,14 @@
     .daily-intro{ font-size:13px; color:var(--muted); margin:-6px 0 12px; line-height:1.4; }
     .divider{ height:1px; background:var(--line-2); margin:8px 22px; }
 
+    /* box chiusura stagionale (settings.season_closed) — riempito da js/season-closed.js */
+    .closed-box{ margin:24px 22px 6px; padding:20px 22px; border-radius:var(--r-md);
+      background:var(--accent-soft); border:1px solid var(--accent-line); box-shadow:var(--shadow-card); }
+    .closed-box .eyebrow{ color:var(--accent-ink); margin-bottom:8px; }
+    .closed-box h2{ font-family:var(--serif); font-weight:500; font-size:27px; line-height:1.14;
+      margin:0 0 9px; color:var(--ink); letter-spacing:-.01em; }
+    .closed-box p{ margin:0; font-size:14px; line-height:1.6; color:var(--ink-2); }
+
     /* CTA sticky in basso */
     .cta{ position:sticky; bottom:0; z-index:6; flex:none;
       padding:14px 20px calc(16px + env(safe-area-inset-bottom)); background:var(--paper);
@@ -240,16 +248,24 @@
       </div>
     </section>
 
-    <section class="sec">
+    <!-- Chiusura stagionale: box di saluto. Nascosto finche' js/season-closed.js non
+         legge settings.season_closed = true; il testo arriva da settings.season_message. -->
+    <section class="closed-box" id="closed-box" hidden>
+      <p class="eyebrow" data-i18n="closed.eyebrow">Chiusura stagionale</p>
+      <h2 data-closed-title data-i18n="closed.title">Ci vediamo la prossima stagione</h2>
+      <p data-closed-body data-i18n="closed.body">La gelateria è chiusa per la stagione e gli ordini online sono sospesi. Grazie a tutti per quest'estate — vi aspettiamo alla riapertura.</p>
+    </section>
+
+    <section class="sec" data-closed-hide>
       <p class="eyebrow" data-i18n="home.story.eyebrow">La nostra storia</p>
       <h1 class="lede" data-i18n-html="home.story.lede">Gelateria artigianale a <em>Monte Petrosu</em>, San Teodoro: mantechiamo ogni giorno con latte fresco e frutta di stagione, a due passi dal mare.</h1>
       <p class="body-copy" data-i18n="home.story.body">Niente coloranti, niente fretta. Solo il gelato che ami — in gelateria o consegnato a domicilio nelle ore più calde, a San Teodoro, Puntaldia, Lu Impostu e in tutte le frazioni.</p>
     </section>
 
-    <section class="sec" style="padding-top:8px;padding-bottom:14px">
+    <section class="sec" style="padding-top:8px;padding-bottom:14px" data-closed-hide>
       <div class="sec-head"><h2 data-i18n="home.carousel.title">Dal laboratorio</h2><span class="more" data-i18n="home.carousel.scroll">Scorri →</span></div>
     </section>
-    <div class="carousel">
+    <div class="carousel" data-closed-hide>
       <div class="slide"><div class="ph-card" id="hp-card1" data-emoji="🍨"></div>
         <div class="scap"><b data-i18n="home.carousel.slide1.title">Le vaschette</b><span data-i18n="home.carousel.slide1.caption">da 600g a 1,7&nbsp;Kg</span></div></div>
       <div class="slide"><div class="ph-card" id="hp-card2" data-emoji="🍦"></div>
@@ -260,7 +276,7 @@
         <div class="scap"><b data-i18n="home.carousel.slide4.title">Consegna o take away</b><span data-i18n="home.carousel.slide4.caption">a San Teodoro</span></div></div>
     </div>
 
-    <section class="sec" id="flavors-sec" hidden style="padding-top:16px">
+    <section class="sec" id="flavors-sec" hidden style="padding-top:16px" data-closed-hide>
       <div class="sec-head"><h2 data-i18n="home.daily.title">Gusti del giorno</h2></div>
       <p class="daily-intro" data-i18n="home.daily.intro">Oltre ai classici oggi proponiamo anche:</p>
       <div class="flavors" id="home-flavors"></div>
@@ -300,7 +316,7 @@
       </a>
     </section>
 
-    <section class="sec" aria-labelledby="delivery-title">
+    <section class="sec" aria-labelledby="delivery-title" data-closed-hide>
       <p class="eyebrow" data-i18n="home.delivery.eyebrow">Consegna a domicilio</p>
       <h2 id="delivery-title" data-i18n="home.delivery.title" style="font-family:var(--serif);font-weight:500;font-size:26px;margin:0 0 4px;color:var(--ink);letter-spacing:-.01em">Il gelato arriva a casa, in vacanza</h2>
       <p class="body-copy" data-i18n-html="home.delivery.body">Consegniamo il gelato appena mantecato in tutto il comune di San Teodoro: <strong>Monte Petrosu</strong>, <strong>Puntaldia</strong>, <strong>Giardini di l'Aldia</strong>, <strong>Lu Impostu</strong> e il paese. Vaschette da 600 g a 1,7 kg, consegna gratuita, pagamento online sicuro.</p>
@@ -319,7 +335,7 @@
 
     <div style="height:10px"></div>
 
-    <div class="cta">
+    <div class="cta" data-closed-hide>
       <a href="/ordina"><span data-i18n="home.cta.button">Ordina ora</span><span class="arr">→</span></a>
       <p class="note" data-i18n="home.cta.note">Consegna a domicilio o take away · ordine minimo € 25</p>
     </div>
@@ -329,6 +345,7 @@
   <!-- Gusti del giorno: prelevati da Supabase (flavors con daily=true) -->
   <script src="js/i18n.js"></script>
   <script src="config.js"></script>
+  <script defer src="js/season-closed.js"></script>
   <script>
     (function () {
       function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }

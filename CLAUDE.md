@@ -171,6 +171,33 @@ Conseguenze operative, non negoziabili:
 - Le Netlify Functions non sono toccate (service_role bypassa grant e RLS); il back office opera come
   `authenticated` e mantiene accesso pieno.
 
+## Chiusura stagionale (2026-09-11)
+Interruttore `settings.season_closed` (bool) + testo `settings.season_message`
+(`{it:{title,body}, en:{title,body}}`). Back office → tab **Parametri** → *Chiusura stagionale*:
+il toggle fa **auto-save con conferma** (un toggle "da salvare" e' il modo per credere il sito chiuso
+mentre accetta ancora ordini); il testo ha un bottone suo e si auto-traduce in EN riusando
+`netlify/functions/translate-home.js` (accetta chiavi arbitrarie, non solo quelle della home).
+Campi vuoti -> default dal dizionario (`js/i18n.js`, chiavi `closed.*`).
+
+Tre livelli, non uno:
+- `js/season-closed.js` (incluso su `index`, `ordina`, `consegna-a-domicilio`, `grazie`,
+  `informazioni`): riempie e mostra `#closed-box`, nasconde `[data-closed-hide]`, spegne i link a
+  `/ordina`. Li spegne **due volte**: sostituzione con `<span>` *e* una regola CSS iniettata, perche'
+  il footer NAP viene riscritto dopo da `footer-nap.js` e da ogni cambio lingua di i18n.
+  `killOrderLinks` salta gli elementi `[data-closed-hide]`: sostituirli con uno `<span>` senza
+  `display:none` li farebbe ricomparire come testo.
+- `js/order.js`: esce da `loadData()` e nasconde la shell **da solo**, senza dipendere dal file sopra
+  (se quella fetch fallisse, la pagina d'ordine resterebbe visibile ma morta).
+- `create-checkout.js` / `create-order-unpaid.js`: **409**. E' l'unico blocco vero: sono endpoint
+  pubblici, il resto e' presentazione.
+
+⚠️ **Deploy: la migration PRIMA del push del JS** (`supabase/migration-2026-09-11-chiusura-stagionale.sql`).
+E' l'inverso della 08-01c: li' si revocava, qui si **aggiungono** colonne che il JS nuovo mette nella
+select list pubblica. Se il JS va online per primo, la query cita colonne inesistenti (42703) e la
+pagina d'ordine non carica piu' il menu'. Le due colonne sono pubbliche di proposito
+(`grant select (season_closed, season_message) on public.settings to anon`), per la regola del grant
+per colonna: una colonna nuova nasce privata.
+
 ## Stampa ordini — Epson TM-m30III (Server Direct Print)
 La stampante (in gelateria, su rete) polla `/.netlify/functions/epson-sdp` ogni ~15s e stampa lo scontrino di
 ogni ordine pagato. Niente browser nel percorso: funziona anche a back office chiuso.

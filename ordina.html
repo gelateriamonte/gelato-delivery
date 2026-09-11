@@ -39,8 +39,18 @@
   </header>
 
   <main class="wrap" id="app">
+    <!-- Chiusura stagionale: stesso box della home. Nascosto finche' js/season-closed.js
+         non legge settings.season_closed = true; testo da settings.season_message. -->
+    <section class="closed-box" id="closed-box" hidden>
+      <p class="eyebrow" data-i18n="closed.eyebrow">Chiusura stagionale</p>
+      <h2 data-closed-title data-i18n="closed.title">Ci vediamo la prossima stagione</h2>
+      <p data-closed-body data-i18n="closed.body">La gelateria è chiusa per la stagione e gli ordini online sono sospesi. Grazie a tutti per quest'estate — vi aspettiamo alla riapertura.</p>
+      <p class="closed-note" data-i18n="closed.ordersOff">Ordini online sospesi.</p>
+      <a class="btn ghost block" style="margin-top:18px" href="/" data-i18n="closed.backHome">Torna alla home</a>
+    </section>
+
     <!-- COMPOSIZIONE ORDINE -->
-    <section id="shop">
+    <section id="shop" data-closed-hide>
       <div class="group">
         <p class="eyebrow muted" data-i18n="order.menu.eyebrow">Il menù</p>
         <h1 class="s-title" data-i18n="order.menu.title">Ordina il gelato: consegna a domicilio o ritiro</h1>
@@ -132,7 +142,7 @@
     </section>
 
     <!-- CONFERMA -->
-    <section id="done" class="hidden">
+    <section id="done" class="hidden" data-closed-hide>
       <div class="confirm">
         <div class="seal">
           <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
@@ -151,7 +161,7 @@
   </main>
 
   <!-- BARRA CHECKOUT -->
-  <div class="bar" id="bar">
+  <div class="bar" id="bar" data-closed-hide>
     <div class="bar-in">
       <div class="grow">
         <div class="lab" data-i18n="order.submit.totalLabel">Totale</div>
@@ -211,6 +221,7 @@
   <script defer src="js/santeodoro-boundary.js"></script>
   <script defer src="js/i18n.js"></script>
   <script defer src="js/footer-nap.js"></script>
+  <script defer src="js/season-closed.js"></script>
   <script defer src="js/order.js"></script>
 </body>
 </html>

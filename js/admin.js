@@ -1529,6 +1529,7 @@ async function loadSettings() {
   $("note-text").value = SETTINGS.production_note || "";
   updateNoteButtons();
   renderOpeningHoursEditor();
+  loadSeason();
   // applica i giorni max prenotabili ai calendari (Fasce + barra giorni Ordini)
   SLOT_DAYS = next7();
   if (!SLOT_DAYS.some((d) => ymd(d) === SELECTED_DAY)) SELECTED_DAY = ymd(SLOT_DAYS[0]);
@@ -1584,6 +1585,54 @@ $("set-maxdays").onchange = async () => {
   renderCal(); renderOrders();
   toast("Giorni max prenotabili salvati.");
 };
+
+// ========== CHIUSURA STAGIONALE ==========
+// season_closed  = interruttore generale (auto-save: un toggle che "resta da salvare" e'
+//                  il modo per credere il sito chiuso mentre accetta ancora ordini).
+// season_message = testo del box, { it:{title,body}, en:{title,body} }. Campi vuoti -> il
+//                  sito usa i default del dizionario (js/i18n.js, closed.title/closed.body).
+// Il blocco vero degli ordini sta nelle function (create-checkout, create-order-unpaid).
+function loadSeason() {
+  $("season-closed").checked = !!(SETTINGS && SETTINGS.season_closed);
+  const it = ((SETTINGS && SETTINGS.season_message) || {}).it || {};
+  const ti = $("season-title"), bo = $("season-body");
+  ti.value = it.title || ""; bo.value = it.body || "";
+  if (window.I18N) { ti.placeholder = I18N.t("closed.title"); bo.placeholder = I18N.t("closed.body"); }
+}
+$("season-closed").onchange = async () => {
+  const on = $("season-closed").checked;
+  if (on && !confirm("Attivare la chiusura stagionale? Sul sito compare il box di saluto e nessuno puo' piu' ordinare online.")) {
+    $("season-closed").checked = false; return;
+  }
+  const { error } = await sb.from("settings").update({ season_closed: on }).eq("id", 1);
+  if (error) { console.error(error); toast("Errore salvataggio."); $("season-closed").checked = !on; return; }
+  SETTINGS.season_closed = on;
+  toast(on ? "Chiusura stagionale ATTIVA: ordini bloccati." : "Chiusura stagionale spenta: ordini riattivati.");
+};
+$("season-save").onclick = async () => {
+  const btn = $("season-save"); btn.disabled = true; const lbl = btn.textContent; btn.textContent = "Salvo e traduco\u2026";
+  const title = $("season-title").value.trim(), body = $("season-body").value.trim();
+  const it = {}; if (title) it.title = title; if (body) it.body = body;
+  let en = {}, enMsg = "";
+  if (Object.keys(it).length) {
+    try {
+      const r = await fetch("/.netlify/functions/translate-home", {
+        method: "POST", headers: { "content-type": "application/json", "x-admin-token": ADMIN_UPLOAD_TOKEN },
+        body: JSON.stringify({ it: it }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.en) { en = d.en; enMsg = " Inglese auto-tradotto."; }
+      else enMsg = " \u26a0 inglese NON aggiornato (" + (d.error || "errore") + "): ai turisti esce l'italiano.";
+    } catch (e) { enMsg = " \u26a0 inglese NON aggiornato (rete): ai turisti esce l'italiano."; }
+  }
+  const payload = Object.keys(it).length ? { it: it, en: en } : null;
+  const { error } = await sb.from("settings").update({ season_message: payload }).eq("id", 1);
+  btn.disabled = false; btn.textContent = lbl;
+  if (error) { console.error(error); toast("Errore salvataggio."); return; }
+  SETTINGS.season_message = payload;
+  toast("Testo del box salvato." + enMsg);
+};
+
 
 // ========== HOMEPAGE (editor contenuti) ==========
 // chiavi = stesse di i18n.js (home.*); il default IT viene dal dizionario (I18N.t).

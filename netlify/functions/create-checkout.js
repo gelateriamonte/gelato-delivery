@@ -35,6 +35,14 @@ exports.handler = async (event) => {
   const isPickup = fulfillment === "pickup";
 
   try {
+    // 0) Chiusura stagionale: il blocco AUTOREVOLE sta qui. Il sito nasconde i bottoni
+    //    (js/season-closed.js), ma questa function e' un endpoint pubblico: senza questo
+    //    controllo un POST a mano creerebbe comunque una sessione Stripe a gelateria chiusa.
+    const { data: settings } = await supa.from("settings").select("delivery_cost,season_closed").eq("id", 1).single();
+    if (settings && settings.season_closed) {
+      return json(409, { error: "La gelateria è chiusa per la stagione: gli ordini online sono sospesi." });
+    }
+
     // 1) Capienza fascia (solo consegna con tetto) — best-effort anti-overbooking.
     if (!isPickup) {
       const { data: slot } = await supa.from("time_slots").select("max_deliveries").eq("label", slot_label).maybeSingle();
@@ -55,7 +63,6 @@ exports.handler = async (event) => {
       price_data: { currency: "eur", unit_amount: l.unitCents, product_data: { name: l.name } },
     }));
 
-    const { data: settings } = await supa.from("settings").select("delivery_cost").eq("id", 1).single();
     const deliveryCents = isPickup ? 0 : Math.round(Number((settings && settings.delivery_cost) || 0) * 100);
     if (deliveryCents > 0) {
       line_items.push({ quantity: 1, price_data: { currency: "eur", unit_amount: deliveryCents, product_data: { name: "Consegna a domicilio" } } });

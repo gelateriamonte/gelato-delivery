@@ -213,6 +213,21 @@
       </div>
       <div class="banner" style="margin-top:18px">Le modifiche si riflettono nella web app cliente dopo il refresh.</div>
 
+      <div class="admin-head" style="margin-top:30px"><h2>Chiusura stagionale</h2></div>
+      <p class="muted small">Interruttore generale. Acceso: sul sito compare il box di saluto, sparisce il bottone "Ordina ora" e <b>gli ordini online sono bloccati</b> — anche il pagamento al ritiro. Si salva da solo, subito. Il testo del box si scrive in <b>italiano</b> (l'inglese si traduce in automatico al salvataggio) e ha un bottone suo: lascia i campi vuoti per usare il testo predefinito.</p>
+      <div class="panel stack">
+        <label class="switch">
+          <input type="checkbox" id="season-closed">
+          <span class="track"><span class="thumb"></span></span>
+          <span class="switch-lbl"><span class="on-t">Chiuso — ordini bloccati</span><span class="off-t">Aperto — ordini attivi</span></span>
+        </label>
+        <div class="field" style="margin:0"><label>Box — titolo (IT)</label>
+          <input id="season-title" type="text"></div>
+        <div class="field" style="margin:0"><label>Box — testo (IT)</label>
+          <textarea id="season-body" rows="3"></textarea></div>
+        <button class="btn" id="season-save">Salva testo del box</button>
+      </div>
+
       <div class="admin-head" style="margin-top:30px"><h2>Codici sconto</h2></div>
       <p class="muted small"><b>Sempre valido</b> = riutilizzabile all'infinito · <b>One-off</b> = si brucia al primo utilizzo. Lo sconto (€ o %) si applica al totale ordine. Il conteggio mostra quante volte è stato usato.</p>
       <div class="panel">

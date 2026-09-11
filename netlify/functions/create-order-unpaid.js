@@ -24,6 +24,13 @@ exports.handler = async (event) => {
   if (!delivery_date || !slot_label) return json(400, { error: "Giorno o orario di ritiro mancante." });
 
   try {
+    // Chiusura stagionale: blocco AUTOREVOLE (l'endpoint e' pubblico, il nascondere i
+    // bottoni lato sito non basta). Stesso controllo in create-checkout.js.
+    const { data: settings } = await supa.from("settings").select("season_closed").eq("id", 1).single();
+    if (settings && settings.season_closed) {
+      return json(409, { error: "La gelateria è chiusa per la stagione: gli ordini online sono sospesi." });
+    }
+
     // pricing autorevole — pickup: nessun costo di consegna, nessun minimo, nessuna capienza fascia
     const priced = await priceCart(supa, items);
     if (priced.error) return json(400, { error: priced.error });
