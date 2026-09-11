@@ -191,6 +191,14 @@ Tre livelli, non uno:
 - `create-checkout.js` / `create-order-unpaid.js`: **409**. E' l'unico blocco vero: sono endpoint
   pubblici, il resto e' presentazione.
 
+Applicata il 2026-09-11 via **CLI** (`supabase migration up --linked`) invece che dal SQL Editor: la riga
+`20260911160000` sta ora in `supabase_migrations.schema_migrations`. Le 6 migration remote precedenti non
+hanno un file locale corrispondente, quindi il CLI rifiuta con `LegacyMigrationMissingLocalError`: si aggira
+creando **segnaposto vuoti** con quegli esatti timestamp in una migrations dir di scratch (fuori dal repo) —
+**mai** `supabase migration repair`, che riscrive la history di produzione. Il login CLI interattivo lo fa
+l'utente nel suo terminale; da lì `migration list/up --linked` si collegano al DB **senza chiedere password**
+(il CLI si crea il login role via Management API).
+
 ⚠️ **Deploy: la migration PRIMA del push del JS** (`supabase/migration-2026-09-11-chiusura-stagionale.sql`).
 E' l'inverso della 08-01c: li' si revocava, qui si **aggiungono** colonne che il JS nuovo mette nella
 select list pubblica. Se il JS va online per primo, la query cita colonne inesistenti (42703) e la
